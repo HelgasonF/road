@@ -1,0 +1,60 @@
+import type { Job } from "@/lib/domain/types";
+import type { JobOperatorMatch } from "./queries";
+
+export const demoJobs: Job[] = [
+  {
+    id: "30000000-0000-4000-8000-000000000001",
+    customerName: "Sigríður Jónsdóttir",
+    customerPhone: "555-0201",
+    vehicleRegistration: "AB-123",
+    vehicleMake: "Toyota",
+    vehicleModel: "RAV4",
+    vehicleType: "Fólksbíll",
+    latitude: 64.1265,
+    longitude: -21.8174,
+    locationLabel: "Bústaðavegur, Reykjavík",
+    locationSource: "search",
+    status: "new",
+    priority: "high",
+    notes: "Sprungið dekk og ekkert varadekk.",
+    requiredCapabilities: ["tire_assistance"],
+    assignment: null,
+    createdAt: "2026-08-19T19:30:00Z",
+    updatedAt: "2026-08-19T19:30:00Z",
+    completedAt: null,
+  },
+  {
+    id: "30000000-0000-4000-8000-000000000002",
+    customerName: "Michael Brown",
+    customerPhone: "555-0202",
+    vehicleRegistration: "XY-789",
+    vehicleMake: "Tesla",
+    vehicleModel: "Model Y",
+    vehicleType: "Rafbíll",
+    latitude: 65.6885,
+    longitude: -18.1262,
+    locationLabel: "Akureyri, Ísland",
+    locationSource: "search",
+    status: "assigned",
+    priority: "normal",
+    notes: "Rafhlaða tóm og þarf örugga aðstoð.",
+    requiredCapabilities: ["ev_assistance", "towing"],
+    assignment: {
+      id: "40000000-0000-4000-8000-000000000001",
+      operatorId: "10000000-0000-4000-8000-000000000002",
+      operatorName: "Anna S. Jónsdóttir",
+      vehicleId: "20000000-0000-4000-8000-000000000002",
+      vehicleName: "Þjónustubíll Norðurs",
+      assignedAt: "2026-08-19T19:15:00Z",
+    },
+    createdAt: "2026-08-19T19:00:00Z",
+    updatedAt: "2026-08-19T19:15:00Z",
+    completedAt: null,
+  },
+];
+
+export const demoJobMatches: JobOperatorMatch[] = [
+  { jobId: demoJobs[0].id, operatorId: "10000000-0000-4000-8000-000000000001", distanceKm: 82.4, hasRequiredCapabilities: false, withinServiceArea: true },
+  { jobId: demoJobs[0].id, operatorId: "10000000-0000-4000-8000-000000000002", distanceKm: 249.2, hasRequiredCapabilities: true, withinServiceArea: false },
+  { jobId: demoJobs[1].id, operatorId: "10000000-0000-4000-8000-000000000002", distanceKm: 1.1, hasRequiredCapabilities: false, withinServiceArea: true },
+];
