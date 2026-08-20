@@ -40,3 +40,13 @@ export function buildContactLinks(phone: string): ContactLinks {
     whatsappHref: whatsappDigits ? `https://wa.me/${whatsappDigits}` : null,
   };
 }
+
+export function buildWhatsAppHref(phone: string, message: string) {
+  const { whatsappHref } = buildContactLinks(phone);
+  if (!whatsappHref) return null;
+
+  const normalizedMessage = message.trim();
+  return normalizedMessage
+    ? `${whatsappHref}?text=${encodeURIComponent(normalizedMessage)}`
+    : whatsappHref;
+}

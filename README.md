@@ -37,7 +37,7 @@ Driver access is managed from the selected service provider in the dispatcher in
 3. The driver opens the email, chooses a password, and lands on `/driver`.
 4. Dispatch can send a password-reset email, disable access immediately, or re-enable the same account without deleting operational data.
 
-Driver contact in the MVP uses ordinary WhatsApp rather than an automated API. The WhatsApp action opens the registered driver's chat on a phone, WhatsApp Desktop, or WhatsApp Web; the dispatcher reviews and manually sends the message. Calling remains available as a fallback. This does not require WhatsApp Business Platform credentials.
+Driver contact in the MVP uses ordinary WhatsApp rather than an automated API. Each ranked driver has a prewritten availability request containing only the operational area, assistance, priority, and estimated distance. After assignment, a second action sends the active driver their Vegstoð login URL. Both actions open the registered driver's chat on a phone, WhatsApp Desktop, or WhatsApp Web; the dispatcher reviews and manually sends the message. Calling remains available as a fallback. This does not require WhatsApp Business Platform credentials.
 
 Customer intake is managed from the selected job:
 

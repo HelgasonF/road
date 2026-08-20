@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildContactLinks } from "./contact-links";
+import { buildContactLinks, buildWhatsAppHref } from "./contact-links";
 
 describe("buildContactLinks", () => {
   it("adds Iceland's country code to a seven-digit local number", () => {
@@ -34,5 +34,18 @@ describe("buildContactLinks", () => {
       callHref: "tel:+1234567890123456",
       whatsappHref: null,
     });
+  });
+
+  it("adds an encoded prewritten message without changing the destination number", () => {
+    const href = buildWhatsAppHref("555-0104", "Hæ Bjarni.\nErtu laus?");
+
+    expect(href).not.toBeNull();
+    const url = new URL(href!);
+    expect(url.origin + url.pathname).toBe("https://wa.me/3545550104");
+    expect(url.searchParams.get("text")).toBe("Hæ Bjarni.\nErtu laus?");
+  });
+
+  it("does not create a prewritten WhatsApp message for a non-WhatsApp number", () => {
+    expect(buildWhatsAppHref("112", "Ertu laus?")).toBeNull();
   });
 });

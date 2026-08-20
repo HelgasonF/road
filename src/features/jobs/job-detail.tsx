@@ -18,6 +18,11 @@ import {
 } from "@/lib/i18n/is";
 import type { JobOperatorMatch } from "./queries";
 import { assignJobAction, updateJobStatusAction } from "./actions";
+import {
+  DriverAssignmentContactActions,
+  DriverAvailabilityContactActions,
+} from "./driver-contact-actions";
+import type { DriverJobContactSummary } from "./driver-contact";
 import { buildJobCandidates } from "./matching";
 
 interface JobDetailProps {
@@ -28,6 +33,15 @@ interface JobDetailProps {
   operators: Operator[];
   onChanged: () => void;
   onEdit: () => void;
+}
+
+function driverContactSummary(job: Job, driverName: string): DriverJobContactSummary {
+  return {
+    driverName,
+    locationLabel: job.locationLabel,
+    priority: job.priority,
+    requiredCapabilities: job.requiredCapabilities,
+  };
 }
 
 export function JobDetail({ customerLink, demoMode, job, matches, operators, onChanged, onEdit }: JobDetailProps) {
@@ -54,6 +68,9 @@ export function JobDetail({ customerLink, demoMode, job, matches, operators, onC
   }
 
   const selectedOperator = operators.find((operator) => operator.id === selectedOperatorId) ?? null;
+  const assignedOperator = job.assignment
+    ? operators.find((operator) => operator.id === job.assignment?.operatorId) ?? null
+    : null;
   const isClosed = job.status === "completed" || job.status === "cancelled";
   const assignmentUnchanged = Boolean(
     job.assignment
@@ -133,7 +150,16 @@ export function JobDetail({ customerLink, demoMode, job, matches, operators, onC
       <section className="detail-section">
         <h3>{is.assignment}</h3>
         {job.assignment ? (
-          <div className="current-assignment"><UserRound size={18} /><span><strong>{job.assignment.operatorName}</strong><small>{job.assignment.vehicleName ?? "Ekkert ökutæki valið"}</small></span></div>
+          <div className="current-assignment-block">
+            <div className="current-assignment"><UserRound size={18} /><span><strong>{job.assignment.operatorName}</strong><small>{job.assignment.vehicleName ?? "Ekkert ökutæki valið"}</small></span></div>
+            {assignedOperator && !isClosed ? (
+              <DriverAssignmentContactActions
+                accessStatus={assignedOperator.driverAccess?.status ?? null}
+                phone={assignedOperator.phone}
+                summary={driverContactSummary(job, assignedOperator.name)}
+              />
+            ) : null}
+          </div>
         ) : <p className="muted-copy">Verkefninu hefur ekki verið úthlutað.</p>}
 
         {!isClosed ? (
@@ -151,16 +177,24 @@ export function JobDetail({ customerLink, demoMode, job, matches, operators, onC
             <div><h3>Röðun þjónustuaðila</h3><span>{suitableCount === 1 ? "1 hentugur" : `${suitableCount} hentugir`} af {candidates.length}</span></div>
             <label><input type="checkbox" checked={suitableOnly} onChange={(event) => setSuitableOnly(event.target.checked)} /> Aðeins hentugir</label>
           </div>
+          <p className="matching-contact-note">Spurðu um framboð án upplýsinga um viðskiptavin. WhatsApp opnast með tilbúnum texta en þú ýtir sjálf/ur á Senda.</p>
           <div className="match-list">
             {visibleCandidates.map(({ operator, match, hasRequiredCapabilities, isSuitable, withinServiceArea }, index) => (
-              <button key={operator.id} type="button" onClick={() => { setSelectedOperatorId(operator.id); setSelectedVehicleId(""); }}>
-                <b>{index + 1}</b><span><strong>{operator.name}</strong><small>{availabilityLabels[operator.availabilityStatus]} · {match ? `${match.distanceKm} km` : "fjarlægð óþekkt"}</small></span>
-                <span className="match-criteria">
-                  {isSuitable ? <i className="match-suitable">Hentugur</i> : null}
-                  <i className={withinServiceArea ? "match-ok" : "match-missing"}>{withinServiceArea ? "Innan svæðis" : "Utan svæðis"}</i>
-                  <i className={hasRequiredCapabilities ? "match-ok" : "match-missing"}>{hasRequiredCapabilities ? "Hæfur" : "Vantar getu"}</i>
-                </span>
-              </button>
+              <article className={`match-card ${selectedOperatorId === operator.id ? "match-card-selected" : ""}`} key={operator.id}>
+                <button className="match-select-button" type="button" aria-pressed={selectedOperatorId === operator.id} onClick={() => { setSelectedOperatorId(operator.id); setSelectedVehicleId(""); }}>
+                  <b>{index + 1}</b><span><strong>{operator.name}</strong><small>{availabilityLabels[operator.availabilityStatus]} · {match ? `${match.distanceKm} km` : "fjarlægð óþekkt"}</small></span>
+                  <span className="match-criteria">
+                    {isSuitable ? <i className="match-suitable">Hentugur</i> : null}
+                    <i className={withinServiceArea ? "match-ok" : "match-missing"}>{withinServiceArea ? "Innan svæðis" : "Utan svæðis"}</i>
+                    <i className={hasRequiredCapabilities ? "match-ok" : "match-missing"}>{hasRequiredCapabilities ? "Hæfur" : "Vantar getu"}</i>
+                  </span>
+                </button>
+                <DriverAvailabilityContactActions
+                  distanceKm={match?.distanceKm ?? null}
+                  phone={operator.phone}
+                  summary={driverContactSummary(job, operator.name)}
+                />
+              </article>
             ))}
             {visibleCandidates.length === 0 ? <p className="match-empty">Enginn laus þjónustuaðili er bæði innan þjónustusvæðis og með rétta getu.</p> : null}
           </div>

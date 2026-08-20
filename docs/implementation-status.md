@@ -22,6 +22,7 @@ Last updated: 20 August 2026
 - MapLibre map with Iceland-correct markers and service-radius overlays.
 - Local Iceland address search using the official HMS address register plus Icelandic OpenStreetMap place names.
 - Direct call and optional WhatsApp actions for registered phone numbers.
+- Job-specific manual WhatsApp contact beside every suggested driver: a privacy-safe availability request before assignment and an assignment/login message only after assignment to a driver with active access.
 - Real locally created operators and jobs used during testing; demo data is isolated to read-only demo mode.
 - One-to-one driver login linked directly to the existing service-provider/operator record.
 - Driver-only Row Level Security for the linked operator, vehicles, assignments, jobs, requirements, and history.
@@ -63,13 +64,24 @@ The account-free intake and private-photo flow was verified locally in three sep
 5. Dispatch reassigned that job to Bjarni. His restricted driver screen showed the updated vehicle data, customer description, incident map, and photo.
 6. Opening the staff/driver photo endpoint without a session returned HTTP 404. Database tests also prove that a driver sees photo metadata only for their own current assignments and cannot read customer-link hashes.
 
+## Completed driver-contact build slice
+
+The dispatcher-to-driver WhatsApp workflow remains deliberately manual and free of API automation:
+
+1. Every suggested driver now has Call and **Spyrja um framboð** actions directly in the ranked candidate card.
+2. The prewritten availability message contains only the driver name, generalized incident area, required assistance, priority, and estimated straight-line distance when known. House numbers and raw map coordinates are suppressed, and the builder receives no customer name, phone, notes, photos, or temporary customer link.
+3. After assignment, dispatch can send a second message containing the operational summary and the absolute Vegstoð `/driver` login URL.
+4. The login-link action appears only when the assigned operator has active driver access. Invited, disabled, and unlinked states explain what dispatch must resolve first.
+5. Both actions open ordinary WhatsApp/WhatsApp Web; Vegstoð never sends automatically and the dispatcher remains responsible for reviewing and pressing Send.
+6. Unit/component tests verify Icelandic and international WhatsApp addressing, exact message content, missing-distance behavior, active-access gating, and runtime construction of the driver URL. A 1440 px and 390 px Playwright pass confirmed both dispatcher states, the WhatsApp handoff, no horizontal overflow, and no application-console errors.
+
 ## Full verification snapshot
 
 The complete current working tree was rechecked on 20 August 2026:
 
 - `npm run build` passed with all application routes, including dispatcher, customer intake, private photo delivery, authentication confirmation/password setup, and the driver screen.
 - `npm run typecheck` and `npm run lint` passed without errors.
-- `npm test` passed all 89 tests across 15 Vitest files.
+- `npm test` passed all 99 tests across 17 Vitest files.
 - `npx supabase test db` passed all 109 assertions across four pgTAP files, covering the dispatch schema, driver isolation/access management, customer-link lifecycle, and private-photo authorization.
 - `npx supabase db lint --local --schema public` reported no application-schema errors. A whole-database lint also reports known analyzer findings inside Supabase's installed PostGIS extension functions; these are vendor extension code rather than Vegstoð migrations.
 - `npm audit --omit=dev` reported zero production dependency vulnerabilities.
@@ -83,10 +95,9 @@ The implemented flows are complete and verified locally, but the product is not 
 
 ## Next slices
 
-1. Create a secure phone-test environment in which both the app and Supabase API/Storage are reachable, then test the complete dispatcher → customer → driver flow on iPhone and Android.
-2. Add a job-specific, prewritten manual WhatsApp availability message beside each suggested driver while keeping the dispatcher responsible for pressing Send.
-3. Add a clearer job event timeline covering customer submission, assignment, acceptance, reassignment, and completion.
-4. Connect hosted Supabase and production email only after the real-phone workflow is approved.
+1. Add a clearer job event timeline covering customer submission, availability contact, assignment, acceptance, reassignment, and completion.
+2. Create a secure phone-test environment in which both the app and Supabase API/Storage are reachable, then test the complete dispatcher → customer → driver flow on iPhone and Android.
+3. Connect hosted Supabase and production email only after the real-phone workflow is approved.
 
 ## Intended end-to-end workflow
 
