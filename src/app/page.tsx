@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 
+import { getAuthenticatedLandingPath } from "@/features/auth/routing";
+import { getCustomerIntakeLinkSummaries } from "@/features/customer-intake/queries";
 import { DispatcherWorkspace } from "@/features/dispatch/dispatcher-workspace";
 import { demoJobMatches, demoJobs } from "@/features/jobs/demo-data";
 import { getJobOperatorMatches, getJobs } from "@/features/jobs/queries";
@@ -29,19 +31,27 @@ export default async function Home() {
 
   const identity = await getVerifiedSession();
   if (!identity) redirect("/login");
+  if (identity.role === "driver") redirect(getAuthenticatedLandingPath(identity) ?? "/login");
+  if (identity.role !== "dispatcher" && identity.role !== "admin") redirect("/login");
 
-  const [operators, capabilities, jobs, jobMatches] = demoMode
-    ? [demoOperators, demoCapabilities, demoJobs, demoJobMatches]
-    : await Promise.all([getOperators(), getCapabilities(), getJobs(), getJobOperatorMatches()]);
+  const [operators, capabilities, jobs, jobMatches, customerLinks] = demoMode
+    ? [demoOperators, demoCapabilities, demoJobs, demoJobMatches, []]
+    : await Promise.all([
+      getOperators(),
+      getCapabilities(),
+      getJobs(),
+      getJobOperatorMatches(),
+      getCustomerIntakeLinkSummaries(),
+    ]);
 
   return (
     <DispatcherWorkspace
       capabilities={capabilities}
+      customerLinks={customerLinks}
       demoMode={demoMode}
       identity={identity}
       jobMatches={jobMatches}
       jobs={jobs}
-      mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN ?? null}
       operators={operators}
     />
   );

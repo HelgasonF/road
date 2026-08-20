@@ -54,6 +54,9 @@ export type JobPriority = (typeof jobPriorities)[number];
 export const locationSources = ["search", "map_pin", "manual", "gps"] as const;
 export type LocationSource = (typeof locationSources)[number];
 
+export const appRoles = ["pending", "dispatcher", "admin", "driver"] as const;
+export type AppRole = (typeof appRoles)[number];
+
 export interface Capability {
   code: CapabilityCode;
   sortOrder: number;
@@ -71,8 +74,20 @@ export interface Vehicle {
   capabilities: CapabilityCode[];
 }
 
+export type DriverAccessStatus = "invited" | "active" | "disabled";
+
+export interface DriverAccess {
+  email: string;
+  status: DriverAccessStatus;
+  invitedAt: string | null;
+  activatedAt: string | null;
+  disabledAt: string | null;
+}
+
 export interface Operator {
   id: string;
+  userId: string | null;
+  driverAccess: DriverAccess | null;
   name: string;
   phone: string;
   companyName: string | null;
@@ -99,6 +114,15 @@ export interface JobAssignment {
   vehicleId: string | null;
   vehicleName: string | null;
   assignedAt: string;
+  acceptedAt: string | null;
+}
+
+export interface JobPhoto {
+  id: string;
+  originalFilename: string;
+  contentType: string;
+  sizeBytes: number;
+  createdAt: string;
 }
 
 export interface Job {
@@ -116,6 +140,9 @@ export interface Job {
   status: JobStatus;
   priority: JobPriority;
   notes: string | null;
+  customerNotes: string | null;
+  customerIntakeSubmittedAt: string | null;
+  photos: JobPhoto[];
   requiredCapabilities: CapabilityCode[];
   assignment: JobAssignment | null;
   createdAt: string;
@@ -130,11 +157,15 @@ export interface LocationSuggestion {
   longitude: number;
 }
 
-export interface DispatcherIdentity {
+export interface AuthenticatedIdentity {
   id: string;
   email: string;
   displayName: string;
+  role: AppRole;
+  operatorId: string | null;
 }
+
+export type DispatcherIdentity = AuthenticatedIdentity;
 
 export interface ActionResult<T = undefined> {
   ok: boolean;

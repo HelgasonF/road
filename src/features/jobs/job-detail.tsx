@@ -1,8 +1,12 @@
 "use client";
 
-import { CheckCircle2, Clock3, MapPin, Pencil, Phone, Route, Truck, UserRound } from "lucide-react";
+import { CheckCircle2, Clock3, MapPin, Pencil, Route, Truck, UserRound } from "lucide-react";
 import { useMemo, useState, useTransition } from "react";
 
+import { ContactActions } from "@/features/contact/contact-actions";
+import { CustomerLinkPanel } from "@/features/customer-intake/customer-link-panel";
+import { JobPhotoGallery } from "@/features/customer-intake/job-photo-gallery";
+import type { CustomerIntakeLinkSummary } from "@/features/customer-intake/queries";
 import type { Job, JobStatus, Operator } from "@/lib/domain/types";
 import { jobStatuses } from "@/lib/domain/types";
 import {
@@ -19,13 +23,14 @@ import { buildJobCandidates } from "./matching";
 interface JobDetailProps {
   demoMode: boolean;
   job: Job | null;
+  customerLink: CustomerIntakeLinkSummary | null;
   matches: JobOperatorMatch[];
   operators: Operator[];
   onChanged: () => void;
   onEdit: () => void;
 }
 
-export function JobDetail({ demoMode, job, matches, operators, onChanged, onEdit }: JobDetailProps) {
+export function JobDetail({ customerLink, demoMode, job, matches, operators, onChanged, onEdit }: JobDetailProps) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [selectedOperatorId, setSelectedOperatorId] = useState(job?.assignment?.operatorId ?? "");
@@ -102,7 +107,9 @@ export function JobDetail({ demoMode, job, matches, operators, onChanged, onEdit
         <button className="icon-button" type="button" disabled={demoMode} onClick={onEdit} aria-label={is.editJob}><Pencil size={16} /></button>
       </header>
 
-      <a className="phone-link" href={`tel:${job.customerPhone}`}><Phone size={16} />{job.customerPhone}</a>
+      <ContactActions personName={job.customerName} phone={job.customerPhone} />
+
+      {!demoMode && !isClosed ? <CustomerLinkPanel jobId={job.id} link={customerLink} /> : null}
 
       <section className="detail-section">
         <h3>{is.jobLocation}</h3>
@@ -120,6 +127,8 @@ export function JobDetail({ demoMode, job, matches, operators, onChanged, onEdit
       </section>
 
       {job.notes ? <section className="detail-section notes-section"><h3>{is.notes}</h3><p>{job.notes}</p></section> : null}
+      {job.customerNotes ? <section className="detail-section notes-section customer-notes-section"><h3>Lýsing viðskiptavinar</h3><p>{job.customerNotes}</p></section> : null}
+      <JobPhotoGallery photos={job.photos} />
 
       <section className="detail-section">
         <h3>{is.assignment}</h3>

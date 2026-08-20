@@ -1,11 +1,12 @@
 "use client";
 
 import { Check, MapPin, MousePointer2, Search } from "lucide-react";
-import mapboxgl from "mapbox-gl";
+import * as maplibregl from "maplibre-gl";
 import { KeyboardEvent, useEffect, useRef, useState, useTransition } from "react";
 
 import type { LocationSource, LocationSuggestion } from "@/lib/domain/types";
 import { searchIcelandLocationsAction } from "./actions";
+import { createIcelandMapStyle, ICELAND_CENTER, ICELAND_MAX_BOUNDS } from "./map-style";
 
 interface AddressSearchFieldProps {
   defaultLabel?: string;
@@ -17,7 +18,6 @@ interface AddressSearchFieldProps {
   locationSourceName?: string;
   longitudeName?: string;
   locationLabelName?: string;
-  mapboxAccessToken?: string | null;
 }
 
 export function AddressSearchField({
@@ -30,7 +30,6 @@ export function AddressSearchField({
   locationSourceName,
   longitudeName = "longitude",
   locationLabelName = "locationLabel",
-  mapboxAccessToken,
 }: AddressSearchFieldProps) {
   const hasDefault = defaultLatitude !== undefined && defaultLongitude !== undefined && Boolean(defaultLabel);
   const [query, setQuery] = useState(defaultLabel);
@@ -113,28 +112,25 @@ export function AddressSearchField({
       ) : null}
       {error ? <p className="compact-error" role="alert">{error}</p> : null}
 
-      {mapboxAccessToken ? (
-        <div className="map-picker-section">
-          <button className="map-picker-toggle" type="button" onClick={() => setShowMapPicker((visible) => !visible)}>
-            <MousePointer2 size={14} /> {showMapPicker ? "Loka kortavali" : "Eða velja nákvæman stað á korti"}
-          </button>
-          {showMapPicker ? (
-            <LocationPinMap
-              accessToken={mapboxAccessToken}
-              latitude={selected?.latitude}
-              longitude={selected?.longitude}
-              onPick={(latitude, longitude) => {
-                const pinLabel = `Pinni á korti · ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
-                setSelected({ id: "map-pin", label: pinLabel, latitude, longitude });
-                setQuery(pinLabel);
-                setSource("map_pin");
-                setSuggestions([]);
-                setError(null);
-              }}
-            />
-          ) : null}
-        </div>
-      ) : null}
+      <div className="map-picker-section">
+        <button className="map-picker-toggle" type="button" onClick={() => setShowMapPicker((visible) => !visible)}>
+          <MousePointer2 size={14} /> {showMapPicker ? "Loka kortavali" : "Eða velja nákvæman stað á korti"}
+        </button>
+        {showMapPicker ? (
+          <LocationPinMap
+            latitude={selected?.latitude}
+            longitude={selected?.longitude}
+            onPick={(latitude, longitude) => {
+              const pinLabel = `Pinni á korti · ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+              setSelected({ id: "map-pin", label: pinLabel, latitude, longitude });
+              setQuery(pinLabel);
+              setSource("map_pin");
+              setSuggestions([]);
+              setError(null);
+            }}
+          />
+        ) : null}
+      </div>
 
       <input name={locationLabelName} type="hidden" value={selected?.label ?? ""} readOnly required />
       <input name={latitudeName} type="hidden" value={selected?.latitude ?? ""} readOnly required />
@@ -145,12 +141,10 @@ export function AddressSearchField({
 }
 
 function LocationPinMap({
-  accessToken,
   latitude,
   longitude,
   onPick,
 }: {
-  accessToken: string;
   latitude?: number;
   longitude?: number;
   onPick: (latitude: number, longitude: number) => void;
@@ -163,24 +157,24 @@ function LocationPinMap({
   useEffect(() => {
     if (!containerRef.current) return;
     const hasLocation = latitude !== undefined && longitude !== undefined;
-    const map = new mapboxgl.Map({
-      accessToken,
+    const map = new maplibregl.Map({
       container: containerRef.current,
-      style: "mapbox://styles/mapbox/standard",
-      center: hasLocation ? [longitude, latitude] : [-18.7, 64.95],
+      style: createIcelandMapStyle(),
+      center: hasLocation ? [longitude, latitude] : ICELAND_CENTER,
       zoom: hasLocation ? 10 : 5.25,
-      maxBounds: [[-27.8, 62.1], [-10.1, 68.1]],
+      maxBounds: ICELAND_MAX_BOUNDS,
       attributionControl: false,
     });
-    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+    map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-left");
 
-    let marker: mapboxgl.Marker | null = hasLocation
-      ? new mapboxgl.Marker({ color: "#0e4b46", draggable: true }).setLngLat([longitude, latitude]).addTo(map)
+    let marker: maplibregl.Marker | null = hasLocation
+      ? new maplibregl.Marker({ color: "#0e4b46", draggable: true }).setLngLat([longitude, latitude]).addTo(map)
       : null;
 
     const pick = (lng: number, lat: number) => {
       if (!marker) {
-        marker = new mapboxgl.Marker({ color: "#0e4b46", draggable: true }).setLngLat([lng, lat]).addTo(map);
+        marker = new maplibregl.Marker({ color: "#0e4b46", draggable: true }).setLngLat([lng, lat]).addTo(map);
         marker.on("dragend", () => {
           const position = marker!.getLngLat();
           onPickRef.current(position.lat, position.lng);
@@ -198,7 +192,7 @@ function LocationPinMap({
     });
 
     return () => { marker?.remove(); map.remove(); };
-  }, [accessToken, latitude, longitude]);
+  }, [latitude, longitude]);
 
   return <div className="location-pin-map" aria-label="Veldu stað með pinna á korti" ref={containerRef} />;
 }

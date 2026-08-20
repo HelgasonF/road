@@ -17,6 +17,8 @@ export const demoCapabilities: Capability[] = [
 export const demoOperators: Operator[] = [
   {
     id: "10000000-0000-4000-8000-000000000001",
+    userId: null,
+    driverAccess: null,
     name: "Jón Einarsson",
     phone: "555-0101",
     companyName: "Vegahjálp Suðurlands",
@@ -49,6 +51,14 @@ export const demoOperators: Operator[] = [
   },
   {
     id: "10000000-0000-4000-8000-000000000002",
+    userId: "00000000-0000-4000-8000-000000000002",
+    driverAccess: {
+      email: "anna.driver@vegstod.local",
+      status: "active",
+      invitedAt: "2026-08-19T12:00:00Z",
+      activatedAt: "2026-08-19T12:10:00Z",
+      disabledAt: null,
+    },
     name: "Anna S. Jónsdóttir",
     phone: "555-0102",
     companyName: "Norðurhjálp",
@@ -81,6 +91,8 @@ export const demoOperators: Operator[] = [
   },
   {
     id: "10000000-0000-4000-8000-000000000003",
+    userId: null,
+    driverAccess: null,
     name: "Bjarni Ólafsson",
     phone: "555-0103",
     companyName: "Vestfjarðabjörgun",
@@ -113,6 +125,8 @@ export const demoOperators: Operator[] = [
   },
   {
     id: "10000000-0000-4000-8000-000000000004",
+    userId: null,
+    driverAccess: null,
     name: "Elín Guðmundsdóttir",
     phone: "555-0104",
     companyName: "Austurdráttur",

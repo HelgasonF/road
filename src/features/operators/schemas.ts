@@ -5,6 +5,7 @@ import {
   capabilityCodes,
   vehicleTypes,
 } from "@/lib/domain/types";
+import { buildContactLinks } from "@/lib/contact-links";
 
 const optionalTrimmedString = z
   .string()
@@ -14,7 +15,10 @@ const optionalTrimmedString = z
 export const operatorInputSchema = z.object({
   id: z.uuid().nullable(),
   name: z.string().trim().min(2).max(120),
-  phone: z.string().trim().min(3).max(40),
+  phone: z.string().trim().min(3).max(40).refine(
+    (value) => buildContactLinks(value).callHref !== null,
+    "Phone number must contain dialable digits.",
+  ),
   companyName: optionalTrimmedString.pipe(z.string().max(120).nullable()),
   isActive: z.boolean(),
   availabilityStatus: z.enum(availabilityStatuses),
@@ -57,4 +61,18 @@ export type VehicleInput = z.infer<typeof vehicleInputSchema>;
 export const availabilityInputSchema = z.object({
   operatorId: z.uuid(),
   availabilityStatus: z.enum(availabilityStatuses),
+});
+
+export const driverInvitationSchema = z.object({
+  operatorId: z.uuid(),
+  email: z.string().trim().toLowerCase().pipe(z.email()),
+});
+
+export const driverPasswordResetSchema = z.object({
+  operatorId: z.uuid(),
+});
+
+export const driverAccessToggleSchema = z.object({
+  operatorId: z.uuid(),
+  disabled: z.boolean(),
 });

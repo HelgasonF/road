@@ -6,6 +6,7 @@ import {
   jobStatuses,
   locationSources,
 } from "@/lib/domain/types";
+import { buildContactLinks } from "@/lib/contact-links";
 
 const optionalTrimmedString = z
   .string()
@@ -15,7 +16,10 @@ const optionalTrimmedString = z
 export const jobInputSchema = z.object({
   id: z.uuid().nullable(),
   customerName: z.string().trim().min(2).max(120),
-  customerPhone: z.string().trim().min(3).max(40),
+  customerPhone: z.string().trim().min(3).max(40).refine(
+    (value) => buildContactLinks(value).callHref !== null,
+    "Phone number must contain dialable digits.",
+  ),
   vehicleRegistration: optionalTrimmedString.pipe(z.string().max(40).nullable()),
   vehicleMake: optionalTrimmedString.pipe(z.string().max(80).nullable()),
   vehicleModel: optionalTrimmedString.pipe(z.string().max(80).nullable()),

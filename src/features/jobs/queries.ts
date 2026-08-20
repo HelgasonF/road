@@ -32,15 +32,26 @@ type JobQueryRow = {
   status: JobStatus;
   priority: JobPriority;
   notes: string | null;
+  customer_notes: string | null;
+  customer_intake_submitted_at: string | null;
   created_at: string;
   updated_at: string;
   completed_at: string | null;
   job_required_capabilities: { capability_code: CapabilityCode }[];
+  job_photos: {
+    id: string;
+    original_filename: string;
+    content_type: string;
+    size_bytes: number;
+    uploaded_at: string | null;
+    created_at: string;
+  }[];
   job_assignments: {
     id: string;
     operator_id: string;
     vehicle_id: string | null;
     assigned_at: string;
+    accepted_at: string | null;
     unassigned_at: string | null;
     operators: { name: string } | null;
     vehicles: { name: string } | null;
@@ -66,15 +77,26 @@ export async function getJobs(): Promise<Job[]> {
       status,
       priority,
       notes,
+      customer_notes,
+      customer_intake_submitted_at,
       created_at,
       updated_at,
       completed_at,
       job_required_capabilities (capability_code),
+      job_photos (
+        id,
+        original_filename,
+        content_type,
+        size_bytes,
+        uploaded_at,
+        created_at
+      ),
       job_assignments (
         id,
         operator_id,
         vehicle_id,
         assigned_at,
+        accepted_at,
         unassigned_at,
         operators (name),
         vehicles (name)
@@ -104,6 +126,17 @@ export async function getJobs(): Promise<Job[]> {
       status: job.status,
       priority: job.priority,
       notes: job.notes,
+      customerNotes: job.customer_notes,
+      customerIntakeSubmittedAt: job.customer_intake_submitted_at,
+      photos: job.job_photos
+        .filter((photo) => photo.uploaded_at !== null)
+        .map((photo) => ({
+          id: photo.id,
+          originalFilename: photo.original_filename,
+          contentType: photo.content_type,
+          sizeBytes: photo.size_bytes,
+          createdAt: photo.created_at,
+        })),
       requiredCapabilities: job.job_required_capabilities.map((item) => item.capability_code),
       assignment: assignment ? {
         id: assignment.id,
@@ -112,6 +145,7 @@ export async function getJobs(): Promise<Job[]> {
         vehicleId: assignment.vehicle_id,
         vehicleName: assignment.vehicles?.name ?? null,
         assignedAt: assignment.assigned_at,
+        acceptedAt: assignment.accepted_at,
       } : null,
       createdAt: job.created_at,
       updatedAt: job.updated_at,

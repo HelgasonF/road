@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 
 type OperatorQueryRow = {
   id: string;
+  user_id: string | null;
   name: string;
   phone: string;
   company_name: string | null;
@@ -16,6 +17,9 @@ type OperatorQueryRow = {
   current_latitude: number | null;
   current_longitude: number | null;
   current_location_updated_at: string | null;
+  driver_invited_at: string | null;
+  driver_access_activated_at: string | null;
+  driver_access_disabled_at: string | null;
   service_radius_km: number | null;
   notes: string | null;
   created_at: string;
@@ -54,6 +58,7 @@ export async function getOperators(): Promise<Operator[]> {
     .from("operators")
     .select(`
       id,
+      user_id,
       name,
       phone,
       company_name,
@@ -65,6 +70,9 @@ export async function getOperators(): Promise<Operator[]> {
       current_latitude,
       current_longitude,
       current_location_updated_at,
+      driver_invited_at,
+      driver_access_activated_at,
+      driver_access_disabled_at,
       service_radius_km,
       notes,
       created_at,
@@ -86,8 +94,29 @@ export async function getOperators(): Promise<Operator[]> {
 
   if (error) throw new Error(`Unable to load operators: ${error.message}`);
 
-  return (data as unknown as OperatorQueryRow[]).map((operator) => ({
+  const rows = data as unknown as OperatorQueryRow[];
+  const userIds = rows.flatMap((operator) => operator.user_id ? [operator.user_id] : []);
+  const { data: profiles, error: profileError } = userIds.length > 0
+    ? await supabase.from("profiles").select("id, email").in("id", userIds)
+    : { data: [], error: null };
+
+  if (profileError) throw new Error(`Unable to load driver access: ${profileError.message}`);
+  const emailByUserId = new Map((profiles ?? []).map((profile) => [profile.id, profile.email]));
+
+  return rows.map((operator) => ({
     id: operator.id,
+    userId: operator.user_id,
+    driverAccess: operator.user_id && emailByUserId.has(operator.user_id) ? {
+      email: emailByUserId.get(operator.user_id)!,
+      status: operator.driver_access_disabled_at
+        ? "disabled" as const
+        : operator.driver_access_activated_at
+          ? "active" as const
+          : "invited" as const,
+      invitedAt: operator.driver_invited_at,
+      activatedAt: operator.driver_access_activated_at,
+      disabledAt: operator.driver_access_disabled_at,
+    } : null,
     name: operator.name,
     phone: operator.phone,
     companyName: operator.company_name,

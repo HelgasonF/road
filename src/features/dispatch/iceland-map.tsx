@@ -1,13 +1,67 @@
 "use client";
 
-import mapboxgl from "mapbox-gl";
+import * as maplibregl from "maplibre-gl";
 import { useEffect, useRef } from "react";
 
+import { createIcelandMapStyle, ICELAND_CENTER, ICELAND_MAX_BOUNDS } from "@/features/location/map-style";
 import type { Job, Operator } from "@/lib/domain/types";
-import { availabilityLabels, is, jobStatusLabels } from "@/lib/i18n/is";
+import { availabilityLabels, jobStatusLabels } from "@/lib/i18n/is";
+import { createOperatorCoverageGeoJson, getCoverageDiameterPixels } from "./operator-coverage";
+
+const MAX_COVERAGE_DIAMETER_PX = 6000;
+
+function resizeOperatorCoverageMarkers(
+  map: maplibregl.Map,
+  markers: Map<string, maplibregl.Marker>,
+) {
+  markers.forEach((marker) => {
+    const element = marker.getElement();
+    const radiusKm = Number(element.dataset.radiusKm);
+    const latitude = Number(element.dataset.latitude);
+    const diameter = Math.min(
+      getCoverageDiameterPixels(radiusKm, latitude, map.getZoom()),
+      MAX_COVERAGE_DIAMETER_PX,
+    );
+    element.style.height = `${diameter}px`;
+    element.style.width = `${diameter}px`;
+  });
+}
+
+function updateOperatorCoverageMarkers(
+  map: maplibregl.Map,
+  markers: Map<string, maplibregl.Marker>,
+  operators: Operator[],
+  selectedOperatorId: string | null,
+) {
+  markers.forEach((marker) => marker.remove());
+  markers.clear();
+
+  operators.forEach((operator) => {
+    const radiusKm = operator.serviceRadiusKm;
+    if (!operator.isActive || radiusKm === null || !Number.isFinite(radiusKm) || radiusKm <= 0) return;
+
+    const latitude = operator.currentLatitude ?? operator.baseLatitude;
+    const longitude = operator.currentLongitude ?? operator.baseLongitude;
+    const element = document.createElement("div");
+    element.className = `operator-coverage-marker operator-coverage-${operator.availabilityStatus}`;
+    element.classList.toggle("operator-coverage-selected", operator.id === selectedOperatorId);
+    element.dataset.latitude = String(latitude);
+    element.dataset.radiusKm = String(radiusKm);
+    element.setAttribute("aria-hidden", "true");
+    const label = document.createElement("span");
+    label.textContent = `${radiusKm} km`;
+    element.append(label);
+
+    const marker = new maplibregl.Marker({ element, anchor: "center" })
+      .setLngLat([longitude, latitude])
+      .addTo(map);
+    markers.set(operator.id, marker);
+  });
+
+  resizeOperatorCoverageMarkers(map, markers);
+}
 
 interface IcelandMapProps {
-  accessToken: string | null;
   jobs: Job[];
   operators: Operator[];
   selectedJobId: string | null;
@@ -16,47 +70,7 @@ interface IcelandMapProps {
   onSelectOperator: (operatorId: string) => void;
 }
 
-const fallbackPositions: Record<string, { left: string; top: string }> = {
-  "10000000-0000-4000-8000-000000000001": { left: "43%", top: "71%" },
-  "10000000-0000-4000-8000-000000000002": { left: "51%", top: "28%" },
-  "10000000-0000-4000-8000-000000000003": { left: "20%", top: "31%" },
-  "10000000-0000-4000-8000-000000000004": { left: "79%", top: "46%" },
-};
-
-function MapFallback({ jobs, operators, selectedJobId, selectedOperatorId, onSelectJob, onSelectOperator }: Omit<IcelandMapProps, "accessToken">) {
-  return (
-    <div className="map-fallback">
-      <div className="iceland-silhouette" aria-hidden="true" />
-      {operators.map((operator, index) => {
-        const position = fallbackPositions[operator.id] ?? { left: `${25 + ((index * 17) % 58)}%`, top: `${25 + ((index * 13) % 48)}%` };
-        return (
-          <button
-            key={operator.id}
-            className={`map-marker map-marker-${operator.availabilityStatus} ${selectedOperatorId === operator.id ? "map-marker-selected" : ""}`}
-            style={position}
-            type="button"
-            title={`${operator.name} — ${availabilityLabels[operator.availabilityStatus]}`}
-            onClick={() => onSelectOperator(operator.id)}
-          ><span>{operator.name.charAt(0)}</span></button>
-        );
-      })}
-      {jobs.map((job, index) => (
-        <button
-          key={job.id}
-          className={`job-map-marker job-priority-${job.priority} ${selectedJobId === job.id ? "job-map-marker-selected" : ""}`}
-          style={{ left: `${35 + ((index * 19) % 40)}%`, top: `${38 + ((index * 17) % 34)}%` }}
-          type="button"
-          title={`${job.customerName} — ${jobStatusLabels[job.status]}`}
-          onClick={() => onSelectJob(job.id)}
-        ><span>V</span></button>
-      ))}
-      <div className="map-token-notice"><strong>{is.mapTokenMissing}</strong><span>{is.mapTokenHelp}</span></div>
-    </div>
-  );
-}
-
 export function IcelandMap({
-  accessToken,
   jobs,
   operators,
   selectedJobId,
@@ -65,42 +79,58 @@ export function IcelandMap({
   onSelectOperator,
 }: IcelandMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
-  const operatorMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
-  const jobMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const coverageMarkersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
+  const operatorMarkersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
+  const jobMarkersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
   const selectOperatorRef = useRef(onSelectOperator);
   const selectJobRef = useRef(onSelectJob);
+  const coverageStateRef = useRef({ operators, selectedOperatorId });
 
   useEffect(() => { selectOperatorRef.current = onSelectOperator; }, [onSelectOperator]);
   useEffect(() => { selectJobRef.current = onSelectJob; }, [onSelectJob]);
+  useEffect(() => {
+    coverageStateRef.current = { operators, selectedOperatorId };
+    const map = mapRef.current;
+    if (map) updateOperatorCoverageMarkers(map, coverageMarkersRef.current, operators, selectedOperatorId);
+  }, [operators, selectedOperatorId]);
 
   useEffect(() => {
-    if (!accessToken || !containerRef.current || mapRef.current) return;
+    if (!containerRef.current || mapRef.current) return;
+    const coverageMarkers = coverageMarkersRef.current;
     const operatorMarkers = operatorMarkersRef.current;
     const jobMarkers = jobMarkersRef.current;
-    const map = new mapboxgl.Map({
-      accessToken,
+    const map = new maplibregl.Map({
       container: containerRef.current,
-      style: "mapbox://styles/mapbox/standard",
-      center: [-18.7, 64.95],
+      style: createIcelandMapStyle(),
+      center: ICELAND_CENTER,
       zoom: 5.25,
       minZoom: 4.4,
-      maxBounds: [[-27.8, 62.1], [-10.1, 68.1]],
+      maxBounds: ICELAND_MAX_BOUNDS,
       attributionControl: false,
     });
-    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "bottom-right");
-    map.addControl(new mapboxgl.AttributionControl({ compact: true }), "bottom-left");
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+    map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-left");
+    const resizeCoverage = () => resizeOperatorCoverageMarkers(map, coverageMarkers);
+    map.on("zoom", resizeCoverage);
     mapRef.current = map;
+    {
+      const state = coverageStateRef.current;
+      updateOperatorCoverageMarkers(map, coverageMarkers, state.operators, state.selectedOperatorId);
+    }
 
     return () => {
+      map.off("zoom", resizeCoverage);
+      coverageMarkers.forEach((marker) => marker.remove());
       operatorMarkers.forEach((marker) => marker.remove());
       jobMarkers.forEach((marker) => marker.remove());
+      coverageMarkers.clear();
       operatorMarkers.clear();
       jobMarkers.clear();
       map.remove();
       mapRef.current = null;
     };
-  }, [accessToken]);
+  }, []);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -120,7 +150,7 @@ export function IcelandMap({
       element.append(initial);
       element.addEventListener("click", () => selectOperatorRef.current(operator.id));
 
-      const marker = new mapboxgl.Marker({ element, anchor: "center" })
+      const marker = new maplibregl.Marker({ element, anchor: "center" })
         .setLngLat([operator.currentLongitude ?? operator.baseLongitude, operator.currentLatitude ?? operator.baseLatitude])
         .addTo(map);
       operatorMarkersRef.current.set(operator.id, marker);
@@ -145,7 +175,7 @@ export function IcelandMap({
       element.append(initial);
       element.addEventListener("click", () => selectJobRef.current(job.id));
 
-      const marker = new mapboxgl.Marker({ element, anchor: "center" })
+      const marker = new maplibregl.Marker({ element, anchor: "center" })
         .setLngLat([job.longitude, job.latitude])
         .addTo(map);
       jobMarkersRef.current.set(job.id, marker);
@@ -162,14 +192,28 @@ export function IcelandMap({
     if (!map) return;
     const job = jobs.find((item) => item.id === selectedJobId);
     const operator = operators.find((item) => item.id === selectedOperatorId);
-    const center = job
-      ? [job.longitude, job.latitude] as [number, number]
-      : operator
-        ? [operator.currentLongitude ?? operator.baseLongitude, operator.currentLatitude ?? operator.baseLatitude] as [number, number]
-        : null;
-    if (center) map.easeTo({ center, zoom: Math.max(map.getZoom(), 7), duration: 650 });
+    if (job) {
+      map.easeTo({ center: [job.longitude, job.latitude], zoom: Math.max(map.getZoom(), 7), duration: 650 });
+      return;
+    }
+
+    if (!operator) return;
+    const coverage = createOperatorCoverageGeoJson([operator], operator.id).features[0];
+    if (coverage) {
+      const bounds = coverage.geometry.coordinates[0].reduce(
+        (result, coordinate) => result.extend(coordinate as [number, number]),
+        new maplibregl.LngLatBounds(),
+      );
+      map.fitBounds(bounds, { padding: 62, maxZoom: 8, duration: 650 });
+      return;
+    }
+
+    map.easeTo({
+      center: [operator.currentLongitude ?? operator.baseLongitude, operator.currentLatitude ?? operator.baseLatitude],
+      zoom: Math.max(map.getZoom(), 7),
+      duration: 650,
+    });
   }, [jobs, operators, selectedJobId, selectedOperatorId]);
 
-  if (!accessToken) return <MapFallback jobs={jobs} operators={operators} selectedJobId={selectedJobId} selectedOperatorId={selectedOperatorId} onSelectJob={onSelectJob} onSelectOperator={onSelectOperator} />;
-  return <div className="mapbox-container" ref={containerRef} aria-label="Kort af Íslandi" />;
+  return <div className="maplibre-container" ref={containerRef} aria-label="Kort af Íslandi" />;
 }

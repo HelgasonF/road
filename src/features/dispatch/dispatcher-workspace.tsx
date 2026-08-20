@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { logoutAction } from "@/features/auth/actions";
+import type { CustomerIntakeLinkSummary } from "@/features/customer-intake/queries";
 import { JobEditor } from "@/features/jobs/editor";
 import { JobDetail } from "@/features/jobs/job-detail";
 import type { JobOperatorMatch } from "@/features/jobs/queries";
@@ -33,11 +34,11 @@ import { IcelandMap } from "./iceland-map";
 
 interface DispatcherWorkspaceProps {
   capabilities: Capability[];
+  customerLinks: CustomerIntakeLinkSummary[];
   demoMode: boolean;
   identity: DispatcherIdentity;
   jobMatches: JobOperatorMatch[];
   jobs: Job[];
-  mapboxAccessToken: string | null;
   operators: Operator[];
 }
 
@@ -47,11 +48,11 @@ type WorkspaceMode = "jobs" | "operators";
 
 export function DispatcherWorkspace({
   capabilities,
+  customerLinks,
   demoMode,
   identity,
   jobMatches,
   jobs,
-  mapboxAccessToken,
   operators,
 }: DispatcherWorkspaceProps) {
   const router = useRouter();
@@ -92,6 +93,7 @@ export function DispatcherWorkspace({
 
   const selectedOperator = operators.find((operator) => operator.id === selectedOperatorId) ?? null;
   const selectedJob = jobs.find((job) => job.id === selectedJobId) ?? null;
+  const selectedCustomerLink = customerLinks.find((link) => link.jobId === selectedJobId) ?? null;
   const activeCount = operators.filter((operator) => operator.isActive).length;
   const availableCount = operators.filter((operator) => operator.isActive && operator.availabilityStatus === "available").length;
   const activeJobCount = jobs.filter((job) => job.status !== "completed" && job.status !== "cancelled").length;
@@ -185,7 +187,6 @@ export function DispatcherWorkspace({
 
         <section className="map-panel">
           <IcelandMap
-            accessToken={mapboxAccessToken}
             jobs={jobs}
             operators={operators}
             selectedJobId={selectedJobId}
@@ -193,7 +194,7 @@ export function DispatcherWorkspace({
             onSelectJob={selectJob}
             onSelectOperator={selectOperator}
           />
-          <div className="map-legend"><span><i className="job-legend-dot" />Verkefni</span>{(["available", "busy", "offline"] as const).map((status) => <span key={status}><i className={`status-dot status-dot-${status}`} />{availabilityLabels[status]}</span>)}</div>
+          <div className="map-legend"><span><i className="coverage-legend-ring" />Þjónustusvæði</span><span><i className="job-legend-dot" />Verkefni</span>{(["available", "busy", "offline"] as const).map((status) => <span key={status}><i className={`status-dot status-dot-${status}`} />{availabilityLabels[status]}</span>)}</div>
         </section>
 
         {mode === "jobs" ? (
@@ -201,6 +202,7 @@ export function DispatcherWorkspace({
             key={`${selectedJob?.id ?? "empty"}-${selectedJob?.status ?? "none"}-${selectedJob?.assignment?.id ?? "none"}`}
             demoMode={demoMode}
             job={selectedJob}
+            customerLink={selectedCustomerLink}
             matches={jobMatches}
             operators={operators}
             onEdit={() => setJobEditor(selectedJob)}
@@ -217,8 +219,8 @@ export function DispatcherWorkspace({
         )}
       </div>
 
-      {operatorEditor !== undefined ? <OperatorEditor key={operatorEditor?.id ?? "new"} capabilities={capabilities} mapboxAccessToken={mapboxAccessToken} operator={operatorEditor} onClose={() => setOperatorEditor(undefined)} onSaved={(operatorId) => { setSelectedOperatorId(operatorId); setOperatorEditor(undefined); setMode("operators"); router.refresh(); }} /> : null}
-      {jobEditor !== undefined ? <JobEditor key={jobEditor?.id ?? "new-job"} capabilities={capabilities} job={jobEditor} mapboxAccessToken={mapboxAccessToken} onClose={() => setJobEditor(undefined)} onSaved={(jobId) => { setSelectedJobId(jobId); setJobEditor(undefined); setMode("jobs"); router.refresh(); }} /> : null}
+      {operatorEditor !== undefined ? <OperatorEditor key={operatorEditor?.id ?? "new"} capabilities={capabilities} operator={operatorEditor} onClose={() => setOperatorEditor(undefined)} onSaved={(operatorId) => { setSelectedOperatorId(operatorId); setOperatorEditor(undefined); setMode("operators"); router.refresh(); }} /> : null}
+      {jobEditor !== undefined ? <JobEditor key={jobEditor?.id ?? "new-job"} capabilities={capabilities} job={jobEditor} onClose={() => setJobEditor(undefined)} onSaved={(jobId) => { setSelectedJobId(jobId); setJobEditor(undefined); setMode("jobs"); router.refresh(); }} /> : null}
       {vehicleEditor.open && selectedOperator ? <VehicleEditor key={vehicleEditor.vehicle?.id ?? "new-vehicle"} capabilities={capabilities} operatorId={selectedOperator.id} vehicle={vehicleEditor.vehicle} onClose={() => setVehicleEditor({ open: false, vehicle: null })} onSaved={() => { setVehicleEditor({ open: false, vehicle: null }); router.refresh(); }} /> : null}
     </main>
   );

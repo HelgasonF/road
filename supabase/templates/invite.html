@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="is">
+  <body style="font-family:Arial,sans-serif;color:#17332f;line-height:1.5">
+    <h2>Þér hefur verið boðið í Vegstoð</h2>
+    <p>Aðgerðastjórn hefur stofnað ökumannsaðgang fyrir {{ .Data.display_name }}.</p>
+    <p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=invite">Velja lykilorð og opna aðgang</a></p>
+    <p>Hlekkurinn rennur út. Ef þú bjóst ekki við þessu boði geturðu hunsað tölvupóstinn.</p>
+  </body>
+</html>

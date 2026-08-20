@@ -63,6 +63,10 @@ describe("jobInputSchema", () => {
     expect(result.notes).toBeNull();
   });
 
+  it("requires a customer phone value containing dialable digits", () => {
+    expect(jobInputSchema.safeParse({ ...validJob, customerPhone: "sendu skilaboð" }).success).toBe(false);
+  });
+
   it.each([
     ["customerName", "A"],
     ["customerPhone", "1"],

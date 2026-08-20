@@ -2,6 +2,7 @@ import { MapPinned } from "lucide-react";
 import { redirect } from "next/navigation";
 
 import { LoginForm } from "@/features/auth/login-form";
+import { getAuthenticatedLandingPath } from "@/features/auth/routing";
 import { getVerifiedSession } from "@/lib/auth/session";
 import { hasSupabaseConfig, isDemoMode } from "@/lib/config";
 import { is } from "@/lib/i18n/is";
@@ -10,7 +11,11 @@ export const dynamic = "force-dynamic";
 
 export default async function LoginPage() {
   if (isDemoMode()) redirect("/");
-  if (hasSupabaseConfig() && (await getVerifiedSession())) redirect("/");
+  if (hasSupabaseConfig()) {
+    const identity = await getVerifiedSession();
+    const landingPath = getAuthenticatedLandingPath(identity);
+    if (landingPath) redirect(landingPath);
+  }
 
   return (
     <main className="login-page">

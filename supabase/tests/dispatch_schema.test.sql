@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(25);
+select plan(36);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'operators', 'operators table exists');
@@ -11,6 +11,8 @@ select has_table('public', 'vehicles', 'vehicles table exists');
 select has_table('public', 'jobs', 'jobs table exists');
 select has_table('public', 'job_assignments', 'job assignments table exists');
 select has_table('public', 'job_status_history', 'job status history table exists');
+select has_table('public', 'iceland_addresses', 'Iceland address search table exists');
+select has_table('public', 'iceland_places', 'Iceland place-name search table exists');
 select has_view('public', 'job_operator_matches', 'operator matching view exists');
 
 select is(
@@ -40,6 +42,20 @@ select ok(
 );
 
 select ok(
+  (select attgenerated = 's'
+   from pg_attribute
+   where attrelid = 'public.iceland_addresses'::regclass and attname = 'search_key'),
+  'address search key is normalized by the database'
+);
+
+select ok(
+  (select attgenerated = 's'
+   from pg_attribute
+   where attrelid = 'public.iceland_places'::regclass and attname = 'search_key'),
+  'place-name search key is normalized by the database'
+);
+
+select ok(
   exists (
     select 1 from pg_indexes
     where schemaname = 'public'
@@ -65,6 +81,30 @@ select ok(
   exists (
     select 1 from pg_indexes
     where schemaname = 'public'
+      and tablename = 'iceland_addresses'
+      and indexname = 'iceland_addresses_search_key_gin'
+      and indexdef ilike '%using gin%'
+      and indexdef ilike '%gin_trgm_ops%'
+  ),
+  'address text search has a trigram GIN index'
+);
+
+select ok(
+  exists (
+    select 1 from pg_indexes
+    where schemaname = 'public'
+      and tablename = 'iceland_places'
+      and indexname = 'iceland_places_search_key_gin'
+      and indexdef ilike '%using gin%'
+      and indexdef ilike '%gin_trgm_ops%'
+  ),
+  'place-name text search has a trigram GIN index'
+);
+
+select ok(
+  exists (
+    select 1 from pg_indexes
+    where schemaname = 'public'
       and tablename = 'job_assignments'
       and indexname = 'job_assignments_one_current_uidx'
       and indexdef ilike '%unique%'
@@ -79,11 +119,11 @@ select is(
    where relnamespace = 'public'::regnamespace
      and relname in (
        'profiles', 'capabilities', 'operators', 'operator_capabilities',
-       'vehicles', 'vehicle_capabilities', 'jobs',
+       'vehicles', 'vehicle_capabilities', 'jobs', 'iceland_addresses', 'iceland_places',
        'job_required_capabilities', 'job_assignments', 'job_status_history'
      )
      and relrowsecurity),
-  10::bigint,
+  12::bigint,
   'RLS is enabled on every private application table'
 );
 
@@ -131,6 +171,58 @@ select ok(
 select ok(
   to_regprocedure('public.set_job_status(uuid,public.job_status,text)') is not null,
   'job status RPC exists'
+);
+
+select ok(
+  to_regprocedure('public.search_iceland_addresses(text,integer)') is not null,
+  'local Iceland address search RPC exists'
+);
+
+select ok(
+  has_function_privilege(
+    'authenticated',
+    'public.normalize_icelandic_search(text)',
+    'EXECUTE'
+  ),
+  'authenticated address search can execute its pure text normalizer'
+);
+
+select is(
+  (select count(*)
+   from information_schema.routine_privileges
+   where specific_schema = 'public'
+     and routine_name = 'search_iceland_addresses'
+     and grantee in ('PUBLIC', 'anon')),
+  0::bigint,
+  'anonymous roles cannot execute address search'
+);
+
+insert into public.iceland_addresses (
+  source_id, address_label, street_name, house_number, postal_code,
+  municipality_code, latitude, longitude, search_text, source_updated_at
+) values (
+  990001414, 'Bæjarlind 8, 201', 'Bæjarlind', '8', '201',
+  '1000', 64.09987002, -21.87914013, 'Bæjarlind 8 201', '2009-02-23'
+);
+
+select is(
+  (select label from public.search_iceland_addresses('Baejarlind 8', 5) limit 1),
+  'Bæjarlind 8, 201',
+  'address search handles partial accent-free Icelandic input'
+);
+
+insert into public.iceland_places (
+  source_type, source_id, name, category, category_label, search_priority,
+  latitude, longitude, search_text
+) values (
+  'node', 9201585514, 'Hella', 'town', 'þéttbýli', 95,
+  63.8355038, -20.3987009, 'Hella town þéttbýli'
+);
+
+select is(
+  (select label from public.search_iceland_addresses('Hella', 5) limit 1),
+  'Hella · þéttbýli',
+  'an exact populated-place match ranks above same-named address records'
 );
 
 insert into public.operators (

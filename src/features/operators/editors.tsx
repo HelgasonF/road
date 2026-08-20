@@ -87,13 +87,12 @@ const toNullableNumber = (value: string) => (value.trim() === "" ? null : Number
 
 interface OperatorEditorProps {
   capabilities: Capability[];
-  mapboxAccessToken: string | null;
   operator: Operator | null;
   onClose: () => void;
   onSaved: (operatorId: string) => void;
 }
 
-export function OperatorEditor({ capabilities, mapboxAccessToken, operator, onClose, onSaved }: OperatorEditorProps) {
+export function OperatorEditor({ capabilities, operator, onClose, onSaved }: OperatorEditorProps) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [selectedCapabilities, setSelectedCapabilities] = useState<CapabilityCode[]>(
@@ -148,7 +147,7 @@ export function OperatorEditor({ capabilities, mapboxAccessToken, operator, onCl
           </label>
           <label className="field">
             <span>{is.phone}</span>
-            <input name="phone" defaultValue={operator?.phone ?? ""} required />
+            <input name="phone" defaultValue={operator?.phone ?? ""} type="tel" inputMode="tel" autoComplete="tel" placeholder="+354 555 0000 eða erlent númer með landskóða" required />
           </label>
           <label className="field">
             <span>{is.companyName}</span>
@@ -177,7 +176,6 @@ export function OperatorEditor({ capabilities, mapboxAccessToken, operator, onCl
             latitudeName="baseLatitude"
             longitudeName="baseLongitude"
             locationLabelName="baseAddress"
-            mapboxAccessToken={mapboxAccessToken}
           />
           <div className="location-support-grid">
             <label className="field">

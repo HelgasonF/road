@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { getVerifiedSession } from "@/lib/auth/session";
+import { getVerifiedStaffSession } from "@/lib/auth/session";
 import { isDemoMode } from "@/lib/config";
 import type { ActionResult } from "@/lib/domain/types";
 import { createClient } from "@/lib/supabase/server";
@@ -26,7 +26,7 @@ function validationError(error: { flatten: () => { fieldErrors: Record<string, s
 
 export async function saveJobAction(input: JobInput): Promise<ActionResult<{ id: string }>> {
   if (isDemoMode()) return { ok: false, error: demoError };
-  if (!(await getVerifiedSession())) return { ok: false, error: authError };
+  if (!(await getVerifiedStaffSession())) return { ok: false, error: authError };
 
   const parsed = jobInputSchema.safeParse(input);
   if (!parsed.success) return validationError(parsed.error);
@@ -56,7 +56,7 @@ export async function saveJobAction(input: JobInput): Promise<ActionResult<{ id:
 
 export async function assignJobAction(input: unknown): Promise<ActionResult> {
   if (isDemoMode()) return { ok: false, error: demoError };
-  if (!(await getVerifiedSession())) return { ok: false, error: authError };
+  if (!(await getVerifiedStaffSession())) return { ok: false, error: authError };
   const parsed = assignmentInputSchema.safeParse(input);
   if (!parsed.success) return validationError(parsed.error);
 
@@ -75,7 +75,7 @@ export async function assignJobAction(input: unknown): Promise<ActionResult> {
 
 export async function updateJobStatusAction(input: unknown): Promise<ActionResult> {
   if (isDemoMode()) return { ok: false, error: demoError };
-  if (!(await getVerifiedSession())) return { ok: false, error: authError };
+  if (!(await getVerifiedStaffSession())) return { ok: false, error: authError };
   const parsed = jobStatusInputSchema.safeParse(input);
   if (!parsed.success) return validationError(parsed.error);
 

@@ -10,14 +10,13 @@ import { capabilityLabels, is, jobPriorityLabels } from "@/lib/i18n/is";
 import { saveJobAction } from "./actions";
 
 interface JobEditorProps {
-  mapboxAccessToken: string | null;
   capabilities: Capability[];
   job: Job | null;
   onClose: () => void;
   onSaved: (jobId: string) => void;
 }
 
-export function JobEditor({ capabilities, job, mapboxAccessToken, onClose, onSaved }: JobEditorProps) {
+export function JobEditor({ capabilities, job, onClose, onSaved }: JobEditorProps) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [selectedCapabilities, setSelectedCapabilities] = useState<CapabilityCode[]>(
@@ -72,7 +71,7 @@ export function JobEditor({ capabilities, job, mapboxAccessToken, onClose, onSav
         >
           <div className="form-grid form-grid-two">
             <label className="field"><span>{is.customerName}</span><input name="customerName" defaultValue={job?.customerName ?? ""} required /></label>
-            <label className="field"><span>{is.customerPhone}</span><input name="customerPhone" defaultValue={job?.customerPhone ?? ""} required /></label>
+            <label className="field"><span>{is.customerPhone}</span><input name="customerPhone" defaultValue={job?.customerPhone ?? ""} type="tel" inputMode="tel" autoComplete="tel" placeholder="+354 555 0000 eða erlent númer með landskóða" required /></label>
           </div>
 
           <div className="form-section">
@@ -84,7 +83,6 @@ export function JobEditor({ capabilities, job, mapboxAccessToken, onClose, onSav
               defaultSource={job?.locationSource}
               label="Heimilisfang eða staðarheiti"
               locationSourceName="locationSource"
-              mapboxAccessToken={mapboxAccessToken}
             />
           </div>
 

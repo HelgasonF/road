@@ -5,7 +5,6 @@ import {
   CircleDot,
   MapPin,
   Pencil,
-  Phone,
   Plus,
   Radio,
   Route,
@@ -14,6 +13,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import { ContactActions } from "@/features/contact/contact-actions";
 import { availabilityStatuses, type AvailabilityStatus, type Operator, type Vehicle } from "@/lib/domain/types";
 import {
   availabilityLabels,
@@ -22,6 +22,7 @@ import {
   vehicleTypeLabels,
 } from "@/lib/i18n/is";
 import { updateAvailabilityAction } from "./actions";
+import { DriverAccessPanel } from "./driver-access-panel";
 
 interface OperatorDetailProps {
   demoMode: boolean;
@@ -103,10 +104,9 @@ export function OperatorDetail({
         </button>
       </div>
 
-      <a className="phone-link" href={`tel:${operator.phone}`}>
-        <Phone size={17} />
-        {operator.phone}
-      </a>
+      <ContactActions personName={operator.name} phone={operator.phone} />
+
+      <DriverAccessPanel key={operator.id} demoMode={demoMode} operator={operator} />
 
       <section className="detail-section">
         <div className="section-heading">

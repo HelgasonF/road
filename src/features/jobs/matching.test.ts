@@ -11,6 +11,8 @@ function operator(
 ): Operator {
   return {
     id,
+    userId: null,
+    driverAccess: null,
     name: `Operator ${id}`,
     phone: "555-0000",
     companyName: null,

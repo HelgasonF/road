@@ -1,5 +1,11 @@
 # Icelandic Roadside Assistance Platform — Codex Handoff
 
+> This file contains the original product brief. For the implemented system and the current agreed build order, see [`docs/implementation-status.md`](docs/implementation-status.md).
+>
+> Current decisions that supersede early options in this brief: MapLibre/OSM plus local HMS search replaced Mapbox; service provider and driver are one operator record; dispatch contacts drivers manually through normal WhatsApp/WhatsApp Web; customers use an expiring account-free Vegstoð link for location, details, and private photo upload.
+>
+> The implementation-status document also contains the 20 August 2026 full verification record and the remaining real-phone/secure-hosting boundary. Use it as the source of truth before calling the system production-ready.
+
 ## 1. Project Purpose
 
 Build a web-based dispatch and operations platform for a new Icelandic roadside-assistance company.
