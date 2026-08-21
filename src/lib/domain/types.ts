@@ -57,6 +57,59 @@ export type LocationSource = (typeof locationSources)[number];
 export const appRoles = ["pending", "dispatcher", "admin", "driver"] as const;
 export type AppRole = (typeof appRoles)[number];
 
+export const billingPayerTypes = [
+  "customer",
+  "rental_company",
+  "insurer",
+  "business_account",
+] as const;
+export type BillingPayerType = (typeof billingPayerTypes)[number];
+
+export const billingReceivableStatuses = [
+  "missing_information",
+  "draft",
+  "ready_to_invoice",
+  "invoiced",
+  "paid",
+  "overdue",
+  "disputed",
+  "refunded",
+  "void",
+] as const;
+export type BillingReceivableStatus = (typeof billingReceivableStatuses)[number];
+
+export const billingPayableStatuses = [
+  "not_ready",
+  "awaiting_provider_invoice",
+  "approved",
+  "paid",
+  "disputed",
+  "void",
+] as const;
+export type BillingPayableStatus = (typeof billingPayableStatuses)[number];
+
+export const billingActions = [
+  "details_updated",
+  "issue_payer_invoice",
+  "record_payer_payment",
+  "mark_payer_overdue",
+  "dispute_payer",
+  "refund_payer",
+  "approve_provider_invoice",
+  "record_provider_payment",
+  "dispute_provider",
+  "reopen_payer",
+  "reopen_provider",
+  "void_billing",
+] as const;
+export type BillingAction = (typeof billingActions)[number];
+
+export const jobContactChannels = ["whatsapp", "phone"] as const;
+export type JobContactChannel = (typeof jobContactChannels)[number];
+
+export const jobContactPurposes = ["availability", "assignment"] as const;
+export type JobContactPurpose = (typeof jobContactPurposes)[number];
+
 export interface Capability {
   code: CapabilityCode;
   sortOrder: number;

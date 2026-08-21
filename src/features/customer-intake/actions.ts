@@ -53,6 +53,7 @@ export async function createCustomerIntakeLinkAction(
 
   if (error || !data) return { ok: false, error: "Ekki tókst að búa til öruggan tengil." };
   revalidatePath("/");
+  revalidatePath(`/jobs/${parsed.data.jobId}/history`);
   return {
     ok: true,
     data: { linkId: data, path: `/customer/${rawToken}`, expiresAt },
@@ -73,6 +74,7 @@ export async function revokeCustomerIntakeLinkAction(input: unknown): Promise<Ac
   if (error) return { ok: false, error: "Ekki tókst að afturkalla tengilinn." };
 
   revalidatePath("/");
+  revalidatePath("/jobs/[jobId]/history", "page");
   return { ok: true };
 }
 
@@ -89,7 +91,7 @@ export async function submitCustomerIntakeAction(input: unknown): Promise<Action
 
   const value = parsed.data;
   const admin = createAdminClient();
-  const { error } = await admin.rpc("submit_customer_intake", {
+  const { data: jobId, error } = await admin.rpc("submit_customer_intake", {
     p_token_hash: hashCustomerIntakeToken(value.token),
     p_customer_name: value.customerName,
     p_customer_phone: value.customerPhone,
@@ -108,6 +110,7 @@ export async function submitCustomerIntakeAction(input: unknown): Promise<Action
   revalidatePath("/");
   revalidatePath("/driver");
   revalidatePath(`/customer/${value.token}`);
+  if (jobId) revalidatePath(`/jobs/${jobId}/history`);
   return { ok: true };
 }
 
@@ -189,6 +192,7 @@ export async function finalizeCustomerPhotoUploadAction(input: unknown): Promise
   if (error) return { ok: false, error: "The uploaded photo could not be saved." };
 
   revalidatePath(`/customer/${parsed.data.token}`);
+  revalidatePath(`/jobs/${link.job_id}/history`);
   return { ok: true };
 }
 
@@ -217,5 +221,6 @@ export async function removeCustomerPhotoAction(input: unknown): Promise<ActionR
   if (error) return { ok: false, error: "Photo could not be removed." };
 
   revalidatePath(`/customer/${parsed.data.token}`);
+  revalidatePath(`/jobs/${link.job_id}/history`);
   return { ok: true };
 }

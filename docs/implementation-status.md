@@ -1,6 +1,6 @@
 # Vegstoð implementation status
 
-Last updated: 20 August 2026
+Last updated: 21 August 2026
 
 ## Product decisions
 
@@ -11,6 +11,9 @@ Last updated: 20 August 2026
 - Drivers use a dedicated mobile-first Vegstoð screen for operational job data.
 - Driver availability contact in the MVP is a normal manual WhatsApp message opened from Vegstoð on a phone or computer. The dispatcher reviews and presses Send, so no paid WhatsApp Business Platform/API automation is required. Calling remains the fallback.
 - A customer does not need an account. A 24-hour, job-specific link collects a confirmed location, vehicle details, problem description, and private photos.
+- Every payer pays Vegstoð. Vegstoð is the payer-facing seller in the system and separately settles with the assigned service provider; the provider never invoices the customer through this workflow.
+- Billing stays in a separate staff-only **Uppgjör** workspace so the dispatcher map remains operational. Drivers cannot see payer prices, provider totals, or Vegstoð's gross difference.
+- Each job has a separate staff-only unified timeline. It shows verified system facts and labels external WhatsApp/phone actions only as links or drafts opened, never as a confirmed send or connected call.
 
 ## Completed
 
@@ -30,6 +33,8 @@ Last updated: 20 August 2026
 - Dispatcher-managed driver invitations, password setup and recovery, visible access status, immediate disable, and re-enable without deleting provider data.
 - Dispatcher-created customer intake links with automatic rotation/revocation, a bilingual mobile form, GPS or map-pin confirmation, and one-time submission.
 - Private job-photo upload to Supabase Storage, with access limited to staff, the currently assigned driver, and the active temporary customer link.
+- Separate staff billing workspace with payer queues, provider settlement, invoice/payment states, locked finalized amounts, financial audit history, and deep links to the operational job.
+- Staff-only unified job timeline with category filters, customer-link first-open tracking, audited driver contact attempts, assignment/status history, photo metadata, and billing events.
 
 ## Completed driver build slice
 
@@ -75,19 +80,45 @@ The dispatcher-to-driver WhatsApp workflow remains deliberately manual and free 
 5. Both actions open ordinary WhatsApp/WhatsApp Web; Vegstoð never sends automatically and the dispatcher remains responsible for reviewing and pressing Send.
 6. Unit/component tests verify Icelandic and international WhatsApp addressing, exact message content, missing-distance behavior, active-access gating, and runtime construction of the driver URL. A 1440 px and 390 px Playwright pass confirmed both dispatcher states, the WhatsApp handoff, no horizontal overflow, and no application-console errors.
 
+## Completed billing and settlement build slice
+
+The financial workflow is connected to the operational job without adding billing forms to the dispatcher map:
+
+1. Every existing and new job has exactly one `job_billing` record. All jobs appear in `/billing`, with queues for missing information, active work, ready to invoice, awaiting payer payment, provider payment, settlement, disputes, refunds, and voids.
+2. Staff records the payer type, legal/billing identity, authorization and reference values, service summary, payer total, provider total, and internal notes. The four payer types are customer, rental company, insurer/assistance company, and business/fleet account.
+3. Completion automatically changes a complete payer draft to `ready_to_invoice` and an assigned provider side to `awaiting_provider_invoice`. Missing payer data remains explicitly missing rather than being silently considered ready.
+4. Payer → Vegstoð and Vegstoð → provider use independent state machines. Invoice issuance, incoming payment, provider-invoice approval, outgoing payment, overdue state, disputes, reopenings, refunds, and cancelled-job voids use guarded database transitions.
+5. A case is `Fulluppgert` only when both sides are paid. Receiving payer money does not mark the provider paid, and paying the provider does not mark the payer paid.
+6. Every detail save and financial transition creates a staff audit event. Drivers have no RLS access to either billing records or events. Payer values lock after invoice issuance and the provider total locks after approval at both the UI and database boundaries; notes remain editable and audited.
+7. Real browser tests covered active draft entry, search and queues, dispatcher completion and deep links, payer and provider invoices, overdue handling, both dispute/reopen paths, independent payment confirmations, full settlement, refund confirmation and its separate queue, cancelled-job void confirmation, immutable field locks, editable internal notes, and the audit history. The 1440 px and 390 × 844 layouts had no application-console errors or page-level horizontal overflow.
+
+This slice records and controls the workflow only. It does not yet create a legal invoice, charge a card, move bank funds, file VAT, or synchronize an accounting platform. Those external actions remain manual and must not be inferred from a recorded status.
+
+## Completed unified job timeline build slice
+
+The timeline is connected to the existing operational and financial records without duplicating their source of truth:
+
+1. Every job detail has a **Skoða feril verkefnis** link to `/jobs/[jobId]/history`; the page links back to the selected dispatcher job and its billing case.
+2. The newest-first list merges job creation/status changes, customer-link creation/first opening/revocation/submission, completed photo uploads, assignment/acceptance/decline/reassignment, staff driver-contact attempts, and billing audit events.
+3. Repeated status rows generated by assignment acceptance or decline are suppressed when the assignment lifecycle already represents the same event. Filters isolate job, customer, service-provider, and billing events.
+4. Opening a normal WhatsApp draft or `tel:` link is persisted through a staff-only audited RPC. The UI explicitly says Vegstoð cannot verify that an external message was sent or a call connected.
+5. `customer_intake_links.first_opened_at` records the first real customer-page visit. The raw token remains unavailable to the timeline and all staff/driver data stays outside the public customer page.
+6. Drivers cannot read `job_contact_events`, billing events, or the staff timeline route. Direct authenticated inserts into contact history are blocked; only the validated staff RPC can write an event.
+7. Browser verification created and opened a real customer link, opened a real WhatsApp handoff, confirmed both events in the timeline, filtered a settled job to its six billing events, and confirmed driver-role denial. Desktop and 390 × 844 layouts had no application-console errors or horizontal overflow. Temporary link/contact records were removed afterward and the test account was disabled again.
+
 ## Full verification snapshot
 
-The complete current working tree was rechecked on 20 August 2026:
+The complete current working tree was rechecked on 21 August 2026:
 
-- `npm run build` passed with all application routes, including dispatcher, customer intake, private photo delivery, authentication confirmation/password setup, and the driver screen.
+- `npm run build` passed with all application routes, including dispatcher, staff billing, the staff job timeline, customer intake, private photo delivery, authentication confirmation/password setup, and the driver screen.
 - `npm run typecheck` and `npm run lint` passed without errors.
-- `npm test` passed all 99 tests across 17 Vitest files.
-- `npx supabase test db` passed all 109 assertions across four pgTAP files, covering the dispatch schema, driver isolation/access management, customer-link lifecycle, and private-photo authorization.
+- `npm test` passed all 120 tests across 20 Vitest files.
+- `npx supabase test db` passed all 165 assertions across six pgTAP files, covering the dispatch schema, driver isolation/access management, customer-link lifecycle and first opening, private-photo authorization, contact-event audit isolation, billing handoff, financial transitions, value locking, audited-only mutation privileges, and driver financial isolation.
 - `npx supabase db lint --local --schema public` reported no application-schema errors. A whole-database lint also reports known analyzer findings inside Supabase's installed PostGIS extension functions; these are vendor extension code rather than Vegstoð migrations.
 - `npm audit --omit=dev` reported zero production dependency vulnerabilities.
 - `git diff --check` passed, and the repository scan found no committed Mapbox token, Supabase secret, placeholder TODO/FIXME, or accidental application debug logging. The importer intentionally prints its completed import summary when run from the terminal.
 
-The existing browser verification remains valid for the critical dispatcher → customer → driver path, including an unauthenticated phone-sized customer session, a real private image upload, one-time link consumption, reassignment, driver-only visibility, and rejection of an anonymous private-photo request. A fresh Playwright smoke pass also confirmed that Bjarni can still sign in, sees only his assigned job with the correct Iceland map pin, customer call/WhatsApp actions, submitted notes and authorized private photo, and is redirected from `/` back to `/driver`. A separate anonymous 390 × 844 session received the safe unavailable state for an invalid customer link, and an anonymous private-photo request still returned HTTP 404. The application produced no browser-console errors; headless Chromium emitted only its known WebGL software-rendering performance warnings while drawing MapLibre.
+The existing browser verification remains valid for the critical dispatcher → customer → driver path, including an unauthenticated phone-sized customer session, a real private image upload, one-time link consumption, reassignment, driver-only visibility, and rejection of an anonymous private-photo request. A fresh Playwright smoke pass also confirmed that Bjarni can still sign in, sees only his assigned job with the correct Iceland map pin, customer call/WhatsApp actions, submitted notes and authorized private photo, and is redirected from `/` back to `/driver`. A separate anonymous 390 × 844 session received the safe unavailable state for an invalid customer link, and an anonymous private-photo request still returned HTTP 404. The billing browser pass covered the complete operational-to-financial handoff and independent settlement. The timeline pass covered live customer-link opening, WhatsApp handoff audit, operational/assignment history, billing filtering, driver denial, deterministic Iceland timestamps, and desktop/mobile rendering. The application produced no browser-console errors; headless Chromium emitted only its known WebGL software-rendering performance warnings while drawing MapLibre.
 
 ## Current readiness boundary
 
@@ -95,9 +126,9 @@ The implemented flows are complete and verified locally, but the product is not 
 
 ## Next slices
 
-1. Add a clearer job event timeline covering customer submission, availability contact, assignment, acceptance, reassignment, and completion.
-2. Create a secure phone-test environment in which both the app and Supabase API/Storage are reachable, then test the complete dispatcher → customer → driver flow on iPhone and Android.
-3. Connect hosted Supabase and production email only after the real-phone workflow is approved.
+1. Create a secure phone-test environment in which both the app and Supabase API/Storage are reachable, then test the complete dispatcher → customer → driver flow on iPhone and Android.
+2. Connect hosted Supabase and production email only after the real-phone workflow is approved.
+3. Select and integrate Iceland-compatible accounting/invoicing and payment providers only after an accountant confirms the invoice, VAT, refund, credit-note, provider-payment, and reconciliation requirements.
 
 ## Intended end-to-end workflow
 
@@ -110,6 +141,10 @@ Customer calls dispatcher
         -> driver accepts in the Vegstoð driver screen
         -> driver calls/navigates and updates job status
         -> dispatcher follows the same job through completion
+        -> completed job becomes ready in Uppgjör
+        -> Vegstoð invoices and collects from the payer
+        -> Vegstoð approves and pays the provider separately
+        -> both paid legs mark the case fully settled
 ```
 
 ## Deferred deliberately
@@ -119,4 +154,5 @@ Customer calls dispatcher
 - Continuous background driver tracking.
 - Native iOS/Android applications.
 - WhatsApp Business automation.
-- Billing and rental-company integrations.
+- Automated legal invoice/accounting synchronization, online payment collection, refunds/credit notes, and bank payouts.
+- Rental-company and insurer account integrations beyond manual payer/reference capture.

@@ -25,7 +25,11 @@ function ConfigurationNeeded() {
   );
 }
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ job?: string }>;
+}) {
   const demoMode = isDemoMode();
   if (!demoMode && !hasSupabaseConfig()) return <ConfigurationNeeded />;
 
@@ -43,6 +47,7 @@ export default async function Home() {
       getJobOperatorMatches(),
       getCustomerIntakeLinkSummaries(),
     ]);
+  const params = await searchParams;
 
   return (
     <DispatcherWorkspace
@@ -50,6 +55,7 @@ export default async function Home() {
       customerLinks={customerLinks}
       demoMode={demoMode}
       identity={identity}
+      initialJobId={params.job ?? null}
       jobMatches={jobMatches}
       jobs={jobs}
       operators={operators}

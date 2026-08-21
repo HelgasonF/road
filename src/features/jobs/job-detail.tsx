@@ -1,6 +1,7 @@
 "use client";
 
-import { CheckCircle2, Clock3, MapPin, Pencil, Route, Truck, UserRound } from "lucide-react";
+import { CheckCircle2, Clock3, History, MapPin, Pencil, ReceiptText, Route, Truck, UserRound } from "lucide-react";
+import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 
 import { ContactActions } from "@/features/contact/contact-actions";
@@ -126,6 +127,11 @@ export function JobDetail({ customerLink, demoMode, job, matches, operators, onC
 
       <ContactActions personName={job.customerName} phone={job.customerPhone} />
 
+      <div className="job-detail-action-links">
+        <Link className="job-timeline-link" href={`/jobs/${job.id}/history`}><History size={17} /> Skoða feril verkefnis</Link>
+        {isClosed ? <Link className="job-billing-link" href={`/billing?job=${job.id}`}><ReceiptText size={17} /> Opna uppgjör verkefnis</Link> : null}
+      </div>
+
       {!demoMode && !isClosed ? <CustomerLinkPanel jobId={job.id} link={customerLink} /> : null}
 
       <section className="detail-section">
@@ -155,6 +161,8 @@ export function JobDetail({ customerLink, demoMode, job, matches, operators, onC
             {assignedOperator && !isClosed ? (
               <DriverAssignmentContactActions
                 accessStatus={assignedOperator.driverAccess?.status ?? null}
+                jobId={job.id}
+                operatorId={assignedOperator.id}
                 phone={assignedOperator.phone}
                 summary={driverContactSummary(job, assignedOperator.name)}
               />
@@ -191,6 +199,8 @@ export function JobDetail({ customerLink, demoMode, job, matches, operators, onC
                 </button>
                 <DriverAvailabilityContactActions
                   distanceKm={match?.distanceKm ?? null}
+                  jobId={job.id}
+                  operatorId={operator.id}
                   phone={operator.phone}
                   summary={driverContactSummary(job, operator.name)}
                 />

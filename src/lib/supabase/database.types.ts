@@ -1,6 +1,12 @@
 import type {
   AvailabilityStatus,
+  BillingAction,
+  BillingPayableStatus,
+  BillingPayerType,
+  BillingReceivableStatus,
   CapabilityCode,
+  JobContactChannel,
+  JobContactPurpose,
   JobPriority,
   JobStatus,
   LocationSource,
@@ -24,6 +30,7 @@ export type Database = {
           job_id: string;
           token_hash: string;
           expires_at: string;
+          first_opened_at: string | null;
           revoked_at: string | null;
           submitted_at: string | null;
           created_by: string;
@@ -34,6 +41,7 @@ export type Database = {
           job_id: string;
           token_hash: string;
           expires_at: string;
+          first_opened_at?: string | null;
           revoked_at?: string | null;
           submitted_at?: string | null;
           created_by: string;
@@ -214,6 +222,70 @@ export type Database = {
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["job_photos"]["Insert"]>;
+        Relationships: [];
+      };
+      job_billing: {
+        Row: {
+          job_id: string;
+          payer_type: BillingPayerType | null;
+          payer_name: string | null;
+          payer_kennitala: string | null;
+          payer_email: string | null;
+          payer_phone: string | null;
+          payer_address: string | null;
+          authorization_reference: string | null;
+          billing_reference: string | null;
+          service_summary: string | null;
+          payer_amount_isk: number | null;
+          provider_amount_isk: number | null;
+          currency: "ISK";
+          receivable_status: BillingReceivableStatus;
+          payer_invoice_number: string | null;
+          payer_invoice_issued_at: string | null;
+          payer_due_at: string | null;
+          payer_paid_at: string | null;
+          payable_status: BillingPayableStatus;
+          provider_invoice_number: string | null;
+          provider_invoice_received_at: string | null;
+          provider_due_at: string | null;
+          provider_paid_at: string | null;
+          notes: string | null;
+          created_by: string;
+          updated_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      job_billing_events: {
+        Row: {
+          id: number;
+          job_id: string;
+          action: BillingAction;
+          reference: string | null;
+          due_at: string | null;
+          notes: string | null;
+          changed_by: string;
+          changed_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      job_contact_events: {
+        Row: {
+          id: number;
+          job_id: string;
+          operator_id: string;
+          channel: JobContactChannel;
+          purpose: JobContactPurpose;
+          initiated_by: string;
+          initiated_at: string;
+        };
+        Insert: never;
+        Update: never;
         Relationships: [];
       };
       job_required_capabilities: {
@@ -398,6 +470,34 @@ export type Database = {
         Args: { p_job_id: string; p_status: JobStatus; p_notes: string | null };
         Returns: undefined;
       };
+      save_job_billing: {
+        Args: {
+          p_job_id: string;
+          p_payer_type: BillingPayerType | null;
+          p_payer_name: string | null;
+          p_payer_kennitala: string | null;
+          p_payer_email: string | null;
+          p_payer_phone: string | null;
+          p_payer_address: string | null;
+          p_authorization_reference: string | null;
+          p_billing_reference: string | null;
+          p_service_summary: string | null;
+          p_payer_amount_isk: number | null;
+          p_provider_amount_isk: number | null;
+          p_notes: string | null;
+        };
+        Returns: undefined;
+      };
+      transition_job_billing: {
+        Args: {
+          p_job_id: string;
+          p_action: Exclude<BillingAction, "details_updated">;
+          p_reference: string | null;
+          p_due_at: string | null;
+          p_notes: string | null;
+        };
+        Returns: undefined;
+      };
       link_driver_user: {
         Args: { p_operator_id: string; p_user_id: string };
         Returns: undefined;
@@ -413,6 +513,19 @@ export type Database = {
       create_customer_intake_link: {
         Args: { p_job_id: string; p_token_hash: string; p_expires_at: string };
         Returns: string;
+      };
+      mark_customer_intake_link_opened: {
+        Args: { p_link_id: string };
+        Returns: string;
+      };
+      record_job_contact: {
+        Args: {
+          p_job_id: string;
+          p_operator_id: string;
+          p_channel: JobContactChannel;
+          p_purpose: JobContactPurpose;
+        };
+        Returns: number;
       };
       revoke_customer_intake_link: {
         Args: { p_link_id: string };
@@ -453,6 +566,12 @@ export type Database = {
       job_status: JobStatus;
       job_priority: JobPriority;
       location_source: LocationSource;
+      billing_payer_type: BillingPayerType;
+      billing_receivable_status: BillingReceivableStatus;
+      billing_payable_status: BillingPayableStatus;
+      billing_action: BillingAction;
+      job_contact_channel: JobContactChannel;
+      job_contact_purpose: JobContactPurpose;
     };
     CompositeTypes: Record<string, never>;
   };

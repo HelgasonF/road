@@ -47,6 +47,18 @@ Customer intake is managed from the selected job:
 4. The customer uses the bilingual, account-free form to confirm GPS/map location, vehicle details, the problem, and up to six 10 MiB photos.
 5. Submission is one-time. Dispatch sees the information immediately, and private photos become visible to the assigned driver only after assignment.
 
+Billing and provider settlement are handled in the separate staff-only **Uppgjör** workspace at `/billing`:
+
+1. Every job receives one billing record automatically and appears in the financial queues without adding fields to the map-centric dispatcher workspace.
+2. Staff records whether the payer is the customer, a rental company, an insurer/assistance company, or a business account. The payer always owes Vegstoð; the assigned provider never invoices the payer through this workflow.
+3. When an assigned job is completed, a complete payer draft becomes ready for a Vegstoð invoice and the provider side begins waiting for the provider's invoice.
+4. Staff records the Vegstoð invoice and incoming payment independently from the provider invoice approval and outgoing payment. A case is fully settled only after both money legs are paid.
+5. Invoice references, due dates, payments, disputes, refunds, voids, and detail changes create an immutable staff audit trail. Refunds and voids require explicit confirmation and remain visible in separate queues. Payer values lock after invoice issuance and the provider total locks after approval.
+
+Every job also has a staff-only **Ferill verkefnis** page at `/jobs/[jobId]/history`. It combines the job creation and status history, customer-link creation/first opening/submission, uploaded-photo metadata, driver contact attempts, assignment/acceptance/decline/reassignment, and billing audit into one newest-first view with category filters. Drivers cannot open this page or read its staff communication/financial event sources. Because normal WhatsApp and phone links leave Vegstoð, the timeline records only that the draft or phone link was opened; it never claims an external message was sent or a call connected.
+
+The current billing slice is a validated ledger and workflow, not a payment processor or accounting-system integration. Recording an invoice or payment does not itself issue a legal invoice, charge a card, initiate a bank transfer, or file VAT. Those actions remain manual until a production accounting/payment integration is selected and verified.
+
 Local customer photos are stored in the private `job-photos` Supabase Storage bucket. Uploads use short-lived signed upload tokens; reads pass through an application authorization route before receiving a five-minute signed object URL. Do not make this bucket public in hosted Supabase.
 
 Local invitation and recovery emails appear in Mailpit at `http://127.0.0.1:54324`. Hosted Supabase must set the project Site URL to the deployed Vegstoð URL and use the repository templates in `supabase/templates/` for the **Invite user** and **Reset password** email templates. `SUPABASE_SECRET_KEY` must contain a server-only `sb_secret_...` key in hosting; it is used for verified staff Auth administration and token-validated private customer-intake/storage operations, and must never reach browser code.

@@ -2,6 +2,8 @@
 
 import { MessageCircle, PhoneCall, Send } from "lucide-react";
 
+import { recordJobContactAction } from "@/features/job-timeline/actions";
+import type { JobContactPurpose } from "@/lib/domain/types";
 import type { DriverAccessStatus } from "@/lib/domain/types";
 import { buildContactLinks, buildWhatsAppHref } from "@/lib/contact-links";
 import {
@@ -11,6 +13,8 @@ import {
 } from "./driver-contact";
 
 interface DriverContactBaseProps {
+  jobId: string;
+  operatorId: string;
   phone: string;
   summary: DriverJobContactSummary;
 }
@@ -23,7 +27,23 @@ interface DriverAssignmentContactActionsProps extends DriverContactBaseProps {
   accessStatus: DriverAccessStatus | null;
 }
 
-function DriverCallLink({ phone, driverName }: { phone: string; driverName: string }) {
+function recordContact(jobId: string, operatorId: string, channel: "whatsapp" | "phone", purpose: JobContactPurpose) {
+  void recordJobContactAction({ jobId, operatorId, channel, purpose });
+}
+
+function DriverCallLink({
+  driverName,
+  jobId,
+  operatorId,
+  phone,
+  purpose,
+}: {
+  driverName: string;
+  jobId: string;
+  operatorId: string;
+  phone: string;
+  purpose: JobContactPurpose;
+}) {
   const { callHref } = buildContactLinks(phone);
   if (!callHref) return null;
 
@@ -31,6 +51,7 @@ function DriverCallLink({ phone, driverName }: { phone: string; driverName: stri
     <a
       className="driver-job-contact driver-job-contact-call"
       href={callHref}
+      onClick={() => recordContact(jobId, operatorId, "phone", purpose)}
       aria-label={`Hringja í ${driverName}: ${phone}`}
     >
       <PhoneCall size={14} /> Hringja
@@ -40,6 +61,8 @@ function DriverCallLink({ phone, driverName }: { phone: string; driverName: stri
 
 export function DriverAvailabilityContactActions({
   distanceKm,
+  jobId,
+  operatorId,
   phone,
   summary,
 }: DriverAvailabilityContactActionsProps) {
@@ -50,11 +73,12 @@ export function DriverAvailabilityContactActions({
 
   return (
     <div className="driver-job-contact-actions" aria-label={`Hafa samband við ${summary.driverName}`}>
-      <DriverCallLink driverName={summary.driverName} phone={phone} />
+      <DriverCallLink driverName={summary.driverName} jobId={jobId} operatorId={operatorId} phone={phone} purpose="availability" />
       {whatsappHref ? (
         <a
           className="driver-job-contact driver-job-contact-whatsapp"
           href={whatsappHref}
+          onClick={() => recordContact(jobId, operatorId, "whatsapp", "availability")}
           target="_blank"
           rel="noopener noreferrer"
           aria-label={`Spyrja ${summary.driverName} um framboð í WhatsApp`}
@@ -74,12 +98,15 @@ const unavailableAccessCopy: Record<Exclude<DriverAccessStatus, "active"> | "mis
 
 export function DriverAssignmentContactActions({
   accessStatus,
+  jobId,
+  operatorId,
   phone,
   summary,
 }: DriverAssignmentContactActionsProps) {
   const { whatsappHref } = buildContactLinks(phone);
 
   function openAssignmentMessage() {
+    recordContact(jobId, operatorId, "whatsapp", "assignment");
     const driverUrl = new URL("/driver", window.location.origin).toString();
     const href = buildWhatsAppHref(phone, buildDriverAssignmentMessage(summary, driverUrl));
     if (href) window.open(href, "_blank", "noopener,noreferrer");
@@ -88,7 +115,7 @@ export function DriverAssignmentContactActions({
   return (
     <div className="assigned-driver-contact">
       <div className="driver-job-contact-actions">
-        <DriverCallLink driverName={summary.driverName} phone={phone} />
+        <DriverCallLink driverName={summary.driverName} jobId={jobId} operatorId={operatorId} phone={phone} purpose="assignment" />
         {accessStatus === "active" && whatsappHref ? (
           <button
             className="driver-job-contact driver-job-contact-whatsapp"

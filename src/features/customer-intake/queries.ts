@@ -103,6 +103,8 @@ export async function getCustomerIntakePageData(token: string): Promise<Customer
   if (status === "submitted") return { status: "submitted" };
   if (status !== "active") return { status: "unavailable" };
 
+  await admin.rpc("mark_customer_intake_link_opened", { p_link_id: link.id });
+
   const [{ data: job, error: jobError }, { data: photos, error: photosError }] = await Promise.all([
     admin
       .from("jobs")

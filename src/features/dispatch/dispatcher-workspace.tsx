@@ -6,11 +6,13 @@ import {
   LogOut,
   MapPinned,
   Plus,
+  ReceiptText,
   Search,
   SlidersHorizontal,
   UsersRound,
   Wrench,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
@@ -37,6 +39,7 @@ interface DispatcherWorkspaceProps {
   customerLinks: CustomerIntakeLinkSummary[];
   demoMode: boolean;
   identity: DispatcherIdentity;
+  initialJobId: string | null;
   jobMatches: JobOperatorMatch[];
   jobs: Job[];
   operators: Operator[];
@@ -51,17 +54,27 @@ export function DispatcherWorkspace({
   customerLinks,
   demoMode,
   identity,
+  initialJobId,
   jobMatches,
   jobs,
   operators,
 }: DispatcherWorkspaceProps) {
   const router = useRouter();
+  const initialJob = jobs.find((job) => job.id === initialJobId) ?? null;
   const [mode, setMode] = useState<WorkspaceMode>(jobs.length > 0 ? "jobs" : "operators");
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [jobFilter, setJobFilter] = useState<JobFilter>("active");
+  const [jobFilter, setJobFilter] = useState<JobFilter>(
+    initialJob && (initialJob.status === "completed" || initialJob.status === "cancelled")
+      ? "completed"
+      : "active",
+  );
   const [selectedOperatorId, setSelectedOperatorId] = useState<string | null>(null);
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(jobs.find((job) => job.status !== "completed" && job.status !== "cancelled")?.id ?? null);
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(
+    initialJob
+      ? initialJob.id
+      : jobs.find((job) => job.status !== "completed" && job.status !== "cancelled")?.id ?? null,
+  );
   const [operatorEditor, setOperatorEditor] = useState<Operator | null | undefined>(undefined);
   const [jobEditor, setJobEditor] = useState<Job | null | undefined>(undefined);
   const [vehicleEditor, setVehicleEditor] = useState<{ open: boolean; vehicle: Vehicle | null }>({ open: false, vehicle: null });
@@ -130,6 +143,7 @@ export function DispatcherWorkspace({
           <div><Wrench size={17} /><span><strong>{activeJobCount}</strong> {is.activeJobs.toLocaleLowerCase("is")}</span></div>
         </div>
         <div className="topbar-actions">
+          <Link className="topbar-section-link" href="/billing"><ReceiptText size={16} /> Uppgjör</Link>
           {demoMode ? <span className="demo-badge">{is.demoMode}</span> : null}
           <div className="identity"><CircleUserRound size={26} /><span><strong>{identity.displayName}</strong><small>{identity.email}</small></span></div>
           <form action={logoutAction}><button className="icon-button" type="submit" aria-label={is.signOut} title={is.signOut}><LogOut size={18} /></button></form>

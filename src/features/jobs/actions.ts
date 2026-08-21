@@ -70,6 +70,7 @@ export async function assignJobAction(input: unknown): Promise<ActionResult> {
   });
   if (error) return { ok: false, error: "Ekki tókst að úthluta verkefninu." };
   revalidatePath("/");
+  revalidatePath(`/jobs/${value.jobId}/history`);
   return { ok: true };
 }
 
@@ -88,5 +89,6 @@ export async function updateJobStatusAction(input: unknown): Promise<ActionResul
   });
   if (error) return { ok: false, error: "Ekki tókst að uppfæra stöðu verkefnisins." };
   revalidatePath("/");
+  revalidatePath(`/jobs/${value.jobId}/history`);
   return { ok: true };
 }

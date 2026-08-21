@@ -48,7 +48,7 @@ export async function respondToDriverAssignmentAction(input: unknown): Promise<A
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("respond_to_driver_assignment", {
+  const { data: jobId, error } = await supabase.rpc("respond_to_driver_assignment", {
     p_assignment_id: parsed.data.assignmentId,
     p_accept: parsed.data.accept,
     p_notes: parsed.data.notes,
@@ -57,6 +57,7 @@ export async function respondToDriverAssignmentAction(input: unknown): Promise<A
 
   revalidatePath("/driver");
   revalidatePath("/");
+  if (jobId) revalidatePath(`/jobs/${jobId}/history`);
   return { ok: true };
 }
 
@@ -77,5 +78,6 @@ export async function updateDriverJobStatusAction(input: unknown): Promise<Actio
 
   revalidatePath("/driver");
   revalidatePath("/");
+  revalidatePath(`/jobs/${parsed.data.jobId}/history`);
   return { ok: true };
 }
