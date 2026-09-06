@@ -17,7 +17,7 @@ There is no production deployment. The preview is intentionally public at the ne
 
 The hosted database contains the complete migration history, the official Icelandic address/place search data, and no demo operators or jobs. At the last check it used about 94 MB of the Free plan's 500 MB database allowance. The imported reference data comprised 139,346 HMS addresses and 2,970 Icelandic place names.
 
-The automatic Git Preview completed the full hosted dispatcher → customer → driver → billing workflow on 6 September 2026. The temporary provider, vehicle, driver account, job, customer link, photo, timeline and billing records were removed afterward. See [`docs/hosted-audit-2026-09-06.md`](hosted-audit-2026-09-06.md) for the evidence and remaining release checks.
+The automatic Git Preview completed the full hosted dispatcher → customer → driver → billing workflow on 6 September 2026. A follow-up on commit `ba61a50` verified the replacement passwordless WhatsApp driver links through provider and job creation, assignment handoff, clean-session redemption, one-time reuse rejection, returning access, driver acceptance, and immediate disable. All temporary database, Storage, and Auth records were removed afterward. See [`docs/hosted-audit-2026-09-06.md`](hosted-audit-2026-09-06.md) and [`docs/hosted-whatsapp-driver-audit-2026-09-06.md`](hosted-whatsapp-driver-audit-2026-09-06.md).
 
 The initial real admin is active and its login was verified against the preview. Its generated temporary credentials are stored outside the repository at `~/.config/vegstod/first-admin.json` with owner-only file permissions. Rotate the temporary password in Supabase Auth after first use.
 

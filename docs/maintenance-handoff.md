@@ -130,11 +130,11 @@ Relevant files include:
 ### Hosted preview and Supabase Free project
 
 - Supabase project `Road` (`abpmzqtbllszqqetuubp`) is linked in `eu-west-1` on the Free plan.
-- All 19 migrations are applied. Hosted reference data contains 139,346 HMS addresses and 2,970 Icelandic place names; the database used about 94 MB at the last check.
+- All 20 migrations are applied. Hosted reference data contains 139,346 HMS addresses and 2,970 Icelandic place names; the database used about 94 MB at the last check.
 - The private `job-photos` bucket and tightened function execution permissions are verified.
 - Vercel Preview uses encrypted Supabase variables with `DEMO_MODE=false` and the stable address `https://vegstod.vercel.app`. The same encrypted variables are prepared for Production, but no production deployment is active.
 - Supabase Auth Site URL and redirects use the stable preview address while preserving local development redirects.
-- The automatic Git Preview passed the full hosted dispatcher → customer → driver → billing workflow using the driver access path available at that revision. The later passwordless WhatsApp driver-link flow is described in [`docs/implementation-status.md`](implementation-status.md). All disposable database, Storage, and Auth records were removed; see [`docs/hosted-audit-2026-09-06.md`](hosted-audit-2026-09-06.md).
+- The automatic Git Preview passed the full hosted dispatcher → customer → driver → billing workflow. Commit `ba61a50` separately passed the current passwordless WhatsApp driver lifecycle and the provider → job → assignment → WhatsApp handoff → driver acceptance path. All disposable database, Storage, and Auth records were removed; see [`docs/hosted-audit-2026-09-06.md`](hosted-audit-2026-09-06.md) and [`docs/hosted-whatsapp-driver-audit-2026-09-06.md`](hosted-whatsapp-driver-audit-2026-09-06.md).
 - The real first admin is active and its login was verified. Temporary credentials are stored outside Git at `~/.config/vegstod/first-admin.json` with owner-only permissions and should be rotated after first use.
 - Vercel is connected to the private GitHub repository `HelgasonF/road`. Feature-branch pushes create previews; `main` is the production branch and must not receive another merge until the release is approved.
 - Hosted Supabase blocks public self-signup, requires 10-character letter-and-number passwords for staff accounts, and enforces SSL for external PostgreSQL connections.
@@ -152,14 +152,14 @@ The current application code was fully checked on 6 September 2026:
 - `npx supabase db lint --local --schema public` reported no application-schema errors.
 - `git diff --check` passed.
 
-The hosted Git Preview separately passed the complete operational and financial workflow with no application-console errors. All disposable hosted database, Storage, and Auth data was removed afterward.
+The hosted Git Preview separately passed the complete operational and financial workflow. The current passwordless driver revision also passed new and returning links, one-time rejection, assignment-message auditing, driver acceptance, immediate revocation, and direct Supabase persistence checks. All disposable hosted database, Storage, and Auth data was removed afterward.
 
 ## Readiness boundary and next work
 
 The local system and hosted desktop workflow are verified, but the current public link is still a preview. The next order is:
 
 1. Repeat the complete customer → dispatch → driver flow on a physical phone through the public HTTPS preview, including native photo selection and the passwordless WhatsApp driver link, without USB forwarding.
-2. Confirm one-time driver-link reuse rejection and immediate access disable in that public-phone pass.
+2. Confirm the WhatsApp and dialer handoffs in their real installed phone applications during that public-phone pass.
 3. Complete the launch checklist and only then create a production deployment. Upgrade the same Supabase project later when operating requirements justify it.
 4. Select accounting, invoicing, payment, refund/credit-note, provider-payment, and reconciliation integrations after the accountant confirms the Icelandic requirements; customer payment links will use the existing WhatsApp delivery pattern.
 

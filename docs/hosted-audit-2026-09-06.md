@@ -80,5 +80,6 @@ job-photos Storage objects: 0
 ## Remaining release checks
 
 - Repeat the public HTTPS workflow on a physical phone, including its native camera/photo picker and WhatsApp or dialer handoff.
-- Deploy and verify the replacement passwordless driver access link through the prepared WhatsApp handoff, including first use, reuse rejection, and immediate access disable.
 - Approve the operational launch checklist before merging to `main`, because Vercel treats `main` as the production branch.
+
+The replacement passwordless driver access link was deployed and passed first use, reuse rejection, returning access, assignment handoff, driver acceptance, and immediate disable later the same day. See [`hosted-whatsapp-driver-audit-2026-09-06.md`](hosted-whatsapp-driver-audit-2026-09-06.md).
