@@ -6,6 +6,28 @@ The Git-created Vercel Preview at `https://vegstod-r7ebg0ufm-freyrs-projects-fad
 
 No production deployment was created and `main` was not changed.
 
+## Repeat persistence proof on the stable URL
+
+A second clean-room run used `https://vegstod.vercel.app`, which was pointed at the Git Preview built from this audit branch. The run created every operational record through the browser first and then queried project `abpmzqtbllszqqetuubp` directly with the hosted Supabase API. This rules out demo data, browser-only state, and a local Supabase instance.
+
+The direct checkpoints found:
+
+- provider `2866448f-61df-4c82-8b47-392fc660f697`, created at `2026-09-06T18:28:47.016248Z` with its address, phone, availability, notes, and towing/tire capabilities;
+- vehicle `30f5abcd-32ec-4e73-adb0-3fe0a59923c2`, created at `2026-09-06T18:30:44.926738Z` with registration `PROOF1`, 3,500 kg capacity, and both selected capabilities;
+- disposable driver Auth/profile user `57e01023-9fe1-4436-9375-d8157c307429`, linked to the provider with role `driver`;
+- job `e7c11826-3ee4-47ce-884f-2d9e4d981614`, created at `2026-09-06T18:34:18.6808Z` with the searched HMS address, high priority, vehicle fields, notes, and required towing capability;
+- customer link `a60c53af-de9e-4e70-a0d9-db104dce174d`, opened and submitted through an anonymous mobile browser;
+- private photo `a1ee1b8f-126e-45b5-9632-3e979898e490`, with matching 395,621-byte PNG metadata and object in the private `job-photos` bucket;
+- assignment `1ffb95be-c539-4dac-b719-9d4c7ad2a002`, connected to the exact provider and vehicle;
+- seven consecutive job status rows ending in `completed` at `2026-09-06T18:39:30.263021Z`, with the provider returned to `available`;
+- a `paid`/`paid` billing row for 50,000/35,000 ISK and five billing events, ending at `2026-09-06T18:42:47.23302Z`.
+
+The repeated authorization checks redirected the driver away from both `/billing` and the staff timeline, returned HTTP 404 for the private photo without a session, and showed the generic unavailable page for an invalid customer token without exposing the audit job. The staff timeline displayed all 17 expected events: 6 job events, 4 customer events, 2 provider events, and 5 billing events.
+
+The Supabase hosted mailer rate-limited the second invitation attempt with its explicit too-many-emails response. The audit therefore created and confirmed the disposable Auth user with the Supabase admin API, then exercised the normal browser login and driver authorization path. This reinforces the custom-SMTP release requirement below; it did not affect database, authentication, role, or driver-workflow verification.
+
+Immediately before cleanup, direct hosted counts were two profiles/Auth users and exactly one provider, vehicle, job, assignment, customer link, photo, billing row, and Storage folder, plus seven status rows and five billing events. Cleanup removed the object before its metadata and parent records, deleted the disposable Auth user and credentials, and returned the project to the exact baseline shown below.
+
 ## Workflow exercised
 
 1. The real admin signed in on the new Preview.
