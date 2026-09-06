@@ -6,8 +6,8 @@ Last updated: 6 September 2026
 
 Vegstoð currently has one external **preview** environment:
 
-- Application: `https://road-preview-freyrs-projects-fad4047a.vercel.app`
-- Vercel project: `freyrs-projects-fad4047a/road`
+- Application: `https://vegstod.vercel.app`
+- Vercel project: `freyrs-projects-fad4047a/vegstod`
 - Supabase project: `Road`
 - Supabase project reference: `abpmzqtbllszqqetuubp`
 - Supabase region: `eu-west-1`
@@ -21,7 +21,7 @@ The initial real admin is active and its login was verified against the preview.
 
 ## Vercel configuration
 
-The Preview environment contains these encrypted variables:
+The Preview and Production environments contain these encrypted variables:
 
 ```text
 NEXT_PUBLIC_SUPABASE_URL
@@ -41,10 +41,28 @@ npx vercel deploy --target preview
 Point the stable phone-test address at the new deployment after it is Ready:
 
 ```bash
-npx vercel alias set DEPLOYMENT_URL road-preview-freyrs-projects-fad4047a.vercel.app
+npx vercel alias set DEPLOYMENT_URL vegstod.vercel.app
 ```
 
-Do not use `--prod` until the external phone workflow and the production checklist have been approved. The Vercel account does not currently have access to connect the private GitHub repository, so deployments use the authenticated CLI. Git itself can still push to `git@github.com:HelgasonF/road.git` over SSH.
+Do not use `--prod` until the external phone workflow and the production checklist have been approved. Production variables are prepared, but there is no active production deployment.
+
+## Connect Vercel to the private GitHub repository
+
+The Git remote works over SSH, but Vercel currently returns `Failed to connect HelgasonF/road` because its GitHub App cannot see the private repository. Fix the account permission once in GitHub:
+
+1. Open [GitHub installed applications](https://github.com/settings/installations).
+2. Select **Configure** beside the Vercel application. If Vercel is not installed, install the [Vercel GitHub App](https://github.com/apps/vercel/installations/new) for the `HelgasonF` account.
+3. Under **Repository access**, select **All repositories** or add the private `road` repository under **Only select repositories**, then save.
+4. Confirm the GitHub account is present in [Vercel Login Connections](https://vercel.com/account/settings/authentication).
+5. From this repository, connect the existing Vercel project:
+
+   ```bash
+   npx vercel git connect --yes
+   ```
+
+6. Check Vercel project **Settings → Git** and confirm `HelgasonF/road` is the connected repository. Future branch pushes will create previews; pushes to the configured production branch can create production deployments, so do not push to that branch until the release is approved.
+
+Vercel's [GitHub repository guide](https://vercel.com/docs/git/vercel-for-github#missing-git-repository) confirms that a personal private repository requires owner access and that the installed GitHub App must have access to the repository.
 
 ## Supabase configuration
 
@@ -56,7 +74,7 @@ npx supabase db push --dry-run
 npx supabase db push
 ```
 
-The hosted Auth Site URL is the stable preview address. Its allowed redirect URLs also include that address plus local `127.0.0.1:3000` and `localhost:3000` development URLs. Email confirmation remains enabled, TOTP remains enabled, and public users do not receive database function execution privileges.
+The hosted Auth Site URL is `https://vegstod.vercel.app`. Its allowed redirect URLs also include that address plus local `127.0.0.1:3000` and `localhost:3000` development URLs. Email confirmation and TOTP remain enabled. Public self-signup is disabled, passwords require at least 10 characters with letters and digits, and public users do not receive database function execution privileges. Hosted PostgreSQL rejects non-SSL external connections.
 
 The repository includes branded invitation and recovery templates in `supabase/templates/`, but the Supabase Free plan's built-in mail provider does not allow custom templates. Configure a custom SMTP provider before applying those templates or sending real driver invitations. Until then, password login works, but hosted invitation/recovery email is not ready for operations.
 
