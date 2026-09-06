@@ -9,12 +9,12 @@ const driverStatusActions: Partial<Record<JobStatus, DriverStatusAction[]>> = {
   accepted: [{ status: "en_route", label: "Leggja af stað" }],
   en_route: [{ status: "on_scene", label: "Kominn á staðinn" }],
   on_scene: [
-    { status: "in_progress", label: "Hefja vinnu" },
     { status: "completed", label: "Ljúka verkefni" },
+    { status: "in_progress", label: "Skrá vinnu í gangi" },
   ],
   in_progress: [
-    { status: "transporting", label: "Hefja flutning" },
     { status: "completed", label: "Ljúka verkefni" },
+    { status: "transporting", label: "Skrá flutning" },
   ],
   transporting: [{ status: "completed", label: "Ljúka verkefni" }],
 };

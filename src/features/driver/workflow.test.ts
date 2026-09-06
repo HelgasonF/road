@@ -12,14 +12,14 @@ describe("driver workflow", () => {
     ]);
   });
 
-  it("allows roadside work to finish without a towing step", () => {
+  it("makes completion primary while retaining optional work and transport tracking", () => {
     expect(getDriverStatusActions("on_scene")).toEqual([
-      { status: "in_progress", label: "Hefja vinnu" },
       { status: "completed", label: "Ljúka verkefni" },
+      { status: "in_progress", label: "Skrá vinnu í gangi" },
     ]);
     expect(getDriverStatusActions("in_progress")).toEqual([
-      { status: "transporting", label: "Hefja flutning" },
       { status: "completed", label: "Ljúka verkefni" },
+      { status: "transporting", label: "Skrá flutning" },
     ]);
   });
 

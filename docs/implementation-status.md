@@ -140,7 +140,20 @@ A Samsung SM-G990B2 running Android 14 and Chrome 149 completed the real local w
 6. The job was assigned from the phone to a temporary driver login. The driver signed in, accepted it, saw the exact customer pin and navigation action, customer contact details, vehicle and incident notes, and the authorized private photo, then advanced the job to `en_route`.
 7. The synthetic job, photo object, phone file, temporary accounts, assignment, links, and audit events were removed afterward. Verification confirmed no temporary records or storage object remained and the existing operator was unlinked from the temporary login.
 
-This proves the complete local Android behavior on physical hardware. The application and Supabase services are now externally reachable over HTTPS, but the public preview still needs a physical-phone pass without USB forwarding.
+This proves the complete local Android behavior on physical hardware. A later pass also completed the real public HTTPS and installed-WhatsApp workflow described below.
+
+## Public HTTPS physical-phone verification
+
+A physical phone with WhatsApp installed completed the live Preview workflow without USB forwarding:
+
+1. Dispatch created the secure customer link in Vegstoð, opened its prepared WhatsApp handoff in a linked WhatsApp Web session, and manually pressed Send. WhatsApp showed two blue checks.
+2. The phone opened the public link, used GPS, uploaded a real 2,308,115-byte image through the native picker, and submitted the customer form. Hosted Supabase confirmed the opened/submitted timestamps, `gps` location source, photo metadata, and private Storage object.
+3. Dispatch assigned the job, generated its passwordless driver link from the assignment, opened the prepared WhatsApp message, and manually pressed Send. The staff-only contact event recorded the assignment handoff.
+4. The phone redeemed the one-time link, displayed the private customer image, accepted the assignment, and advanced through every driver status to completion. Supabase recorded all seven transitions and returned the provider to `available`.
+5. The completed job produced 13 staff timeline events and the expected billing handoff in `missing_information`/`awaiting_provider_invoice`.
+6. The detailed status path felt too long in real use. **Ljúka verkefni** is now the primary action at the scene, while work-in-progress and transport tracking remain optional.
+
+The disposable provider, job, Auth user, photo, and billing case remain temporarily available for the owner to inspect from the staff interface. See [`docs/public-phone-audit-2026-09-06.md`](public-phone-audit-2026-09-06.md).
 
 ## Full verification snapshot
 
@@ -158,13 +171,13 @@ The existing browser verification remains valid for the critical dispatcher → 
 
 ## Current readiness boundary
 
-The implemented flows are complete locally, and the complete dispatcher → customer → driver → billing path has passed against an automatic Vercel Preview and the hosted Supabase Free project. The product is still not declared production-ready: a physical phone must repeat the public HTTPS workflow with the passwordless driver link, and the operational launch checklist must be approved. The current link is a preview environment rather than a production release.
+The implemented flows are complete locally, and the complete dispatcher → customer → driver → billing path has passed against the hosted Supabase Free project and public Vercel Preview on a physical phone. The product is still not declared production-ready: the owner must finish inspecting and clean the retained test data, rotate the initial administrator password, and approve the operational launch checklist. The current link is a preview environment rather than a production release.
 
 ## Next slices
 
-1. Repeat the customer → dispatch → driver workflow on a physical phone through the public HTTPS preview, including the native picker and private-photo display, without USB forwarding.
-2. Confirm the WhatsApp and dialer handoffs in their real installed phone applications during that public-phone pass.
-3. Promote a reviewed build to production only after the phone and launch checks pass; upgrade the same Supabase project later when capacity, uptime, backup, or support requirements justify it.
+1. Let the owner inspect the completed phone-audit job from the staff interface, then delete its disposable database, Storage, and Auth records.
+2. Rotate the initial administrator temporary password and remove the linked WhatsApp Web device if it should not remain connected.
+3. Promote a reviewed build to production only after the launch checklist is approved; upgrade the same Supabase project later when capacity, uptime, backup, or support requirements justify it.
 4. Select and integrate Iceland-compatible accounting/invoicing and payment providers only after an accountant confirms the invoice, VAT, refund, credit-note, provider-payment, and reconciliation requirements. Customer payment links will be delivered through the existing WhatsApp handoff.
 
 ## Intended end-to-end workflow

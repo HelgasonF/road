@@ -37,5 +37,6 @@ The earlier complete hosted audit still supplies the customer-photo, complete dr
 
 ## Remaining release checks
 
-- Repeat the public HTTPS customer and driver workflow on a physical phone, including its native camera/photo picker and real WhatsApp or dialer handoff.
 - Approve the operational launch checklist before merging to `main`, because Vercel treats `main` as the production branch.
+
+The public HTTPS customer and driver workflow later passed on a physical phone with installed WhatsApp, GPS, a native photo upload, private-photo display, and completion through the billing handoff. See [`public-phone-audit-2026-09-06.md`](public-phone-audit-2026-09-06.md).
