@@ -117,7 +117,7 @@ Relevant files include:
 - Supabase Auth Site URL and redirects use the stable preview address while preserving local development redirects.
 - A full hosted staff → customer → private photo → staff smoke pass succeeded with no browser console errors, and all disposable operational records and Storage objects were removed.
 - The real first admin is active and its login was verified. Temporary credentials are stored outside Git at `~/.config/vegstod/first-admin.json` with owner-only permissions and should be rotated after first use.
-- Vercel is not connected to the private GitHub repository because its GitHub App cannot currently see `HelgasonF/road`; the exact permission fix is documented in [`docs/deployment.md`](deployment.md). Preview deploys currently use the authenticated CLI even though Git push works over SSH.
+- Vercel is connected to the private GitHub repository `HelgasonF/road`. Feature-branch pushes create previews; `main` is the production branch and must not receive another merge until the release is approved.
 - Hosted Supabase blocks public self-signup, requires 10-character letter-and-number passwords, and enforces SSL for external PostgreSQL connections.
 - Custom SMTP is still required before using branded hosted invitation/recovery templates. Full commands and operational boundaries are in [`docs/deployment.md`](deployment.md).
 

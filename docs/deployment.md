@@ -46,23 +46,18 @@ npx vercel alias set DEPLOYMENT_URL vegstod.vercel.app
 
 Do not use `--prod` until the external phone workflow and the production checklist have been approved. Production variables are prepared, but there is no active production deployment.
 
-## Connect Vercel to the private GitHub repository
+## GitHub automatic deployments
 
-The Git remote works over SSH, but Vercel currently returns `Failed to connect HelgasonF/road` because its GitHub App cannot see the private repository. Fix the account permission once in GitHub:
+Vercel is connected to the private GitHub repository `HelgasonF/road`. The production branch is `main`. Use feature branches for work that should remain in Preview:
 
-1. Open [GitHub installed applications](https://github.com/settings/installations).
-2. Select **Configure** beside the Vercel application. If Vercel is not installed, install the [Vercel GitHub App](https://github.com/apps/vercel/installations/new) for the `HelgasonF` account.
-3. Under **Repository access**, select **All repositories** or add the private `road` repository under **Only select repositories**, then save.
-4. Confirm the GitHub account is present in [Vercel Login Connections](https://vercel.com/account/settings/authentication).
-5. From this repository, connect the existing Vercel project:
+```bash
+git switch -c feature/short-description
+git push -u origin feature/short-description
+```
 
-   ```bash
-   npx vercel git connect --yes
-   ```
+Each pushed feature branch receives an automatic Vercel Preview deployment. A push or merge to `main` creates a Production deployment, so merge only after the public-phone and launch checklists pass.
 
-6. Check Vercel project **Settings → Git** and confirm `HelgasonF/road` is the connected repository. Future branch pushes will create previews; pushes to the configured production branch can create production deployments, so do not push to that branch until the release is approved.
-
-Vercel's [GitHub repository guide](https://vercel.com/docs/git/vercel-for-github#missing-git-repository) confirms that a personal private repository requires owner access and that the installed GitHub App must have access to the repository.
+If Vercel loses repository access, open [GitHub installed applications](https://github.com/settings/installations), configure the Vercel application, and confirm that its repository access includes `road`. Also confirm GitHub appears in [Vercel Login Connections](https://vercel.com/account/settings/authentication), then reconnect with `npx vercel git connect --yes`. Vercel documents these permissions in its [GitHub repository guide](https://vercel.com/docs/git/vercel-for-github#missing-git-repository).
 
 ## Supabase configuration
 
