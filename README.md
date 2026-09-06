@@ -16,7 +16,19 @@ npm run dev
 
 Copy the local Supabase URL and publishable key into `.env.local` using the variable names in `.env.example`. When that URL points to localhost, `npm run dev` resolves the local server-only `SECRET_KEY` from `supabase status` for the child process without printing or storing it. Never prefix a secret key with `NEXT_PUBLIC_`.
 
-The map uses MapLibre with OpenStreetMap tiles and needs no token. Address search runs entirely in PostgreSQL: `npm run addresses:import` streams the official [HMS Staðfangaskrá](https://hms.is/gogn-og-maelabord/grunngogntilnidurhals/stadfangaskra) and a small Icelandic place-name subset from OpenStreetMap into the local database. The source downloads are not committed to Git. Run the import after the first database reset and then weekly to follow the HMS update schedule.
+The map uses MapLibre with OpenStreetMap tiles and needs no token. Address search and map-pin reverse lookup run entirely in PostgreSQL: `npm run addresses:import` streams the official [HMS Staðfangaskrá](https://hms.is/gogn-og-maelabord/grunngogntilnidurhals/stadfangaskra) and a small Icelandic place-name subset from OpenStreetMap into the local database. A pin near a registered house receives the nearest precise HMS address while retaining its exact clicked coordinates; other pins remain valid with a coordinate label. The source downloads are not committed to Git. Run the import after the first database reset and then weekly to follow the HMS update schedule.
+
+### Android USB testing
+
+An authorized Android development phone can reach both the local app and local Supabase through ADB without publishing either service:
+
+```bash
+adb devices -l
+adb reverse tcp:3000 tcp:3000
+adb reverse tcp:54321 tcp:54321
+```
+
+Open `http://127.0.0.1:3000` in Chrome on the phone. `next.config.ts` allows that loopback development origin so Next.js client chunks and hot reload load normally. This is only a local USB test path; customer links still require a real HTTPS deployment where both the app and Supabase API/Storage are reachable.
 
 For a hosted Supabase database, set `DATABASE_URL` to its direct PostgreSQL connection string before running the importer. For a busier production deployment, set `NEXT_PUBLIC_MAP_TILE_URL` and `NEXT_PUBLIC_MAP_TILE_ATTRIBUTION` to a self-hosted or contracted OSM-compatible tile service; the default public OSM tiles are appropriate for local testing and modest interactive use, but do not provide a production SLA.
 
@@ -43,7 +55,7 @@ Customer intake is managed from the selected job:
 
 1. Create the job with at least the caller and initial incident location.
 2. Open **Öruggur viðskiptavinatengill** and generate the 24-hour link. Generating another link revokes the previous one.
-3. Send the returned URL to the customer. The raw token is shown only at creation time and only its SHA-256 hash is stored.
+3. Press **Senda í WhatsApp**. Vegstoð opens the customer's registered WhatsApp chat with clear English instructions and the secure URL; the dispatcher reviews the draft and presses Send. The raw token is available only at creation time and only its SHA-256 hash is stored.
 4. The customer uses the bilingual, account-free form to confirm GPS/map location, vehicle details, the problem, and up to six 10 MiB photos.
 5. Submission is one-time. Dispatch sees the information immediately, and private photos become visible to the assigned driver only after assignment.
 
@@ -61,7 +73,7 @@ The current billing slice is a validated ledger and workflow, not a payment proc
 
 Local customer photos are stored in the private `job-photos` Supabase Storage bucket. Uploads use short-lived signed upload tokens; reads pass through an application authorization route before receiving a five-minute signed object URL. Do not make this bucket public in hosted Supabase.
 
-Local invitation and recovery emails appear in Mailpit at `http://127.0.0.1:54324`. Hosted Supabase must set the project Site URL to the deployed Vegstoð URL and use the repository templates in `supabase/templates/` for the **Invite user** and **Reset password** email templates. `SUPABASE_SECRET_KEY` must contain a server-only `sb_secret_...` key in hosting; it is used for verified staff Auth administration and token-validated private customer-intake/storage operations, and must never reach browser code.
+Local invitation and recovery emails appear in Mailpit at `http://127.0.0.1:54324`. The hosted Free-plan Supabase project and public Vercel preview are configured as described in [docs/deployment.md](docs/deployment.md). Configure custom SMTP before applying the repository templates in `supabase/templates/` or sending real hosted driver invitations. `SUPABASE_SECRET_KEY` must contain a server-only `sb_secret_...` key in hosting; it is used for verified staff Auth administration and token-validated private customer-intake/storage operations, and must never reach browser code.
 
 For a UI-only preview without Docker or credentials, run:
 
@@ -80,6 +92,6 @@ npm test
 npm run build
 ```
 
-See [docs/architecture.md](docs/architecture.md) for the repository boundaries and data-model decisions. The original product handoff is preserved in [iceland_roadside_assistance_codex_handoff.md](iceland_roadside_assistance_codex_handoff.md).
+After computer maintenance, resume with the [maintenance handoff](docs/maintenance-handoff.md). Hosted preview and Supabase operations are covered by the [deployment runbook](docs/deployment.md). See the presentation-ready [Vegstoð system flowchart](docs/vegstod-system-flowchart.md) for the complete customer → WhatsApp → dispatcher → driver → billing journey. [docs/architecture.md](docs/architecture.md) describes the repository boundaries and data-model decisions. The original product handoff is preserved in [iceland_roadside_assistance_codex_handoff.md](iceland_roadside_assistance_codex_handoff.md).
 
 The current product decisions, completed work, and next build slices are tracked in [docs/implementation-status.md](docs/implementation-status.md).

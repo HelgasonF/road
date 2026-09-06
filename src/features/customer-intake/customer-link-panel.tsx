@@ -1,30 +1,32 @@
 "use client";
 
-import { Check, Copy, Link2, LockKeyhole, RefreshCw, Unlink } from "lucide-react";
+import { Check, Link2, LockKeyhole, MessageCircle, RefreshCw, Unlink } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import { buildWhatsAppHref } from "@/lib/contact-links";
 import {
   createCustomerIntakeLinkAction,
   revokeCustomerIntakeLinkAction,
 } from "./actions";
+import { buildCustomerIntakeWhatsAppMessage } from "./customer-contact";
 import type { CustomerIntakeLinkSummary } from "./queries";
 
 interface CustomerLinkPanelProps {
+  customerName: string;
+  customerPhone: string;
   jobId: string;
   link: CustomerIntakeLinkSummary | null;
 }
 
-export function CustomerLinkPanel({ jobId, link }: CustomerLinkPanelProps) {
+export function CustomerLinkPanel({ customerName, customerPhone, jobId, link }: CustomerLinkPanelProps) {
   const router = useRouter();
   const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   function createLink() {
     setError(null);
-    setCopied(false);
     startTransition(async () => {
       const result = await createCustomerIntakeLinkAction({ jobId });
       if (!result.ok || !result.data) {
@@ -50,18 +52,14 @@ export function CustomerLinkPanel({ jobId, link }: CustomerLinkPanelProps) {
     });
   }
 
-  async function copyLink() {
-    if (!generatedUrl) return;
-    try {
-      await navigator.clipboard.writeText(generatedUrl);
-      setCopied(true);
-    } catch {
-      setError("Ekki tókst að afrita tengilinn. Veldu hann og afritaðu handvirkt.");
-    }
-  }
-
   const active = link?.status === "active";
   const submitted = link?.status === "submitted";
+  const customerWhatsAppHref = generatedUrl
+    ? buildWhatsAppHref(
+      customerPhone,
+      buildCustomerIntakeWhatsAppMessage(customerName, generatedUrl),
+    )
+    : null;
 
   return (
     <section className="detail-section customer-link-panel">
@@ -72,11 +70,23 @@ export function CustomerLinkPanel({ jobId, link }: CustomerLinkPanelProps) {
       {link && !active && !submitted ? <p className="customer-link-status">Tengill er útrunninn eða hefur verið afturkallaður.</p> : null}
 
       {generatedUrl ? (
-        <div className="customer-generated-link">
-          <input aria-label="Viðskiptavinatengill" value={generatedUrl} readOnly onFocus={(event) => event.currentTarget.select()} />
-          <button className="secondary-button" type="button" onClick={copyLink}>{copied ? <Check size={15} /> : <Copy size={15} />}{copied ? "Afritað" : "Afrita"}</button>
-        </div>
-      ) : active ? <p className="muted-copy">Vegna öryggis er hrái tengillinn aðeins sýndur þegar hann er búinn til. Búðu til nýjan ef afrita þarf hann aftur.</p> : null}
+        customerWhatsAppHref ? (
+          <div className="customer-whatsapp-handoff">
+            <p>Tengillinn er tilbúinn. WhatsApp opnast með leiðbeiningum á ensku; þú ferð yfir þær og ýtir á Senda.</p>
+            <a
+              aria-label={`Senda öruggan tengil til ${customerName} í WhatsApp`}
+              className="customer-whatsapp-send"
+              href={customerWhatsAppHref}
+              rel="noreferrer"
+              target="_blank"
+            >
+              <MessageCircle size={16} /> Senda í WhatsApp
+            </a>
+          </div>
+        ) : (
+          <p className="compact-error" role="alert">Ekki er hægt að opna WhatsApp fyrir skráða símanúmerið. Leiðréttu símanúmer viðskiptavinar og búðu til nýjan tengil.</p>
+        )
+      ) : active ? <p className="muted-copy">Vegna öryggis er hrái tengillinn aðeins tiltækur þegar hann er búinn til. Búðu til nýjan til að senda aftur í WhatsApp.</p> : null}
 
       <div className="customer-link-actions">
         <button className="secondary-button" type="button" disabled={pending} onClick={createLink}>{active || submitted ? <RefreshCw size={15} /> : <Link2 size={15} />}{pending ? "Vinn…" : active ? "Nýr tengill" : submitted ? "Óska eftir leiðréttingu" : "Búa til tengil"}</button>

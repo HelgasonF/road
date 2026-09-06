@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(36);
+select plan(41);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'operators', 'operators table exists');
@@ -179,6 +179,16 @@ select ok(
 );
 
 select ok(
+  to_regprocedure('public.reverse_geocode_iceland_address(double precision,double precision,double precision)') is not null,
+  'local Iceland reverse-geocoding RPC exists'
+);
+
+select ok(
+  to_regclass('public.iceland_addresses_location_gix') is not null,
+  'Iceland address coordinates have a spatial lookup index'
+);
+
+select ok(
   has_function_privilege(
     'authenticated',
     'public.normalize_icelandic_search(text)',
@@ -197,6 +207,16 @@ select is(
   'anonymous roles cannot execute address search'
 );
 
+select is(
+  (select count(*)
+   from information_schema.routine_privileges
+   where specific_schema = 'public'
+     and routine_name = 'reverse_geocode_iceland_address'
+     and grantee in ('PUBLIC', 'anon')),
+  0::bigint,
+  'anonymous roles cannot execute reverse geocoding'
+);
+
 insert into public.iceland_addresses (
   source_id, address_label, street_name, house_number, postal_code,
   municipality_code, latitude, longitude, search_text, source_updated_at
@@ -209,6 +229,29 @@ select is(
   (select label from public.search_iceland_addresses('Baejarlind 8', 5) limit 1),
   'Bæjarlind 8, 201',
   'address search handles partial accent-free Icelandic input'
+);
+
+select is(
+  (select label
+   from public.reverse_geocode_iceland_address(
+     64.09987002::double precision,
+     -21.87914013::double precision,
+     250::double precision
+   )
+   limit 1),
+  'Bæjarlind 8, 201',
+  'a pin on a registered house resolves to its precise HMS address'
+);
+
+select is(
+  (select count(*)
+   from public.reverse_geocode_iceland_address(
+     64.11::double precision,
+     -21.95::double precision,
+     25::double precision
+   )),
+  0::bigint,
+  'reverse geocoding does not attach a distant house address to a pin'
 );
 
 insert into public.iceland_places (

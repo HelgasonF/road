@@ -132,7 +132,14 @@ export function JobDetail({ customerLink, demoMode, job, matches, operators, onC
         {isClosed ? <Link className="job-billing-link" href={`/billing?job=${job.id}`}><ReceiptText size={17} /> Opna uppgjör verkefnis</Link> : null}
       </div>
 
-      {!demoMode && !isClosed ? <CustomerLinkPanel jobId={job.id} link={customerLink} /> : null}
+      {!demoMode && !isClosed ? (
+        <CustomerLinkPanel
+          customerName={job.customerName}
+          customerPhone={job.customerPhone}
+          jobId={job.id}
+          link={customerLink}
+        />
+      ) : null}
 
       <section className="detail-section">
         <h3>{is.jobLocation}</h3>

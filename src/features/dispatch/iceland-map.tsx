@@ -9,6 +9,49 @@ import { availabilityLabels, jobStatusLabels } from "@/lib/i18n/is";
 import { createOperatorCoverageGeoJson, getCoverageDiameterPixels } from "./operator-coverage";
 
 const MAX_COVERAGE_DIAMETER_PX = 6000;
+const MARKER_SEPARATION_PX = 38;
+const COINCIDENT_MARKER_OFFSET_PX = 27;
+
+function getJobMarkerOffset(
+  jobPoint: { x: number; y: number },
+  operatorPoints: Array<{ x: number; y: number }>,
+): [number, number] {
+  let nearestDelta: { x: number; y: number; distance: number } | null = null;
+
+  for (const operatorPoint of operatorPoints) {
+    const x = jobPoint.x - operatorPoint.x;
+    const y = jobPoint.y - operatorPoint.y;
+    const distance = Math.hypot(x, y);
+    if (!nearestDelta || distance < nearestDelta.distance) nearestDelta = { x, y, distance };
+  }
+
+  if (!nearestDelta || nearestDelta.distance >= MARKER_SEPARATION_PX) return [0, 0];
+  if (nearestDelta.distance < 1) return [COINCIDENT_MARKER_OFFSET_PX, -COINCIDENT_MARKER_OFFSET_PX];
+
+  const pushDistance = MARKER_SEPARATION_PX - nearestDelta.distance;
+  return [
+    (nearestDelta.x / nearestDelta.distance) * pushDistance,
+    (nearestDelta.y / nearestDelta.distance) * pushDistance,
+  ];
+}
+
+function separateOverlappingJobMarkers(
+  map: maplibregl.Map,
+  markers: Map<string, maplibregl.Marker>,
+  jobs: Job[],
+  operators: Operator[],
+) {
+  const operatorPoints = operators.map((operator) => map.project([
+    operator.currentLongitude ?? operator.baseLongitude,
+    operator.currentLatitude ?? operator.baseLatitude,
+  ]));
+
+  jobs.forEach((job) => {
+    const marker = markers.get(job.id);
+    if (!marker) return;
+    marker.setOffset(getJobMarkerOffset(map.project([job.longitude, job.latitude]), operatorPoints));
+  });
+}
 
 function resizeOperatorCoverageMarkers(
   map: maplibregl.Map,
@@ -86,9 +129,11 @@ export function IcelandMap({
   const selectOperatorRef = useRef(onSelectOperator);
   const selectJobRef = useRef(onSelectJob);
   const coverageStateRef = useRef({ operators, selectedOperatorId });
+  const markerStateRef = useRef({ jobs, operators });
 
   useEffect(() => { selectOperatorRef.current = onSelectOperator; }, [onSelectOperator]);
   useEffect(() => { selectJobRef.current = onSelectJob; }, [onSelectJob]);
+  useEffect(() => { markerStateRef.current = { jobs, operators }; }, [jobs, operators]);
   useEffect(() => {
     coverageStateRef.current = { operators, selectedOperatorId };
     const map = mapRef.current;
@@ -111,8 +156,12 @@ export function IcelandMap({
     });
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
     map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-left");
-    const resizeCoverage = () => resizeOperatorCoverageMarkers(map, coverageMarkers);
-    map.on("zoom", resizeCoverage);
+    const refreshMapOverlays = () => {
+      resizeOperatorCoverageMarkers(map, coverageMarkers);
+      const state = markerStateRef.current;
+      separateOverlappingJobMarkers(map, jobMarkers, state.jobs, state.operators);
+    };
+    map.on("zoom", refreshMapOverlays);
     mapRef.current = map;
     {
       const state = coverageStateRef.current;
@@ -120,7 +169,7 @@ export function IcelandMap({
     }
 
     return () => {
-      map.off("zoom", resizeCoverage);
+      map.off("zoom", refreshMapOverlays);
       coverageMarkers.forEach((marker) => marker.remove());
       operatorMarkers.forEach((marker) => marker.remove());
       jobMarkers.forEach((marker) => marker.remove());
@@ -146,7 +195,7 @@ export function IcelandMap({
       element.title = `${operator.name} — ${availabilityLabels[operator.availabilityStatus]}`;
       element.setAttribute("aria-label", element.title);
       const initial = document.createElement("span");
-      initial.textContent = operator.name.charAt(0);
+      initial.textContent = "D";
       element.append(initial);
       element.addEventListener("click", () => selectOperatorRef.current(operator.id));
 
@@ -155,6 +204,8 @@ export function IcelandMap({
         .addTo(map);
       operatorMarkersRef.current.set(operator.id, marker);
     });
+    const state = markerStateRef.current;
+    separateOverlappingJobMarkers(map, jobMarkersRef.current, state.jobs, state.operators);
   }, [operators]);
 
   useEffect(() => {
@@ -180,6 +231,8 @@ export function IcelandMap({
         .addTo(map);
       jobMarkersRef.current.set(job.id, marker);
     });
+    const state = markerStateRef.current;
+    separateOverlappingJobMarkers(map, jobMarkersRef.current, state.jobs, state.operators);
   }, [jobs]);
 
   useEffect(() => {

@@ -349,6 +349,7 @@ export type Database = {
           special_name: string | null;
           latitude: number;
           longitude: number;
+          location: unknown;
           search_text: string;
           search_key: string;
           source_updated_at: string | null;
@@ -556,6 +557,20 @@ export type Database = {
           label: string;
           latitude: number;
           longitude: number;
+        }>;
+      };
+      reverse_geocode_iceland_address: {
+        Args: {
+          p_latitude: number;
+          p_longitude: number;
+          p_max_distance_meters?: number;
+        };
+        Returns: Array<{
+          id: string;
+          label: string;
+          latitude: number;
+          longitude: number;
+          distance_meters: number;
         }>;
       };
     };

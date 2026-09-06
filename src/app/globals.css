@@ -593,7 +593,7 @@ a:focus-visible {
 .job-map-marker span { font-size: 10px; font-weight: 800; }
 .job-map-marker.job-priority-high { background: #d98219; }
 .job-map-marker.job-priority-urgent { background: #c64545; }
-.job-map-marker-selected { box-shadow: 0 0 0 3px var(--pine), 0 0 0 6px white, 0 8px 18px rgba(18, 47, 68, 0.4); z-index: 7; }
+.job-map-marker-selected { filter: brightness(0.9) saturate(1.15); z-index: 7; }
 .job-legend-dot { background: #173f5f; border-radius: 3px; height: 8px; width: 8px; }
 .coverage-legend-ring { background: rgba(47, 158, 119, 0.16); border: 1.5px solid #1e7358; border-radius: 50%; height: 10px; width: 10px; }
 
@@ -1408,8 +1408,11 @@ button.driver-job-contact { cursor: pointer; }
 .customer-link-status { align-items: center; background: #edf1ef; border-radius: 8px; color: var(--muted); display: flex; font-size: 9px; font-weight: 700; gap: 7px; margin: 11px 0 0; padding: 9px 10px; }
 .customer-link-status.status-active { background: #e8f4ee; color: #087d50; }
 .customer-link-status.status-submitted { background: #e4f4ec; color: #087d50; }
-.customer-generated-link { display: grid; gap: 7px; grid-template-columns: minmax(0, 1fr) auto; margin-top: 10px; }
-.customer-generated-link input { background: white; border: 1px solid var(--line); border-radius: 8px; font-size: 9px; min-width: 0; padding: 9px 10px; }
+.customer-whatsapp-handoff { background: white; border: 1px solid #cfe3d8; border-radius: 9px; display: flex; flex-direction: column; gap: 9px; margin-top: 10px; padding: 10px; }
+.customer-whatsapp-handoff p { color: var(--muted); font-size: 8px; line-height: 1.5; margin: 0; }
+.customer-whatsapp-send { align-items: center; background: #e4f5eb; border: 1px solid #b8dbc7; border-radius: 8px; color: #087543; display: inline-flex; font-size: 9px; font-weight: 750; gap: 6px; justify-content: center; min-height: 34px; padding: 8px 11px; text-decoration: none; }
+.customer-whatsapp-send:hover { border-color: #70b98f; }
+.customer-whatsapp-send:focus-visible { outline: 2px solid var(--pine); outline-offset: 2px; }
 .customer-link-actions { display: flex; gap: 8px; margin-top: 10px; }
 .customer-link-actions button { flex: 1; justify-content: center; }
 .text-danger-button { align-items: center; background: transparent; border: 0; color: #b33f3f; display: inline-flex; font-size: 9px; font-weight: 700; gap: 6px; padding: 8px; }

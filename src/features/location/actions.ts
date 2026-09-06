@@ -5,9 +5,14 @@ import { z } from "zod";
 import { getVerifiedStaffSession } from "@/lib/auth/session";
 import type { ActionResult, LocationSuggestion } from "@/lib/domain/types";
 import { createClient } from "@/lib/supabase/server";
-import { toLocationSuggestion } from "./hms";
+import { toLocationSuggestion, toMapPinAddress, type MapPinAddress } from "./hms";
 
 const querySchema = z.string().trim().min(2).max(256);
+const mapPinSchema = z.object({
+  latitude: z.number().finite().min(62).max(68),
+  longitude: z.number().finite().min(-26).max(-12),
+});
+const MAX_ADDRESS_DISTANCE_METERS = 250;
 
 export async function searchIcelandLocationsAction(
   input: unknown,
@@ -42,5 +47,35 @@ export async function searchIcelandLocationsAction(
     return { ok: true, data: suggestions };
   } catch {
     return { ok: false, error: "Ekki náðist samband við íslensku staðfangaskrána. Reyndu aftur." };
+  }
+}
+
+export async function findNearestIcelandAddressAction(
+  input: unknown,
+): Promise<ActionResult<MapPinAddress | null>> {
+  if (!(await getVerifiedStaffSession())) {
+    return { ok: false, error: "Innskráning rann út. Skráðu þig inn aftur." };
+  }
+
+  const parsed = mapPinSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Pinninn er utan Íslands." };
+
+  try {
+    const client = await createClient();
+    const { data, error } = await client.rpc("reverse_geocode_iceland_address", {
+      p_latitude: parsed.data.latitude,
+      p_longitude: parsed.data.longitude,
+      p_max_distance_meters: MAX_ADDRESS_DISTANCE_METERS,
+    });
+
+    if (error) {
+      console.error("HMS reverse geocoding failed", error);
+      return { ok: false, error: "Ekki tókst að finna heimilisfang fyrir pinnann." };
+    }
+
+    const address = data?.[0] ? toMapPinAddress(data[0]) : null;
+    return { ok: true, data: address };
+  } catch {
+    return { ok: false, error: "Ekki náðist samband við íslensku staðfangaskrána." };
   }
 }

@@ -1,0 +1,101 @@
+digraph vegstod_system {
+  graph [
+    rankdir=TB,
+    bgcolor="#F7F5EF",
+    pad="0.28",
+    nodesep="0.34",
+    ranksep="0.62",
+    splines=spline,
+    outputorder=edgesfirst,
+    fontname="DejaVu Sans",
+    label="VEGSTOÐ — FRÁ FYRSTU BEIÐNI TIL FULLS UPPGJÖRS\nWhatsApp flytur skilaboð og örugga tengla • öll gögn og allar myndir dvelja í Vegstoð",
+    labelloc=t,
+    fontsize=21,
+    fontcolor="#18352F"
+  ];
+
+  node [
+    shape=box,
+    style="rounded,filled",
+    width=2.35,
+    height=0.72,
+    margin="0.13,0.09",
+    fontname="DejaVu Sans",
+    fontsize=9.4,
+    color="#AAB7B3",
+    fillcolor="#FFFFFF",
+    fontcolor="#18352F",
+    penwidth=1.35
+  ];
+
+  edge [
+    fontname="DejaVu Sans",
+    fontsize=8.2,
+    color="#657772",
+    fontcolor="#51645F",
+    arrowsize=0.72,
+    penwidth=1.4
+  ];
+
+  customer_contact [label="1 · VIÐSKIPTAVINUR\nHringir eða sendir WhatsApp\ntil Vegstoðar", fillcolor="#EEF5FF", color="#6B95C9"];
+  create_job [label="2 · VEGSTOÐ / MÓTTAKA\nBýr til verkefni með síma\nog upphafsstað", fillcolor="#ECF4F1", color="#4F8B7B"];
+  create_link [label="3 · VEGSTOÐ / MÓTTAKA\nBýr til öruggan 24 klst.\nviðskiptavinatengil", fillcolor="#ECF4F1", color="#4F8B7B"];
+  wa_customer [label="4 · WHATSAPP\nSenda í WhatsApp opnar skráð númer\nmeð enskum texta + tengli", fillcolor="#E8F7EE", color="#25A85E", fontcolor="#087543"];
+  customer_form [label="5 · VIÐSKIPTAVINUR\nOpnar tengilinn\nEngin innskráning", fillcolor="#EEF5FF", color="#6B95C9"];
+
+  customer_submit [label="6 · VIÐSKIPTAVINUR\nStaðfestir GPS/kortapinna\n+ bíl + vandamál + myndir", fillcolor="#EEF5FF", color="#6B95C9"];
+  private_data [label="7 · VEGSTOÐ-KERFIÐ\nVerkefnið uppfærist strax\nMyndir fara í einkageymslu", fillcolor="#ECF4F1", color="#4F8B7B"];
+  matching [label="8 · VEGSTOÐ / MÓTTAKA\nRaðar hentugum ökumönnum\nGeta • framboð • fjarlægð • svæði", fillcolor="#ECF4F1", color="#4F8B7B"];
+  wa_availability [label="9 · WHATSAPP\nPersónuvernduð fyrirspurn:\nErtu laus í verkefni?", fillcolor="#E8F7EE", color="#25A85E", fontcolor="#087543"];
+  available [label="10 · ÖKUMAÐUR\nLaus?", shape=diamond, width=1.55, height=0.85, style="filled", fillcolor="#FFF2C9", color="#C5A34C"];
+
+  assign [label="11 · VEGSTOÐ / MÓTTAKA\nVelur og úthlutar\nökumanni + ökutæki", fillcolor="#ECF4F1", color="#4F8B7B"];
+  wa_assignment [label="12 · WHATSAPP\nStaðfesting úthlutunar\n+ Vegstoð-innskráningartengill", fillcolor="#E8F7EE", color="#25A85E", fontcolor="#087543"];
+  driver_login [label="13 · ÖKUMAÐUR\nOpnar tengil og skráir sig\ninn í Vegstoð", fillcolor="#FFF8E8", color="#C5A34C"];
+  driver_view [label="14 · ÖKUMANNSSKJÁR VEGSTOÐAR\nViðskiptavinur • sími • kortapinni\nleiðsögn • bílgögn • myndir", fillcolor="#FFF8E8", color="#C5A34C"];
+  driver_accept [label="15 · ÖKUMAÐUR\nSamþykkir?", shape=diamond, width=1.65, height=0.9, style="filled", fillcolor="#FFF2C9", color="#C5A34C"];
+
+  driver_work [label="16 · ÖKUMAÐUR\nHefur samband eftir þörfum\nog sinnir verkinu", fillcolor="#FFF8E8", color="#C5A34C"];
+  driver_status [label="17 · ÖKUMANNSSKJÁR VEGSTOÐAR\nSamþykkt → á leið → á staðnum\n→ lokið", fillcolor="#FFF8E8", color="#C5A34C"];
+  monitor [label="18 · VEGSTOÐ / MÓTTAKA\nFylgist með verkefninu og sér\nallan staðfestan feril", fillcolor="#ECF4F1", color="#4F8B7B"];
+  complete [label="19 · VEGSTOÐ\nVerkefni klárað", fillcolor="#DFF0E9", color="#4F8B7B"];
+  billing [label="20 · UPPGJÖR\nVerkefnið fer sjálfkrafa\ní fjárhagslega vinnslu", fillcolor="#F4F0FC", color="#8068AE"];
+
+  payer [label="21A · GREIÐANDI → VEGSTOÐ\nViðskiptavinur • bílaleiga\ntrygging • fyrirtæki", fillcolor="#F4F0FC", color="#8068AE"];
+  provider_invoice [label="21B · ÞJÓNUSTUAÐILI → VEGSTOÐ\nSendir reikning fyrir verkið", fillcolor="#F4F0FC", color="#8068AE"];
+  provider_paid [label="22 · VEGSTOÐ → ÞJÓNUSTUAÐILI\nSamþykkir og greiðir\nþjónustuaðilanum", fillcolor="#F4F0FC", color="#8068AE"];
+  settled [label="23 · FULLUPPGERT\nVegstoð hefur fengið greitt\nog þjónustuaðili hefur fengið greitt", fillcolor="#EAE2F8", color="#6A4F9B", penwidth=1.9];
+
+  { rank=same; customer_contact; create_job; create_link; wa_customer; customer_form; }
+  { rank=same; available; wa_availability; matching; private_data; customer_submit; }
+  { rank=same; assign; wa_assignment; driver_login; driver_view; driver_accept; }
+  { rank=same; billing; complete; monitor; driver_status; driver_work; }
+  { rank=same; payer; provider_invoice; }
+
+  customer_contact -> create_job -> create_link -> wa_customer -> customer_form;
+  customer_form -> customer_submit;
+  available -> wa_availability -> matching -> private_data -> customer_submit [dir=back];
+  available -> assign [label=" JÁ"];
+  available -> matching [label=" NEI — spyrja næsta", style=dashed, color="#B78737", constraint=false];
+  assign -> wa_assignment -> driver_login -> driver_view -> driver_accept;
+  driver_accept -> driver_work [label=" JÁ"];
+  driver_accept -> matching [label=" NEI — endurúthluta", style=dashed, color="#B78737", constraint=false];
+  billing -> complete -> monitor -> driver_status -> driver_work [dir=back];
+  billing -> payer;
+  billing -> provider_invoice;
+  provider_invoice -> provider_paid;
+  payer -> settled [label=" greiðsla móttekin"];
+  provider_paid -> settled [label=" þjónustuaðili greiddur"];
+
+  whatsapp_note [
+    label="WHATSAPP ER AÐEINS SAMSKIPTALEIÐ\n• Móttaka yfirfer texta og ýtir sjálf á Senda\n• Eyðublað, staðsetning og myndir fara inn í Vegstoð\n• Ökumaður sér gögnin í Vegstoð eftir úthlutun\n• Ekkert greitt WhatsApp Business API er nauðsynlegt",
+    shape=note,
+    width=3.65,
+    fillcolor="#FFFFFF",
+    color="#25A85E",
+    fontcolor="#087543",
+    fontsize=8.8
+  ];
+
+  settled -> whatsapp_note [style=invis];
+}

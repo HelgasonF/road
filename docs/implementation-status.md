@@ -1,6 +1,10 @@
 # Vegstoð implementation status
 
-Last updated: 21 August 2026
+Last updated: 6 September 2026
+
+## Maintenance checkpoint
+
+The shutdown/resume state, active repository path, uncommitted work, restart commands, and verification record are captured in [`docs/maintenance-handoff.md`](maintenance-handoff.md). The active repository is `/mnt/ssd4tb/web-apps/Road`; `/mnt/ssd4tb/Road` is not the Git repository. Review `git status --short` before resuming and do not run a database reset during a normal restart.
 
 ## Product decisions
 
@@ -10,7 +14,7 @@ Last updated: 21 August 2026
 - Dispatch remains manual. Matching suggests suitable operators, but a dispatcher makes the assignment.
 - Drivers use a dedicated mobile-first Vegstoð screen for operational job data.
 - Driver availability contact in the MVP is a normal manual WhatsApp message opened from Vegstoð on a phone or computer. The dispatcher reviews and presses Send, so no paid WhatsApp Business Platform/API automation is required. Calling remains the fallback.
-- A customer does not need an account. A 24-hour, job-specific link collects a confirmed location, vehicle details, problem description, and private photos.
+- A customer does not need an account. Dispatch sends a 24-hour, job-specific link directly through a prepared WhatsApp handoff; it collects a confirmed location, vehicle details, problem description, and private photos inside Vegstoð.
 - Every payer pays Vegstoð. Vegstoð is the payer-facing seller in the system and separately settles with the assigned service provider; the provider never invoices the customer through this workflow.
 - Billing stays in a separate staff-only **Uppgjör** workspace so the dispatcher map remains operational. Drivers cannot see payer prices, provider totals, or Vegstoð's gross difference.
 - Each job has a separate staff-only unified timeline. It shows verified system facts and labels external WhatsApp/phone actions only as links or drafts opened, never as a confirmed send or connected call.
@@ -23,7 +27,7 @@ Last updated: 21 August 2026
 - Job creation, editing, manual assignment, reassignment history, and operational statuses.
 - PostGIS distance and service-radius matching with manual dispatcher control.
 - MapLibre map with Iceland-correct markers and service-radius overlays.
-- Local Iceland address search using the official HMS address register plus Icelandic OpenStreetMap place names.
+- Local Iceland address search using the official HMS address register plus Icelandic OpenStreetMap place names, with nearest-address reverse lookup for map pins and a coordinate fallback where no registered address is nearby.
 - Direct call and optional WhatsApp actions for registered phone numbers.
 - Job-specific manual WhatsApp contact beside every suggested driver: a privacy-safe availability request before assignment and an assignment/login message only after assignment to a driver with active access.
 - Real locally created operators and jobs used during testing; demo data is isolated to read-only demo mode.
@@ -32,6 +36,7 @@ Last updated: 21 August 2026
 - Mobile driver screen with availability, accept/decline, customer contact, an embedded incident map and pin, navigation, vehicle details, and controlled job-status progression.
 - Dispatcher-managed driver invitations, password setup and recovery, visible access status, immediate disable, and re-enable without deleting provider data.
 - Dispatcher-created customer intake links with automatic rotation/revocation, a bilingual mobile form, GPS or map-pin confirmation, and one-time submission.
+- Direct customer WhatsApp handoff using the registered phone number, clear English instructions, and the newly generated secure link; no copy-and-paste step is required.
 - Private job-photo upload to Supabase Storage, with access limited to staff, the currently assigned driver, and the active temporary customer link.
 - Separate staff billing workspace with payer queues, provider settlement, invoice/payment states, locked finalized amounts, financial audit history, and deep links to the operational job.
 - Staff-only unified job timeline with category filters, customer-link first-open tracking, audited driver contact attempts, assignment/status history, photo metadata, and billing events.
@@ -63,7 +68,7 @@ The access lifecycle was verified locally in separate dispatcher and driver brow
 The account-free intake and private-photo flow was verified locally in three separate access contexts:
 
 1. Dispatch opened the existing Sophie job and generated a random 24-hour customer link. Only its SHA-256 hash was stored in PostgreSQL.
-2. A separate unauthenticated 390 × 844 customer browser opened the link, confirmed the incident map position, added a problem description, and uploaded a real PNG image through a signed upload URL.
+2. Vegstoð prepares the customer's registered WhatsApp chat with clear English instructions and the one-time secure URL; the dispatcher reviews the draft and presses Send. A separate unauthenticated 390 × 844 customer browser opened the link, confirmed the incident map position, added a problem description, and uploaded a real PNG image through a signed upload URL.
 3. The customer submitted once and received the bilingual completion screen; the same token could no longer update the job or access the temporary photo route.
 4. Dispatch immediately saw the submitted description, intake status, and private thumbnail on Sophie's existing job.
 5. Dispatch reassigned that job to Bjarni. His restricted driver screen showed the updated vehicle data, customer description, incident map, and photo.
@@ -106,29 +111,58 @@ The timeline is connected to the existing operational and financial records with
 6. Drivers cannot read `job_contact_events`, billing events, or the staff timeline route. Direct authenticated inserts into contact history are blocked; only the validated staff RPC can write an event.
 7. Browser verification created and opened a real customer link, opened a real WhatsApp handoff, confirmed both events in the timeline, filtered a settled job to its six billing events, and confirmed driver-role denial. Desktop and 390 × 844 layouts had no application-console errors or horizontal overflow. Temporary link/contact records were removed afterward and the test account was disabled again.
 
+## Hosted preview and Free Supabase verification
+
+The first external environment is now connected without upgrading Supabase:
+
+1. The repository is linked to the healthy Supabase Free project `Road` (`abpmzqtbllszqqetuubp`) in `eu-west-1`; all 19 migrations are applied.
+2. The hosted database contains 139,346 HMS addresses and 2,970 Icelandic place names, uses about 94 MB, and has an explicitly private `job-photos` bucket.
+3. Public/anonymous execution was removed from every application function. Authenticated users cannot invoke trigger-only functions, and customer submission/audit RPCs remain restricted to the server service role. The local pgTAP regression suite and direct hosted catalog assertions verify these boundaries.
+4. Vercel Preview has encrypted publishable and server-only Supabase variables with `DEMO_MODE=false`. The stable public test address is `https://road-preview-freyrs-projects-fad4047a.vercel.app`; no production deployment is active.
+5. Supabase Auth uses that stable address as its Site URL and allows it plus both local development origins as redirects. Email confirmation and TOTP remain enabled.
+6. A disposable hosted admin completed staff login, HMS address search, operator creation, job creation, matching, one-time customer-link generation, customer submission, a real private PNG upload, and staff photo display. The browser reported no application console errors.
+7. The test job, operator, intake link, photo metadata/object, profile, and Auth user were deleted afterward. The real first admin was then created separately and its preview login was verified; the hosted project otherwise retains only application schema and reference location data.
+
+Hosted invitation and recovery email is still pending. The Free plan's built-in mail provider rejects custom email templates, so custom SMTP must be configured before real driver invitations use the branded repository templates. See [`docs/deployment.md`](deployment.md).
+
+## Real Android device verification
+
+A Samsung SM-G990B2 running Android 14 and Chrome 149 completed the real local workflow over USB with ADB reverse forwarding for the Next.js app and Supabase API/Storage:
+
+1. A temporary dispatcher signed in on the phone, created a real local job through HMS address search, and opened the dispatcher, billing, and unified-timeline screens at the device's actual 411 CSS-pixel viewport without horizontal overflow.
+2. Next.js initially blocked phone-loaded development chunks with HTTP 403. The server log identified the loopback origin boundary; `allowedDevOrigins: ["127.0.0.1"]` fixed the client chunks and hot-reload connection on the device.
+3. The temporary customer link opened in a separate phone tab. Android's native photo picker selected a synthetic test PNG, the bilingual form submitted the confirmed map location and vehicle details, and private Storage plus database metadata both contained the completed upload.
+4. Customer and driver call links opened Samsung's dialer with the correct number but no call was placed. This phone did not have WhatsApp installed, so the WhatsApp links opened the official browser fallback with the intended recipient and prepared-message destination.
+5. Opening the driver's WhatsApp availability draft and phone link produced separate audited `whatsapp` and `phone` contact events. The timeline described them only as links/drafts opened and did not claim a sent message or connected call.
+6. The job was assigned from the phone to a temporary driver login. The driver signed in, accepted it, saw the exact customer pin and navigation action, customer contact details, vehicle and incident notes, and the authorized private photo, then advanced the job to `en_route`.
+7. The synthetic job, photo object, phone file, temporary accounts, assignment, links, and audit events were removed afterward. Verification confirmed no temporary records or storage object remained and the existing operator was unlinked from the temporary login.
+
+This proves the complete local Android behavior on physical hardware. The application and Supabase services are now externally reachable over HTTPS, but the public preview still needs a physical-phone pass without USB forwarding.
+
 ## Full verification snapshot
 
-The complete current working tree was rechecked on 21 August 2026:
+The complete current working tree was rechecked on 6 September 2026:
 
 - `npm run build` passed with all application routes, including dispatcher, staff billing, the staff job timeline, customer intake, private photo delivery, authentication confirmation/password setup, and the driver screen.
 - `npm run typecheck` and `npm run lint` passed without errors.
-- `npm test` passed all 120 tests across 20 Vitest files.
-- `npx supabase test db` passed all 165 assertions across six pgTAP files, covering the dispatch schema, driver isolation/access management, customer-link lifecycle and first opening, private-photo authorization, contact-event audit isolation, billing handoff, financial transitions, value locking, audited-only mutation privileges, and driver financial isolation.
+- `npm test` passed all 124 tests across 22 Vitest files, including the English-only direct customer WhatsApp handoff and international-number routing.
+- `npx supabase test db` passed all 176 assertions across seven pgTAP files, covering the dispatch schema, indexed HMS reverse geocoding, driver isolation/access management, customer-link lifecycle and first opening, private-photo authorization, contact-event audit isolation, billing handoff, financial transitions, value locking, audited-only mutation privileges, function execution grants, and driver financial isolation.
 - `npx supabase db lint --local --schema public` reported no application-schema errors. A whole-database lint also reports known analyzer findings inside Supabase's installed PostGIS extension functions; these are vendor extension code rather than Vegstoð migrations.
 - `npm audit --omit=dev` reported zero production dependency vulnerabilities.
 - `git diff --check` passed, and the repository scan found no committed Mapbox token, Supabase secret, placeholder TODO/FIXME, or accidental application debug logging. The importer intentionally prints its completed import summary when run from the terminal.
 
-The existing browser verification remains valid for the critical dispatcher → customer → driver path, including an unauthenticated phone-sized customer session, a real private image upload, one-time link consumption, reassignment, driver-only visibility, and rejection of an anonymous private-photo request. A fresh Playwright smoke pass also confirmed that Bjarni can still sign in, sees only his assigned job with the correct Iceland map pin, customer call/WhatsApp actions, submitted notes and authorized private photo, and is redirected from `/` back to `/driver`. A separate anonymous 390 × 844 session received the safe unavailable state for an invalid customer link, and an anonymous private-photo request still returned HTTP 404. The billing browser pass covered the complete operational-to-financial handoff and independent settlement. The timeline pass covered live customer-link opening, WhatsApp handoff audit, operational/assignment history, billing filtering, driver denial, deterministic Iceland timestamps, and desktop/mobile rendering. The application produced no browser-console errors; headless Chromium emitted only its known WebGL software-rendering performance warnings while drawing MapLibre.
+The existing browser verification remains valid for the critical dispatcher → customer → driver path, including an unauthenticated phone-sized customer session, a real private image upload, one-time link consumption, reassignment, driver-only visibility, and rejection of an anonymous private-photo request. A fresh Playwright pass on 25 August additionally created a disposable customer/job, generated a real secure link, opened the new direct customer WhatsApp handoff, and confirmed WhatsApp received the correct international number, customer name, prepared instructions, and secure URL. No message was sent, and the temporary link, job, profile, and Auth user were removed afterward. A separate smoke pass confirmed that Bjarni can still sign in, sees only his assigned job with the correct Iceland map pin, customer call/WhatsApp actions, submitted notes and authorized private photo, and is redirected from `/` back to `/driver`. A separate anonymous 390 × 844 session received the safe unavailable state for an invalid customer link, and an anonymous private-photo request still returned HTTP 404. The billing browser pass covered the complete operational-to-financial handoff and independent settlement. The timeline pass covered live customer-link opening, WhatsApp handoff audit, operational/assignment history, billing filtering, driver denial, deterministic Iceland timestamps, and desktop/mobile rendering. The physical Android pass additionally covered native photo selection, dialer and WhatsApp browser handoffs, dispatcher assignment, driver acceptance, exact map rendering, authorized photo delivery, and progression to `en_route`. The application produced no application-console errors after the development-origin fix; headless Chromium emitted only its known WebGL software-rendering performance warnings while drawing MapLibre, while the Android map cancelled superseded OpenStreetMap tile requests during normal redraws.
 
 ## Current readiness boundary
 
-The implemented flows are complete and verified locally, but the product is not yet declared production-ready. Customer links currently use the local application origin, and browser uploads use the configured Supabase URL. A real customer phone therefore needs both the Vegstoð app and the Supabase API/Storage endpoint to be securely reachable; exposing only the Next.js page through a tunnel is not enough. No customer should receive a `localhost` link.
+The implemented flows are complete locally and the same staff/customer/private-photo path has passed against the external Vercel Preview and hosted Supabase Free project. The product is still not declared production-ready: a physical phone must repeat the public HTTPS workflow, custom SMTP must be configured and tested for driver invitations/recovery, and the operational launch checklist must be approved. The current link is a preview environment rather than a production release.
 
 ## Next slices
 
-1. Create a secure phone-test environment in which both the app and Supabase API/Storage are reachable, then test the complete dispatcher → customer → driver flow on iPhone and Android.
-2. Connect hosted Supabase and production email only after the real-phone workflow is approved.
-3. Select and integrate Iceland-compatible accounting/invoicing and payment providers only after an accountant confirms the invoice, VAT, refund, credit-note, provider-payment, and reconciliation requirements.
+1. Repeat the customer → dispatch → driver workflow on a physical phone through the public HTTPS preview, including the native picker and private-photo display, without USB forwarding.
+2. Configure custom SMTP on the existing Free Supabase project, then apply and test the branded invitation/recovery templates.
+3. Promote a reviewed build to production only after the phone and launch checks pass; upgrade the same Supabase project later when capacity, uptime, backup, or support requirements justify it.
+4. Select and integrate Iceland-compatible accounting/invoicing and payment providers only after an accountant confirms the invoice, VAT, refund, credit-note, provider-payment, and reconciliation requirements.
 
 ## Intended end-to-end workflow
 
