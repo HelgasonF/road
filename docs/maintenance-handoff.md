@@ -115,7 +115,7 @@ Relevant files include:
 - The private `job-photos` bucket and tightened function execution permissions are verified.
 - Vercel Preview uses encrypted Supabase variables with `DEMO_MODE=false` and the stable address `https://vegstod.vercel.app`. The same encrypted variables are prepared for Production, but no production deployment is active.
 - Supabase Auth Site URL and redirects use the stable preview address while preserving local development redirects.
-- A full hosted staff → customer → private photo → staff smoke pass succeeded with no browser console errors, and all disposable operational records and Storage objects were removed.
+- The automatic Git Preview passed the full hosted dispatcher → customer → driver → billing workflow, including invitation, assignment, every driver status, private-photo access, timeline aggregation, independent settlement, and immediate access revocation. All disposable database, Storage, and Auth records were removed; see [`docs/hosted-audit-2026-09-06.md`](hosted-audit-2026-09-06.md).
 - The real first admin is active and its login was verified. Temporary credentials are stored outside Git at `~/.config/vegstod/first-admin.json` with owner-only permissions and should be rotated after first use.
 - Vercel is connected to the private GitHub repository `HelgasonF/road`. Feature-branch pushes create previews; `main` is the production branch and must not receive another merge until the release is approved.
 - Hosted Supabase blocks public self-signup, requires 10-character letter-and-number passwords, and enforces SSL for external PostgreSQL connections.
@@ -133,7 +133,7 @@ The current application code was fully checked on 6 September 2026:
 - `npx supabase db lint --local --schema public` reported no application-schema errors.
 - `git diff --check` passed.
 
-The hosted desktop smoke test separately passed staff authentication, HMS lookup, job/customer intake, private Storage upload, and staff photo delivery with no browser console errors. All disposable hosted data was removed afterward.
+The hosted Git Preview separately passed the complete operational and financial workflow with no application-console errors. All disposable hosted database, Storage, and Auth data was removed afterward.
 
 ## Readiness boundary and next work
 
