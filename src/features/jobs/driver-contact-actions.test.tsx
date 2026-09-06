@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { recordJobContactAction } from "@/features/job-timeline/actions";
+import { createDriverAccessLinkAction } from "@/features/operators/actions";
 
 import type { DriverJobContactSummary } from "./driver-contact";
 import {
@@ -11,6 +12,13 @@ import {
 
 vi.mock("@/features/job-timeline/actions", () => ({
   recordJobContactAction: vi.fn().mockResolvedValue({ ok: true }),
+}));
+
+vi.mock("@/features/operators/actions", () => ({
+  createDriverAccessLinkAction: vi.fn().mockResolvedValue({
+    ok: true,
+    data: { path: "/driver/access?token_hash=secure-token&type=magiclink" },
+  }),
 }));
 
 const jobId = "30000000-0000-4000-8000-000000000001";
@@ -25,7 +33,7 @@ const summary: DriverJobContactSummary = {
 
 afterEach(() => {
   cleanup();
-  vi.restoreAllMocks();
+  vi.clearAllMocks();
 });
 
 describe("driver job contact actions", () => {
@@ -54,8 +62,7 @@ describe("driver job contact actions", () => {
     });
   });
 
-  it("builds the absolute driver URL only when dispatch opens the post-assignment message", () => {
-    const open = vi.spyOn(window, "open").mockImplementation(() => null);
+  it("generates a private driver link before offering the post-assignment WhatsApp message", async () => {
     render(
       <DriverAssignmentContactActions
         accessStatus="active"
@@ -66,12 +73,17 @@ describe("driver job contact actions", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Senda úthlutun til Bjarni Ólafsson í WhatsApp" }));
+    fireEvent.click(screen.getByRole("button", { name: "Búa til öruggan úthlutunartengil fyrir Bjarni Ólafsson" }));
 
-    const href = String(open.mock.calls[0]?.[0]);
+    expect(createDriverAccessLinkAction).toHaveBeenCalledWith({ operatorId });
+    const link = await screen.findByRole("link", { name: "Senda úthlutun til Bjarni Ólafsson í WhatsApp" });
+
+    const href = link.getAttribute("href")!;
     const message = new URL(href).searchParams.get("text");
-    expect(message).toContain("http://localhost:3000/driver");
+    expect(message).toContain("http://localhost:3000/driver/access?token_hash=secure-token&type=magiclink");
     expect(message).toContain("Verkefninu hefur verið úthlutað");
+
+    fireEvent.click(link);
     expect(recordJobContactAction).toHaveBeenCalledWith({
       jobId,
       operatorId,
@@ -91,7 +103,7 @@ describe("driver job contact actions", () => {
       />,
     );
 
-    expect(screen.queryByRole("button", { name: /Senda úthlutun/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Búa til öruggan úthlutunartengil/ })).not.toBeInTheDocument();
     expect(screen.getByText("Ökumannsaðgangur er óvirkur.")).toBeInTheDocument();
   });
 });

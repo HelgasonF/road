@@ -699,15 +699,9 @@ a:focus-visible {
 .driver-access-section > .section-heading > div:first-child h3 { margin: 0; }
 .driver-access-section > .section-heading > div:first-child p { color: var(--muted); font-size: 8px; margin: 3px 0 0; }
 .driver-access-status { align-items: center; border-radius: 999px; display: inline-flex; font-size: 8px; font-weight: 800; gap: 4px; padding: 5px 7px; white-space: nowrap; }
-.driver-access-status-invited { background: #fff1da; color: #97600d; }
+.driver-access-status-pending { background: #fff1da; color: #97600d; }
 .driver-access-status-active { background: #e2f3eb; color: #08754d; }
 .driver-access-status-disabled { background: #f8e5e5; color: #9b3c3c; }
-.driver-invite-form { display: flex; flex-direction: column; gap: 9px; margin-top: 11px; }
-.driver-invite-form > p { color: var(--muted); font-size: 8px; line-height: 1.5; margin: 0; }
-.driver-email-input { align-items: center; background: white; border: 1px solid var(--line); border-radius: 8px; display: flex; gap: 7px; padding: 0 9px; }
-.driver-email-input:focus-within { border-color: var(--pine); box-shadow: 0 0 0 2px rgba(22, 63, 60, 0.12); }
-.driver-email-input svg { color: var(--muted); flex: 0 0 auto; }
-.driver-email-input input { border: 0; min-width: 0; outline: 0; padding: 9px 0; width: 100%; }
 .driver-access-primary { background: var(--pine); border-color: var(--pine); color: white; justify-content: center; }
 .driver-access-danger { color: #9b3c3c; }
 .driver-access-details { margin-top: 11px; }
@@ -717,6 +711,8 @@ a:focus-visible {
 .driver-access-confirm { background: #fcf1f1; border: 1px solid #eccccc; border-radius: 9px; margin-top: 10px; padding: 10px; }
 .driver-access-confirm p { color: #813d3d; font-size: 8px; line-height: 1.5; margin: 0; }
 .driver-access-confirm > div { display: flex; gap: 7px; margin-top: 8px; }
+.driver-whatsapp-handoff { background: #e8f7ee; border: 1px solid #bfe3cf; border-radius: 9px; margin-top: 10px; padding: 10px; }
+.driver-whatsapp-handoff p { color: #195f42; font-size: 8px; line-height: 1.5; margin: 0 0 8px; }
 .compact-success { color: #08754d; font-size: 9px; margin: 9px 0 0; }
 
 .detail-section {
@@ -1049,9 +1045,7 @@ button.driver-job-contact { cursor: pointer; }
 .login-card h1 { font-size: 34px; }
 .login-intro { color: var(--muted); font-size: 13px; line-height: 1.65; margin: 10px 0 28px; }
 .login-form { display: flex; flex-direction: column; gap: 16px; }
-.password-help { color: var(--muted); font-size: 9px; line-height: 1.5; margin: -7px 0 0; }
-.password-link-error svg { color: var(--pine); }
-.password-link-error .primary-button { margin-top: 13px; text-decoration: none; }
+.access-link-error svg { color: var(--pine); }
 .input-with-icon { align-items: center; display: flex; gap: 9px; padding: 0 11px; }
 .input-with-icon svg { color: #80918e; flex: 0 0 auto; }
 .input-with-icon input { background: transparent; border: 0; box-shadow: none; height: 42px; padding: 0; }

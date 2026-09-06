@@ -7,11 +7,11 @@ import { hasSupabaseAdminConfig, isDemoMode } from "@/lib/config";
 import type { ActionResult } from "@/lib/domain/types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { buildDriverAccessPath, getDriverAuthEmail } from "./driver-access";
 import {
   availabilityInputSchema,
+  driverAccessLinkSchema,
   driverAccessToggleSchema,
-  driverInvitationSchema,
-  driverPasswordResetSchema,
   operatorInputSchema,
   type OperatorInput,
   vehicleInputSchema,
@@ -114,65 +114,56 @@ async function getDriverAccessTarget(operatorId: string) {
     .maybeSingle();
 
   if (error || !operator) return { error: "Þjónustuaðilinn fannst ekki." } as const;
-  if (!operator.user_id) return { operator, email: null } as const;
-
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("email")
-    .eq("id", operator.user_id)
-    .maybeSingle();
-
-  if (profileError || !profile) return { error: "Innskráningin fannst ekki." } as const;
-  return { operator, email: profile.email } as const;
+  return { operator } as const;
 }
 
-function invitationError(message?: string) {
-  if (message?.toLowerCase().includes("rate limit")) {
-    return "Of margir aðgangstölvupóstar hafa verið sendir. Reyndu aftur síðar.";
-  }
-  if (message?.toLowerCase().includes("already")) {
-    return "Netfangið er þegar skráð í Supabase Auth.";
-  }
-  return "Ekki tókst að senda aðgangstölvupóstinn.";
-}
-
-export async function sendDriverInvitationAction(input: unknown): Promise<ActionResult<{ message: string }>> {
+export async function createDriverAccessLinkAction(input: unknown): Promise<ActionResult<{ path: string }>> {
   if (isDemoMode()) return { ok: false, error: demoError };
   if (!(await getVerifiedStaffSession())) return { ok: false, error: authError };
   if (!hasSupabaseAdminConfig()) return { ok: false, error: adminConfigError };
 
-  const parsed = driverInvitationSchema.safeParse(input);
+  const parsed = driverAccessLinkSchema.safeParse(input);
   if (!parsed.success) return validationError(parsed.error);
 
   const supabase = await createClient();
   const target = await getDriverAccessTarget(parsed.data.operatorId);
   if ("error" in target) return { ok: false, error: target.error };
-  if (target.operator.user_id && target.email !== parsed.data.email) {
-    return { ok: false, error: "Þjónustuaðilinn er þegar tengdur öðru netfangi." };
+  if (target.operator.driver_access_disabled_at) {
+    return { ok: false, error: "Virkjaðu ökumannsaðganginn áður en nýr tengill er búinn til." };
   }
 
   const admin = createAdminClient();
+  const createsUser = !target.operator.user_id;
+  let authEmail = getDriverAuthEmail(target.operator.id);
+
   if (target.operator.user_id) {
     const { data: existingUser, error: userError } = await admin.auth.admin.getUserById(target.operator.user_id);
     if (userError || !existingUser.user) return { ok: false, error: "Innskráningin fannst ekki í Supabase Auth." };
-
-    if (existingUser.user.email_confirmed_at) {
-      const { error: recoveryError } = await supabase.auth.resetPasswordForEmail(parsed.data.email);
-      if (recoveryError) return { ok: false, error: invitationError(recoveryError.message) };
-      return { ok: true, data: { message: "Nýr lykilorðshlekkur var sendur." } };
-    }
+    if (!existingUser.user.email) return { ok: false, error: "Innskráningin hefur ekkert innra auðkenni." };
+    authEmail = existingUser.user.email;
   }
 
-  const { data, error } = await admin.auth.admin.inviteUserByEmail(parsed.data.email, {
-    data: {
-      display_name: target.operator.name,
-      operator_id: target.operator.id,
+  const { data, error } = await admin.auth.admin.generateLink({
+    type: "magiclink",
+    email: authEmail,
+    options: {
+      data: {
+        display_name: target.operator.name,
+        operator_id: target.operator.id,
+      },
     },
   });
 
-  if (error || !data.user) return { ok: false, error: invitationError(error?.message) };
+  if (error || !data.user || !data.properties.hashed_token) {
+    return { ok: false, error: "Ekki tókst að búa til öruggan ökumannstengil." };
+  }
+  const verificationType = data.properties.verification_type;
+  if (verificationType !== "signup" && verificationType !== "magiclink") {
+    if (createsUser) await admin.auth.admin.deleteUser(data.user.id);
+    return { ok: false, error: "Supabase skilaði óþekktri tegund ökumannstengils." };
+  }
 
-  if (!target.operator.user_id) {
+  if (createsUser) {
     const { error: linkError } = await supabase.rpc("link_driver_user", {
       p_operator_id: target.operator.id,
       p_user_id: data.user.id,
@@ -180,34 +171,25 @@ export async function sendDriverInvitationAction(input: unknown): Promise<Action
 
     if (linkError) {
       await admin.auth.admin.deleteUser(data.user.id);
-      return { ok: false, error: "Boðið var ekki sent vegna þess að ekki tókst að tengja innskráninguna." };
+      return { ok: false, error: "Ekki tókst að tengja ökumannsaðganginn við þjónustuaðilann." };
     }
+  }
+
+  const { error: timestampError } = await supabase
+    .from("operators")
+    .update({ driver_access_link_created_at: new Date().toISOString() })
+    .eq("id", target.operator.id);
+
+  if (timestampError) {
+    if (createsUser) await admin.auth.admin.deleteUser(data.user.id);
+    return { ok: false, error: "Ekki tókst að skrá nýja ökumannstengilinn." };
   }
 
   revalidatePath("/");
   return {
     ok: true,
-    data: { message: target.operator.user_id ? "Aðgangsboðið var sent aftur." : "Aðgangsboðið var sent." },
+    data: { path: buildDriverAccessPath(data.properties.hashed_token, verificationType) },
   };
-}
-
-export async function sendDriverPasswordResetAction(input: unknown): Promise<ActionResult<{ message: string }>> {
-  if (isDemoMode()) return { ok: false, error: demoError };
-  if (!(await getVerifiedStaffSession())) return { ok: false, error: authError };
-
-  const parsed = driverPasswordResetSchema.safeParse(input);
-  if (!parsed.success) return validationError(parsed.error);
-
-  const target = await getDriverAccessTarget(parsed.data.operatorId);
-  if ("error" in target) return { ok: false, error: target.error };
-  if (!target.operator.user_id || !target.email) return { ok: false, error: "Enginn ökumannsaðgangur er skráður." };
-  if (target.operator.driver_access_disabled_at) return { ok: false, error: "Virkjaðu aðganginn áður en lykilorð er endurstillt." };
-
-  const supabase = await createClient();
-  const { error } = await supabase.auth.resetPasswordForEmail(target.email);
-  if (error) return { ok: false, error: invitationError(error.message) };
-
-  return { ok: true, data: { message: "Endurstillingartölvupóstur var sendur." } };
 }
 
 export async function setDriverAccessDisabledAction(input: unknown): Promise<ActionResult<{ message: string }>> {

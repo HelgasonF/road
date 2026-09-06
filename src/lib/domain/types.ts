@@ -127,12 +127,11 @@ export interface Vehicle {
   capabilities: CapabilityCode[];
 }
 
-export type DriverAccessStatus = "invited" | "active" | "disabled";
+export type DriverAccessStatus = "pending" | "active" | "disabled";
 
 export interface DriverAccess {
-  email: string;
   status: DriverAccessStatus;
-  invitedAt: string | null;
+  linkCreatedAt: string | null;
   activatedAt: string | null;
   disabledAt: string | null;
 }

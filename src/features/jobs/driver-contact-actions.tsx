@@ -1,8 +1,10 @@
 "use client";
 
 import { MessageCircle, PhoneCall, Send } from "lucide-react";
+import { useState, useTransition } from "react";
 
 import { recordJobContactAction } from "@/features/job-timeline/actions";
+import { createDriverAccessLinkAction } from "@/features/operators/actions";
 import type { JobContactPurpose } from "@/lib/domain/types";
 import type { DriverAccessStatus } from "@/lib/domain/types";
 import { buildContactLinks, buildWhatsAppHref } from "@/lib/contact-links";
@@ -90,12 +92,6 @@ export function DriverAvailabilityContactActions({
   );
 }
 
-const unavailableAccessCopy: Record<Exclude<DriverAccessStatus, "active"> | "missing", string> = {
-  invited: "Ökumaður þarf fyrst að klára aðgangsboðið.",
-  disabled: "Ökumannsaðgangur er óvirkur.",
-  missing: "Stofna þarf ökumannsaðgang áður en innskráningarhlekkur er sendur.",
-};
-
 export function DriverAssignmentContactActions({
   accessStatus,
   jobId,
@@ -104,34 +100,61 @@ export function DriverAssignmentContactActions({
   summary,
 }: DriverAssignmentContactActionsProps) {
   const { whatsappHref } = buildContactLinks(phone);
+  const [driverUrl, setDriverUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  const assignmentWhatsAppHref = driverUrl
+    ? buildWhatsAppHref(phone, buildDriverAssignmentMessage(summary, driverUrl))
+    : null;
 
-  function openAssignmentMessage() {
-    recordContact(jobId, operatorId, "whatsapp", "assignment");
-    const driverUrl = new URL("/driver", window.location.origin).toString();
-    const href = buildWhatsAppHref(phone, buildDriverAssignmentMessage(summary, driverUrl));
-    if (href) window.open(href, "_blank", "noopener,noreferrer");
+  function createAssignmentLink() {
+    setError(null);
+    startTransition(async () => {
+      const result = await createDriverAccessLinkAction({ operatorId });
+      if (!result.ok || !result.data) {
+        setError(result.error ?? "Ekki tókst að búa til ökumannstengil.");
+        return;
+      }
+      setDriverUrl(new URL(result.data.path, window.location.origin).toString());
+    });
   }
 
   return (
     <div className="assigned-driver-contact">
       <div className="driver-job-contact-actions">
         <DriverCallLink driverName={summary.driverName} jobId={jobId} operatorId={operatorId} phone={phone} purpose="assignment" />
-        {accessStatus === "active" && whatsappHref ? (
+        {accessStatus !== "disabled" && whatsappHref && !assignmentWhatsAppHref ? (
           <button
             className="driver-job-contact driver-job-contact-whatsapp"
             type="button"
-            onClick={openAssignmentMessage}
-            aria-label={`Senda úthlutun til ${summary.driverName} í WhatsApp`}
+            disabled={pending}
+            onClick={createAssignmentLink}
+            aria-label={`Búa til öruggan úthlutunartengil fyrir ${summary.driverName}`}
           >
-            <Send size={14} /> Senda úthlutun
+            <Send size={14} /> {pending ? "Bý til tengil…" : "Búa til tengil"}
           </button>
         ) : null}
+        {assignmentWhatsAppHref ? (
+          <a
+            className="driver-job-contact driver-job-contact-whatsapp"
+            href={assignmentWhatsAppHref}
+            onClick={() => recordContact(jobId, operatorId, "whatsapp", "assignment")}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Senda úthlutun til ${summary.driverName} í WhatsApp`}
+          >
+            <MessageCircle size={14} /> Senda úthlutun
+          </a>
+        ) : null}
       </div>
-      {accessStatus !== "active" ? (
-        <p>{unavailableAccessCopy[accessStatus ?? "missing"]}</p>
+      {accessStatus === "disabled" ? (
+        <p>Ökumannsaðgangur er óvirkur.</p>
+      ) : assignmentWhatsAppHref ? (
+        <p>Öruggi tengillinn er tilbúinn; þú ferð yfir WhatsApp-skilaboðin og ýtir á Senda.</p>
       ) : (
-        <p>Opnar WhatsApp með innskráningarhlekk; þú ýtir sjálf/ur á Senda.</p>
+        <p>Býr til einkatengil sem skráir ökumanninn inn í Vegstoð eftir staðfestingu.</p>
       )}
+      {error ? <p className="compact-error" role="alert">{error}</p> : null}
     </div>
   );
 }

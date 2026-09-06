@@ -67,6 +67,8 @@ export type Database = {
           current_longitude: number | null;
           current_location: unknown | null;
           current_location_updated_at: string | null;
+          driver_access_link_created_at: string | null;
+          /** @deprecated Kept temporarily for deployment compatibility with the former email-invitation build. */
           driver_invited_at: string | null;
           driver_access_activated_at: string | null;
           driver_access_disabled_at: string | null;
@@ -89,6 +91,8 @@ export type Database = {
           current_latitude?: number | null;
           current_longitude?: number | null;
           current_location_updated_at?: string | null;
+          driver_access_link_created_at?: string | null;
+          /** @deprecated Kept temporarily for deployment compatibility with the former email-invitation build. */
           driver_invited_at?: string | null;
           driver_access_activated_at?: string | null;
           driver_access_disabled_at?: string | null;

@@ -13,6 +13,7 @@ The shutdown/resume state, active repository path, uncommitted work, restart com
 - A driver login is an authentication link to an operator; it is not a second driver or company record.
 - Dispatch remains manual. Matching suggests suitable operators, but a dispatcher makes the assignment.
 - Drivers use a dedicated mobile-first Vegstoð screen for operational job data.
+- Drivers never receive operational email and do not need an email address or password. Dispatch generates a private one-time Vegstoð access link and sends it manually to the registered phone through WhatsApp.
 - Driver availability contact in the MVP is a normal manual WhatsApp message opened from Vegstoð on a phone or computer. The dispatcher reviews and presses Send, so no paid WhatsApp Business Platform/API automation is required. Calling remains the fallback.
 - A customer does not need an account. Dispatch sends a 24-hour, job-specific link directly through a prepared WhatsApp handoff; it collects a confirmed location, vehicle details, problem description, and private photos inside Vegstoð.
 - Every payer pays Vegstoð. Vegstoð is the payer-facing seller in the system and separately settles with the assigned service provider; the provider never invoices the customer through this workflow.
@@ -34,7 +35,7 @@ The shutdown/resume state, active repository path, uncommitted work, restart com
 - One-to-one driver login linked directly to the existing service-provider/operator record.
 - Driver-only Row Level Security for the linked operator, vehicles, assignments, jobs, requirements, and history.
 - Mobile driver screen with availability, accept/decline, customer contact, an embedded incident map and pin, navigation, vehicle details, and controlled job-status progression.
-- Dispatcher-managed driver invitations, password setup and recovery, visible access status, immediate disable, and re-enable without deleting provider data.
+- Dispatcher-managed passwordless driver links through WhatsApp, visible access status, one-time token use, immediate disable, and re-enable without deleting provider data.
 - Dispatcher-created customer intake links with automatic rotation/revocation, a bilingual mobile form, GPS or map-pin confirmation, and one-time submission.
 - Direct customer WhatsApp handoff using the registered phone number, clear English instructions, and the newly generated secure link; no copy-and-paste step is required.
 - Private job-photo upload to Supabase Storage, with access limited to staff, the currently assigned driver, and the active temporary customer link.
@@ -52,16 +53,17 @@ The driver slice was verified locally with separate dispatcher and driver accoun
 5. Direct navigation from a driver session to the dispatcher route redirected back to `/driver`.
 6. The responsive driver interface was inspected at a 390 × 844 phone viewport with no browser-console errors.
 
-## Completed driver-access build slice
+## Completed WhatsApp driver-access build slice
 
-The access lifecycle was verified locally in separate dispatcher and driver browser sessions:
+The passwordless access lifecycle was verified locally in separate dispatcher and clean driver browser sessions:
 
-1. Dispatch selected the existing Bjarni service-provider record and sent an invitation to `bjarni.driver@vegstod.local`.
-2. The Icelandic Supabase invitation arrived in local Mailpit and linked to Vegstoð's password-setup screen.
-3. Bjarni chose his own password and landed on a driver screen containing only Bjarni's operational data.
-4. Dispatch sent a separate Icelandic password-recovery email.
-5. Dispatch disabled Bjarni's login; refreshing his already-authenticated driver session immediately redirected it to `/login`.
-6. Dispatch re-enabled the same account and the existing session regained `/driver` without recreating Bjarni, his vehicle, or any history.
+1. Dispatch selected an unlinked service-provider record and created an access link using only the provider's registered phone number; the interface did not request or display a driver email.
+2. The server-only Supabase client created the Auth identity and returned a one-time `signup` token without sending mail. Vegstoð placed its first-party `/driver/access` URL in the prepared WhatsApp message.
+3. Opening the URL showed a confirmation page. Pressing **Opna ökumannsskjá** established the restricted Supabase session and landed on `/driver`, where the driver's phone number appeared instead of the internal Auth identifier.
+4. A clean browser could open the landing page but could not redeem the already-used token.
+5. Generating a later link for an existing driver returned the expected `magiclink` token and opened the same restricted driver screen.
+6. Dispatch disabled the driver; refreshing the already-authenticated driver session immediately redirected it to `/login`.
+7. All temporary Auth users and operator access changes were removed after verification.
 
 ## Completed customer-intake build slice
 
@@ -80,8 +82,8 @@ The dispatcher-to-driver WhatsApp workflow remains deliberately manual and free 
 
 1. Every suggested driver now has Call and **Spyrja um framboð** actions directly in the ranked candidate card.
 2. The prewritten availability message contains only the driver name, generalized incident area, required assistance, priority, and estimated straight-line distance when known. House numbers and raw map coordinates are suppressed, and the builder receives no customer name, phone, notes, photos, or temporary customer link.
-3. After assignment, dispatch can send a second message containing the operational summary and the absolute Vegstoð `/driver` login URL.
-4. The login-link action appears only when the assigned operator has active driver access. Invited, disabled, and unlinked states explain what dispatch must resolve first.
+3. After assignment, dispatch can create a second message containing the operational summary and a fresh one-time Vegstoð `/driver/access` URL.
+4. Creating that link also creates the linked driver identity when needed. A disabled operator remains blocked until dispatch deliberately re-enables access.
 5. Both actions open ordinary WhatsApp/WhatsApp Web; Vegstoð never sends automatically and the dispatcher remains responsible for reviewing and pressing Send.
 6. Unit/component tests verify Icelandic and international WhatsApp addressing, exact message content, missing-distance behavior, active-access gating, and runtime construction of the driver URL. A 1440 px and 390 px Playwright pass confirmed both dispatcher states, the WhatsApp handoff, no horizontal overflow, and no application-console errors.
 
@@ -123,7 +125,7 @@ The first external environment is now connected without upgrading Supabase:
 6. A fresh automatic Git Preview completed staff login, HMS address search, provider/vehicle creation, driver invitation and activation, job creation and matching, one-time customer intake with a real private PNG, assignment, driver acceptance and every operational status through completion, both billing legs through full settlement, the unified timeline, driver route isolation, and immediate access revocation. The 390 × 844 customer and driver layouts had no horizontal overflow and the browser reported no application-console errors.
 7. Direct hosted assertions confirmed the completed job, submitted intake, private upload, accepted assignment, seven status changes, five billing events, and independent `paid`/`paid` settlement. Every temporary database record, Storage object, and Auth user was deleted afterward; only the real admin plus reference location data remain. The full record is in [`docs/hosted-audit-2026-09-06.md`](hosted-audit-2026-09-06.md).
 
-Hosted invitation and recovery email is still pending. The Free plan's built-in mail provider rejects custom email templates, so custom SMTP must be configured before real driver invitations use the branded repository templates. See [`docs/deployment.md`](deployment.md).
+The hosted audit above used the superseded email-invitation implementation. The replacement passwordless WhatsApp access flow is complete and verified locally; its hosted Preview result is recorded below after migration and deployment. SMTP is not a customer or driver requirement.
 
 ## Real Android device verification
 
@@ -143,26 +145,26 @@ This proves the complete local Android behavior on physical hardware. The applic
 
 The complete current working tree was rechecked on 6 September 2026:
 
-- `npm run build` passed with all application routes, including dispatcher, staff billing, the staff job timeline, customer intake, private photo delivery, authentication confirmation/password setup, and the driver screen.
+- `npm run build` passed with all application routes, including dispatcher, staff billing, the staff job timeline, customer intake, private photo delivery, passwordless driver-link confirmation, and the driver screen.
 - `npm run typecheck` and `npm run lint` passed without errors.
-- `npm test` passed all 124 tests across 22 Vitest files, including the English-only direct customer WhatsApp handoff and international-number routing.
+- `npm test` passed all 124 tests across 24 Vitest files, including customer and driver WhatsApp handoffs, one-time driver-link validation, and international-number routing.
 - `npx supabase test db` passed all 176 assertions across seven pgTAP files, covering the dispatch schema, indexed HMS reverse geocoding, driver isolation/access management, customer-link lifecycle and first opening, private-photo authorization, contact-event audit isolation, billing handoff, financial transitions, value locking, audited-only mutation privileges, function execution grants, and driver financial isolation.
 - `npx supabase db lint --local --schema public` reported no application-schema errors. A whole-database lint also reports known analyzer findings inside Supabase's installed PostGIS extension functions; these are vendor extension code rather than Vegstoð migrations.
 - `npm audit --omit=dev` reported zero production dependency vulnerabilities.
 - `git diff --check` passed, and the repository scan found no committed Mapbox token, Supabase secret, placeholder TODO/FIXME, or accidental application debug logging. The importer intentionally prints its completed import summary when run from the terminal.
 
-The existing browser verification remains valid for the critical dispatcher → customer → driver path, including an unauthenticated phone-sized customer session, a real private image upload, one-time link consumption, reassignment, driver-only visibility, and rejection of an anonymous private-photo request. A fresh hosted pass on 6 September exercised the automatic Git Preview through provider and vehicle creation, real driver invitation, customer intake, assignment, every driver status through completion, five financial audit actions through full settlement, timeline aggregation, access revocation, and complete cleanup; see [`docs/hosted-audit-2026-09-06.md`](hosted-audit-2026-09-06.md). The physical Android pass additionally covered native photo selection, dialer and WhatsApp browser handoffs, dispatcher assignment, driver acceptance, exact map rendering, authorized photo delivery, and progression to `en_route`. The application produced no application-console errors after the development-origin fix; headless Chromium emitted only its known WebGL software-rendering performance warnings while drawing MapLibre, while the Android map cancelled superseded OpenStreetMap tile requests during normal redraws.
+The existing browser verification remains valid for the critical dispatcher → customer → driver path, including an unauthenticated phone-sized customer session, a real private image upload, one-time customer-link consumption, reassignment, driver-only visibility, and rejection of an anonymous private-photo request. A fresh hosted pass on 6 September exercised the automatic Git Preview through provider and vehicle creation, the former driver-invitation path, customer intake, assignment, every driver status through completion, five financial audit actions through full settlement, timeline aggregation, access revocation, and complete cleanup; see [`docs/hosted-audit-2026-09-06.md`](hosted-audit-2026-09-06.md). The physical Android pass additionally covered native photo selection, dialer and WhatsApp browser handoffs, dispatcher assignment, driver acceptance, exact map rendering, authorized photo delivery, and progression to `en_route`. A later local pass verified new-driver and returning-driver WhatsApp Auth links, explicit confirmation, one-time use, phone-only presentation, and immediate revocation. The application produced no application-console errors after the development-origin fix; headless Chromium emitted only its known WebGL software-rendering performance warnings while drawing MapLibre, while the Android map cancelled superseded OpenStreetMap tile requests during normal redraws.
 
 ## Current readiness boundary
 
-The implemented flows are complete locally, and the complete dispatcher → customer → driver → billing path has passed against an automatic Vercel Preview and the hosted Supabase Free project. The product is still not declared production-ready: a physical phone must repeat the public HTTPS workflow, custom SMTP must be configured and tested for driver invitations/recovery, and the operational launch checklist must be approved. The current link is a preview environment rather than a production release.
+The implemented flows are complete locally, and the complete dispatcher → customer → driver → billing path has passed against an automatic Vercel Preview and the hosted Supabase Free project. The product is still not declared production-ready: a physical phone must repeat the public HTTPS workflow with the passwordless driver link, and the operational launch checklist must be approved. The current link is a preview environment rather than a production release.
 
 ## Next slices
 
 1. Repeat the customer → dispatch → driver workflow on a physical phone through the public HTTPS preview, including the native picker and private-photo display, without USB forwarding.
-2. Configure custom SMTP on the existing Free Supabase project, then apply and test the branded invitation/recovery templates.
+2. Confirm new-driver link creation, one-time redemption, returning-driver access, and immediate disable through the public HTTPS preview.
 3. Promote a reviewed build to production only after the phone and launch checks pass; upgrade the same Supabase project later when capacity, uptime, backup, or support requirements justify it.
-4. Select and integrate Iceland-compatible accounting/invoicing and payment providers only after an accountant confirms the invoice, VAT, refund, credit-note, provider-payment, and reconciliation requirements.
+4. Select and integrate Iceland-compatible accounting/invoicing and payment providers only after an accountant confirms the invoice, VAT, refund, credit-note, provider-payment, and reconciliation requirements. Customer payment links will be delivered through the existing WhatsApp handoff.
 
 ## Intended end-to-end workflow
 

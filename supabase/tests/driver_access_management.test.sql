@@ -5,7 +5,7 @@ set local search_path = public, extensions;
 
 select plan(17);
 
-select has_column('public', 'operators', 'driver_invited_at', 'operator records when access was invited');
+select has_column('public', 'operators', 'driver_access_link_created_at', 'operator records when a WhatsApp access link was created');
 select has_column('public', 'operators', 'driver_access_activated_at', 'operator records when driver access was activated');
 select has_column('public', 'operators', 'driver_access_disabled_at', 'operator records when driver access was disabled');
 select has_function('public', 'link_driver_user', array['uuid', 'uuid'], 'staff driver-link RPC exists');
@@ -71,8 +71,8 @@ select is(
 );
 
 select ok(
-  (select driver_invited_at is not null from public.operators where id = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeee2'),
-  'linking records the invitation timestamp'
+  (select driver_access_link_created_at is not null from public.operators where id = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeee2'),
+  'linking records the access-link timestamp'
 );
 
 select lives_ok(

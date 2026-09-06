@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  driverAccessLinkSchema,
   driverAccessToggleSchema,
-  driverInvitationSchema,
-  driverPasswordResetSchema,
   operatorInputSchema,
   vehicleInputSchema,
 } from "./schemas";
@@ -122,15 +121,9 @@ describe("vehicleInputSchema", () => {
 describe("driver access schemas", () => {
   const operatorId = "10000000-0000-4000-8000-000000000001";
 
-  it("normalizes invitation email addresses", () => {
-    expect(driverInvitationSchema.parse({
-      operatorId,
-      email: "  DRIVER@Example.COM ",
-    })).toEqual({ operatorId, email: "driver@example.com" });
-  });
-
-  it("rejects invalid invitation email and operator identifiers", () => {
-    expect(driverInvitationSchema.safeParse({ operatorId: "not-a-uuid", email: "driver" }).success).toBe(false);
+  it("validates WhatsApp access-link targets", () => {
+    expect(driverAccessLinkSchema.safeParse({ operatorId }).success).toBe(true);
+    expect(driverAccessLinkSchema.safeParse({ operatorId: "not-a-uuid" }).success).toBe(false);
   });
 
   it("accepts only explicit access state changes", () => {
@@ -138,8 +131,4 @@ describe("driver access schemas", () => {
     expect(driverAccessToggleSchema.safeParse({ operatorId, disabled: "true" }).success).toBe(false);
   });
 
-  it("validates password reset targets", () => {
-    expect(driverPasswordResetSchema.safeParse({ operatorId }).success).toBe(true);
-    expect(driverPasswordResetSchema.safeParse({ operatorId: "" }).success).toBe(false);
-  });
 });

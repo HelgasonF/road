@@ -9,7 +9,7 @@ The completed application slices let authenticated staff manage the Iceland-wide
 ```text
 src/
   app/                         Next.js routes, layouts, and route-level errors
-  features/auth/               Login, invitation confirmation, and password setup
+  features/auth/               Staff login and passwordless driver-link confirmation
   features/billing/            Payer receivables, provider payables, queues, and audit UI
   features/customer-intake/    Hashed links, bilingual public form, signed uploads, and photo UI
   features/dispatch/           Map-centric dispatcher workspace
@@ -26,7 +26,6 @@ src/
 supabase/
   migrations/                  Versioned PostgreSQL/PostGIS schema
   seed.sql                     Local-only reference/demo records
-  templates/                   Local/hosted Supabase Auth email templates
 docs/                          Architecture and operational decisions
 ```
 
@@ -35,7 +34,7 @@ The route layer stays thin. Server Components read through feature queries; inte
 ## Data model
 
 - `profiles` links Supabase Auth users to `pending`, `dispatcher`, `admin`, or `driver`. New users remain pending until deliberately activated.
-- `operators` stores the service provider/driver identity, availability, a base point, an optional current point, and the MVP service radius. Its nullable unique `user_id` links that same person to a driver login without duplicating a driver record. Invitation, activation, and disabled timestamps expose the access lifecycle without copying Auth credentials into the public schema.
+- `operators` stores the service provider/driver identity, availability, a base point, an optional current point, and the MVP service radius. Its nullable unique `user_id` links that same person to a driver session without duplicating a driver record. Access-link creation, activation, and disabled timestamps expose the lifecycle without copying Auth credentials or raw tokens into the public schema.
 - `vehicles` belongs to an operator rather than being folded into the operator record.
 - `capabilities`, `operator_capabilities`, and `vehicle_capabilities` preserve reusable metadata and many-to-many capability assignments.
 - `jobs` stores coordinates as the incident truth and supports multiple required capabilities through `job_required_capabilities`.
@@ -63,6 +62,8 @@ Customer submission is atomic in PostgreSQL: a security-definer RPC locks the ma
 
 Driver login disabling also changes the RLS-visible operator state, so an already-issued driver token loses operational access immediately rather than waiting to expire.
 
+Driver access is passwordless and delivered manually through WhatsApp. A staff-only Server Action uses the server-only Supabase key to generate an Auth link for an internal, non-routable driver identifier. Vegstoð returns only a first-party `/driver/access` URL to the authenticated dispatcher. Opening that URL displays a confirmation button instead of immediately consuming the token, so link-preview requests do not sign in or invalidate the link. The confirmed one-time token creates the normal Supabase cookie session, after which all driver reads and mutations remain constrained by the existing driver RLS policies. The internal Auth identifier is never requested from or shown to the driver.
+
 Billing has two deliberately independent state machines: payer → Vegstoð is a receivable, while Vegstoð → provider is a payable. Completing a job triggers the initial financial handoff, but receiving payer money never marks the provider paid and paying the provider never marks the payer settled. Staff-only, security-definer RPCs validate every invoice/payment transition and write its audit event in the same database operation. Drivers receive no table policy for billing records, prices, margin, or financial events.
 
 The staff-only timeline route normalizes existing source-of-truth rows rather than copying them into a second generic activity table. Job creation, status history, customer-link lifecycle, uploaded photos, assignment lifecycle, driver contact attempts, and billing events remain owned by their domain tables and are merged newest-first at read time. The only added audit facts were `customer_intake_links.first_opened_at` and append-only `job_contact_events`; drivers have no RLS policy for the contact table or timeline route.
@@ -86,8 +87,8 @@ English codes are the domain contract. `src/lib/i18n/is.ts` owns the Icelandic d
 - Provider ranking uses straight-line PostGIS distance, capability coverage, availability, and service radius; road-network ETA can replace the distance input later.
 - Current location is a manually maintained point, not continuous tracking.
 - Public OpenStreetMap raster tiles have no service-level guarantee; production traffic should use a self-hosted or contracted compatible tile endpoint.
-- Driver accounts are created by dispatcher-managed email invitation and linked one-to-one to existing operators; disabling a login never deletes the operator or operational history.
-- Driver contact is deliberately manual in the MVP: normal `wa.me` links open WhatsApp or WhatsApp Web and the dispatcher presses Send. Candidate messages are built from a narrow operational summary that cannot contain customer contact details, notes, photos, or intake tokens; house numbers and raw map coordinates are removed from the pre-assignment area label. The post-assignment variant adds the runtime `/driver` URL only for an operator with active driver access. Contact-link openings are audited, but an external send or connected call cannot be verified. No WhatsApp Business Platform/API integration is part of the operational core.
+- Driver accounts are created from dispatcher-generated passwordless links sent to the registered phone through ordinary WhatsApp and linked one-to-one to existing operators; drivers do not provide an email or password, and disabling access never deletes the operator or operational history.
+- Driver contact is deliberately manual in the MVP: normal `wa.me` links open WhatsApp or WhatsApp Web and the dispatcher presses Send. Candidate messages are built from a narrow operational summary that cannot contain customer contact details, notes, photos, or intake tokens; house numbers and raw map coordinates are removed from the pre-assignment area label. The post-assignment variant generates a fresh, expiring one-time driver access URL for any non-disabled assigned operator. Contact-link openings are audited, but an external send or connected call cannot be verified. No WhatsApp Business Platform/API integration is part of the operational core.
 - Customer-link delivery uses the same manual `wa.me` handoff: immediately after creating a raw intake token, Vegstoð opens the customer's registered WhatsApp number with clear English instructions and the secure URL. The form data and photos are submitted to Vegstoð and private Supabase Storage, not sent through WhatsApp. The raw URL is not recoverable from the stored hash, so resending later requires rotating to a new link.
 - Customer photos are limited to six files per link and 10 MiB per file. JPEG, PNG, WebP, HEIC, and HEIF metadata are accepted; production device testing must confirm preview behavior for each phone format.
 - The billing workspace records external invoice/payment facts but does not create legal invoices, charge payment methods, send bank transfers, calculate/file VAT, or synchronize an accounting package. Production payment and accounting integrations remain separate from the validated internal ledger.

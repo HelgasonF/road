@@ -32,11 +32,15 @@ describe("driver WhatsApp messages", () => {
   });
 
   it("adds the driver login only to the post-assignment message", () => {
-    const message = buildDriverAssignmentMessage(summary, "https://dispatch.vegstod.is/driver");
+    const message = buildDriverAssignmentMessage(
+      summary,
+      "https://dispatch.vegstod.is/driver/access?token_hash=secret",
+    );
 
     expect(message).toContain("Verkefninu hefur verið úthlutað til þín");
-    expect(message).toContain("Skráðu þig inn til að sjá nákvæma staðsetningu og upplýsingar viðskiptavinar");
-    expect(message).toContain("https://dispatch.vegstod.is/driver");
+    expect(message).toContain("Opnaðu örugga tengilinn til að sjá nákvæma staðsetningu og upplýsingar viðskiptavinar");
+    expect(message).toContain("https://dispatch.vegstod.is/driver/access?token_hash=secret");
+    expect(message).toContain("Ekki framsenda tengilinn");
   });
 
   it("reduces an exact address to an area before assignment", () => {

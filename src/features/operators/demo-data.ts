@@ -53,9 +53,8 @@ export const demoOperators: Operator[] = [
     id: "10000000-0000-4000-8000-000000000002",
     userId: "00000000-0000-4000-8000-000000000002",
     driverAccess: {
-      email: "anna.driver@vegstod.local",
       status: "active",
-      invitedAt: "2026-08-19T12:00:00Z",
+      linkCreatedAt: "2026-08-19T12:00:00Z",
       activatedAt: "2026-08-19T12:10:00Z",
       disabledAt: null,
     },

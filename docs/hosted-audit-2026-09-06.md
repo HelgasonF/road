@@ -1,5 +1,7 @@
 # Hosted end-to-end audit — 6 September 2026
 
+> Historical record: this audit exercised the email-based driver invitation that existed in commit `5611f74`. That access path was replaced later on 6 September by passwordless, one-time driver links delivered through the registered WhatsApp number. The mailer observations below explain the old test only; SMTP is no longer a customer or driver release requirement. See [`implementation-status.md`](implementation-status.md) for the current flow.
+
 ## Result
 
 The Git-created Vercel Preview at `https://vegstod-r7ebg0ufm-freyrs-projects-fad4047a.vercel.app` passed the complete browser workflow against the hosted Supabase Free project. The audited deployment was built automatically from commit `5611f74` on `chore/vercel-git-connection`.
@@ -24,7 +26,7 @@ The direct checkpoints found:
 
 The repeated authorization checks redirected the driver away from both `/billing` and the staff timeline, returned HTTP 404 for the private photo without a session, and showed the generic unavailable page for an invalid customer token without exposing the audit job. The staff timeline displayed all 17 expected events: 6 job events, 4 customer events, 2 provider events, and 5 billing events.
 
-The Supabase hosted mailer rate-limited the second invitation attempt with its explicit too-many-emails response. The audit therefore created and confirmed the disposable Auth user with the Supabase admin API, then exercised the normal browser login and driver authorization path. This reinforces the custom-SMTP release requirement below; it did not affect database, authentication, role, or driver-workflow verification.
+The Supabase hosted mailer rate-limited the second invitation attempt with its explicit too-many-emails response. The audit therefore created and confirmed the disposable Auth user with the Supabase admin API, then exercised the browser login and driver authorization path that existed at that revision. This did not affect database, role, or driver-workflow verification. The later WhatsApp access implementation generates Auth links directly and sends no mail.
 
 Immediately before cleanup, direct hosted counts were two profiles/Auth users and exactly one provider, vehicle, job, assignment, customer link, photo, billing row, and Storage folder, plus seven status rows and five billing events. Cleanup removed the object before its metadata and parent records, deleted the disposable Auth user and credentials, and returned the project to the exact baseline shown below.
 
@@ -78,5 +80,5 @@ job-photos Storage objects: 0
 ## Remaining release checks
 
 - Repeat the public HTTPS workflow on a physical phone, including its native camera/photo picker and WhatsApp or dialer handoff.
-- Configure custom SMTP and test branded invitation and recovery mail with a normal external driver address. The built-in Supabase mailer delivered this audit invitation to the project owner's address, but it is not the operational mail setup.
+- Deploy and verify the replacement passwordless driver access link through the prepared WhatsApp handoff, including first use, reuse rejection, and immediate access disable.
 - Approve the operational launch checklist before merging to `main`, because Vercel treats `main` as the production branch.

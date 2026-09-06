@@ -5,10 +5,10 @@ import { z } from "zod";
 
 import { hasSupabaseConfig, isDemoMode } from "@/lib/config";
 import { createClient } from "@/lib/supabase/server";
-import { passwordSetupSchema } from "./schemas";
+import { driverAccessTokenSchema } from "./driver-access";
 
 export type LoginState = { error?: string };
-export type PasswordSetupState = { error?: string };
+export type DriverAccessState = { error?: string };
 
 const loginSchema = z.object({
   email: z.email().trim(),
@@ -68,38 +68,42 @@ export async function logoutAction() {
   redirect("/login");
 }
 
-export async function setPasswordAction(
-  _previousState: PasswordSetupState,
+export async function openDriverAccessAction(
+  _previousState: DriverAccessState,
   formData: FormData,
-): Promise<PasswordSetupState> {
+): Promise<DriverAccessState> {
   if (isDemoMode() || !hasSupabaseConfig()) return { error: "Tengingu við Supabase vantar." };
 
-  const parsed = passwordSetupSchema.safeParse({
-    password: formData.get("password"),
-    confirmPassword: formData.get("confirmPassword"),
+  const parsed = driverAccessTokenSchema.safeParse({
+    tokenHash: formData.get("tokenHash"),
+    type: formData.get("type"),
   });
-  if (!parsed.success) {
-    return { error: "Lykilorðin þurfa að vera eins, að minnsta kosti 10 stafir og innihalda bókstaf og tölu." };
-  }
+  if (!parsed.success) return { error: "Aðgangstengillinn er ógildur." };
 
   const supabase = await createClient();
-  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
-  if (claimsError || !claimsData?.claims?.sub) {
-    return { error: "Aðgangshlekkurinn er útrunninn. Biddu um nýjan hlekk." };
+  const { data: authData, error: verifyError } = await supabase.auth.verifyOtp({
+    token_hash: parsed.data.tokenHash,
+    type: parsed.data.type,
+  });
+  if (verifyError || !authData.user) {
+    return { error: "Aðgangstengillinn er útrunninn eða hefur þegar verið notaður. Biddu aðgerðastjórn um nýjan tengil." };
   }
 
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
-    .eq("id", claimsData.claims.sub)
+    .eq("id", authData.user.id)
     .maybeSingle();
-  if (profile?.role !== "driver") return { error: "Þessi aðgangur er ekki tengdur ökumanni." };
-
-  const { error: updateError } = await supabase.auth.updateUser({ password: parsed.data.password });
-  if (updateError) return { error: "Ekki tókst að vista lykilorðið. Reyndu aftur." };
+  if (profile?.role !== "driver") {
+    await supabase.auth.signOut();
+    return { error: "Þessi tengill er ekki tengdur ökumanni." };
+  }
 
   const { error: activationError } = await supabase.rpc("activate_current_driver_access");
-  if (activationError) return { error: "Lykilorðið var vistað en ökumannstengingin fannst ekki." };
+  if (activationError) {
+    await supabase.auth.signOut();
+    return { error: "Ökumannstengingin fannst ekki eða aðganginum hefur verið lokað." };
+  }
 
   redirect("/driver");
 }

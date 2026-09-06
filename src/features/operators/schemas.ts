@@ -63,12 +63,7 @@ export const availabilityInputSchema = z.object({
   availabilityStatus: z.enum(availabilityStatuses),
 });
 
-export const driverInvitationSchema = z.object({
-  operatorId: z.uuid(),
-  email: z.string().trim().toLowerCase().pipe(z.email()),
-});
-
-export const driverPasswordResetSchema = z.object({
+export const driverAccessLinkSchema = z.object({
   operatorId: z.uuid(),
 });
 

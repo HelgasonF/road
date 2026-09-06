@@ -25,7 +25,6 @@ import { logoutAction } from "@/features/auth/actions";
 import { ContactActions } from "@/features/contact/contact-actions";
 import { JobPhotoGallery } from "@/features/customer-intake/job-photo-gallery";
 import type {
-  AuthenticatedIdentity,
   AvailabilityStatus,
   Job,
   JobStatus,
@@ -48,7 +47,6 @@ import { buildDirectionsHref, formatDriverTimestamp, getDriverStatusActions } fr
 
 interface DriverWorkspaceProps {
   demoMode: boolean;
-  identity: AuthenticatedIdentity;
   jobs: Job[];
   operator: Operator;
 }
@@ -66,7 +64,7 @@ function jobVehicle(job: Job) {
     || "Ökutæki óskráð";
 }
 
-export function DriverWorkspace({ demoMode, identity, jobs, operator }: DriverWorkspaceProps) {
+export function DriverWorkspace({ demoMode, jobs, operator }: DriverWorkspaceProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [selectedJobId, setSelectedJobId] = useState(
@@ -132,7 +130,7 @@ export function DriverWorkspace({ demoMode, identity, jobs, operator }: DriverWo
         </div>
         <div className="driver-topbar-actions">
           {demoMode ? <span className="demo-badge">Sýnishamur</span> : null}
-          <span className="driver-identity"><CircleUserRound size={23} /><span><strong>{operator.name}</strong><small>{identity.email}</small></span></span>
+          <span className="driver-identity"><CircleUserRound size={23} /><span><strong>{operator.name}</strong><small>{operator.phone}</small></span></span>
           <form action={logoutAction}><button className="icon-button" type="submit" aria-label="Skrá út"><LogOut size={18} /></button></form>
         </div>
       </header>

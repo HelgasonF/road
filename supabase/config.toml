@@ -233,31 +233,6 @@ otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
-# Use a production-ready SMTP server
-# [auth.email.smtp]
-# enabled = true
-# host = "smtp.sendgrid.net"
-# port = 587
-# user = "apikey"
-# pass = "env(SENDGRID_API_KEY)"
-# admin_email = "admin@email.com"
-# sender_name = "Admin"
-
-# Uncomment to customize email template
-[auth.email.template.invite]
-subject = "Ökumannsaðgangur að Vegstoð"
-content_path = "./supabase/templates/invite.html"
-
-[auth.email.template.recovery]
-subject = "Endurstilla lykilorð Vegstoðar"
-content_path = "./supabase/templates/recovery.html"
-
-# Uncomment to customize notification email template
-# [auth.email.notification.password_changed]
-# enabled = true
-# subject = "Your password has been changed"
-# content_path = "./supabase/templates/password_changed_notification.html"
-
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.
 enable_signup = false

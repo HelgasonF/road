@@ -45,9 +45,9 @@ Then open `http://127.0.0.1:3000` in Chrome on the phone.
 
 ## Current checkpoint state
 
-- Git branch: `main`.
+- Git branch: `chore/vercel-git-connection` (Preview work; `main` remains the production branch).
 - Git remote: `origin` → `git@github.com:HelgasonF/road.git`.
-- This checkpoint includes the map/address, customer WhatsApp, Android-origin, flowchart, hosted Supabase, deployment, and function-permission work completed after `2c3a1fd`.
+- This checkpoint includes the map/address, customer WhatsApp, passwordless driver WhatsApp access, Android-origin, flowchart, hosted Supabase, deployment, and function-permission work completed after `2c3a1fd`.
 - Confirm the exact revision with `git log -1 --oneline` and verify `git status --short` is clean before starting another slice.
 - The local Supabase Docker stack preserves the current application data and imported Icelandic address register. Restart it with `npx supabase start` if needed.
 - No Android device is currently connected through ADB.
@@ -93,6 +93,25 @@ Relevant files include:
 - `src/features/customer-intake/customer-link-panel.test.tsx`
 - `src/features/jobs/job-detail.tsx`
 
+### Passwordless driver WhatsApp access
+
+- Driver access no longer asks for an email, sends an email invitation, or requires a password.
+- Dispatch creates a one-time Supabase Auth link from the selected provider's registered phone workflow and then opens a prepared ordinary WhatsApp message.
+- A new driver produces a Supabase `signup` token; later links produce `magiclink` tokens. Vegstoð explicitly validates only those two types.
+- `/driver/access` requires the driver to press **Opna ökumannsskjá** before redeeming the token, preventing link-preview requests from consuming it.
+- The resulting Supabase cookie session uses the existing driver-only RLS policies. Used links fail, and disabling the driver removes an already-authenticated session immediately.
+- A real local browser pass verified new and returning links, phone-only presentation, one-time use, and disabling. Temporary Auth users and operator changes were removed afterward.
+
+Relevant files include:
+
+- `src/app/driver/access/page.tsx`
+- `src/features/auth/driver-access-form.tsx`
+- `src/features/operators/driver-access.ts`
+- `src/features/operators/driver-access-panel.tsx`
+- `src/features/operators/actions.ts`
+- `src/features/jobs/driver-contact-actions.tsx`
+- `supabase/migrations/20260906193000_use_whatsapp_driver_access.sql`
+
 ### Android development access
 
 - `next.config.ts` allows the Android USB loopback development origin so Next.js chunks and hot reload work through ADB reverse forwarding.
@@ -115,11 +134,11 @@ Relevant files include:
 - The private `job-photos` bucket and tightened function execution permissions are verified.
 - Vercel Preview uses encrypted Supabase variables with `DEMO_MODE=false` and the stable address `https://vegstod.vercel.app`. The same encrypted variables are prepared for Production, but no production deployment is active.
 - Supabase Auth Site URL and redirects use the stable preview address while preserving local development redirects.
-- The automatic Git Preview passed the full hosted dispatcher → customer → driver → billing workflow, including invitation, assignment, every driver status, private-photo access, timeline aggregation, independent settlement, and immediate access revocation. All disposable database, Storage, and Auth records were removed; see [`docs/hosted-audit-2026-09-06.md`](hosted-audit-2026-09-06.md).
+- The automatic Git Preview passed the full hosted dispatcher → customer → driver → billing workflow using the driver access path available at that revision. The later passwordless WhatsApp driver-link flow is described in [`docs/implementation-status.md`](implementation-status.md). All disposable database, Storage, and Auth records were removed; see [`docs/hosted-audit-2026-09-06.md`](hosted-audit-2026-09-06.md).
 - The real first admin is active and its login was verified. Temporary credentials are stored outside Git at `~/.config/vegstod/first-admin.json` with owner-only permissions and should be rotated after first use.
 - Vercel is connected to the private GitHub repository `HelgasonF/road`. Feature-branch pushes create previews; `main` is the production branch and must not receive another merge until the release is approved.
-- Hosted Supabase blocks public self-signup, requires 10-character letter-and-number passwords, and enforces SSL for external PostgreSQL connections.
-- Custom SMTP is still required before using branded hosted invitation/recovery templates. Full commands and operational boundaries are in [`docs/deployment.md`](deployment.md).
+- Hosted Supabase blocks public self-signup, requires 10-character letter-and-number passwords for staff accounts, and enforces SSL for external PostgreSQL connections.
+- Customers and drivers receive their secure Vegstoð links through ordinary WhatsApp. Drivers use passwordless, one-time Supabase Auth links generated by the server-only application client; SMTP is not an operational dependency.
 
 ## Last completed verification
 
@@ -128,7 +147,7 @@ The current application code was fully checked on 6 September 2026:
 - `npm run build` passed.
 - `npm run typecheck` passed.
 - `npm run lint` passed.
-- `npm test` passed all 124 tests across 22 Vitest files.
+- `npm test` passed all 124 tests across 24 Vitest files.
 - `npx supabase test db` passed all 176 assertions across seven pgTAP files.
 - `npx supabase db lint --local --schema public` reported no application-schema errors.
 - `git diff --check` passed.
@@ -139,9 +158,9 @@ The hosted Git Preview separately passed the complete operational and financial 
 
 The local system and hosted desktop workflow are verified, but the current public link is still a preview. The next order is:
 
-1. Repeat the complete customer → dispatch → driver flow on a physical phone through the public HTTPS preview, including native photo selection, without USB forwarding.
-2. Configure custom SMTP on the existing Free Supabase project and test invitation/recovery mail.
+1. Repeat the complete customer → dispatch → driver flow on a physical phone through the public HTTPS preview, including native photo selection and the passwordless WhatsApp driver link, without USB forwarding.
+2. Confirm one-time driver-link reuse rejection and immediate access disable in that public-phone pass.
 3. Complete the launch checklist and only then create a production deployment. Upgrade the same Supabase project later when operating requirements justify it.
-4. Select accounting, invoicing, payment, refund/credit-note, provider-payment, and reconciliation integrations after the accountant confirms the Icelandic requirements.
+4. Select accounting, invoicing, payment, refund/credit-note, provider-payment, and reconciliation integrations after the accountant confirms the Icelandic requirements; customer payment links will use the existing WhatsApp delivery pattern.
 
 Do not treat the preview as a production release or the current billing ledger as a legal invoice issuer or payment processor.

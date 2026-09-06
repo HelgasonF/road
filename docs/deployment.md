@@ -13,7 +13,7 @@ Vegstoð currently has one external **preview** environment:
 - Supabase region: `eu-west-1`
 - Supabase plan: Free
 
-There is no production deployment. The preview is intentionally public at the network layer so a customer can open a secure job link without a Vercel account. Staff routes still require Supabase authentication, customer routes require a random expiring one-time token, and the photo bucket remains private.
+There is no production deployment. The preview is intentionally public at the network layer so customers and drivers can open their secure links without a Vercel account. Staff routes still require Supabase authentication, customer routes require a random expiring one-time token, driver links establish a restricted Supabase session after explicit confirmation, and the photo bucket remains private.
 
 The hosted database contains the complete migration history, the official Icelandic address/place search data, and no demo operators or jobs. At the last check it used about 94 MB of the Free plan's 500 MB database allowance. The imported reference data comprised 139,346 HMS addresses and 2,970 Icelandic place names.
 
@@ -32,7 +32,7 @@ SUPABASE_SECRET_KEY
 DEMO_MODE=false
 ```
 
-`SUPABASE_SECRET_KEY` must remain server-only and must never use a `NEXT_PUBLIC_` prefix. The local `.vercel/` link metadata is ignored by Git.
+`SUPABASE_SECRET_KEY` must remain server-only and must never use a `NEXT_PUBLIC_` prefix. It generates driver Auth links and performs the narrowly scoped customer-link and Storage operations. The local `.vercel/` link metadata is ignored by Git.
 
 Create a new preview from the linked working tree with:
 
@@ -71,9 +71,9 @@ npx supabase db push --dry-run
 npx supabase db push
 ```
 
-The hosted Auth Site URL is `https://vegstod.vercel.app`. Its allowed redirect URLs also include that address plus local `127.0.0.1:3000` and `localhost:3000` development URLs. Email confirmation and TOTP remain enabled. Public self-signup is disabled, passwords require at least 10 characters with letters and digits, and public users do not receive database function execution privileges. Hosted PostgreSQL rejects non-SSL external connections.
+The hosted Auth Site URL is `https://vegstod.vercel.app`. Its allowed redirect URLs also include that address plus local `127.0.0.1:3000` and `localhost:3000` development URLs. Email/password authentication and TOTP remain available for staff accounts. Public self-signup is disabled, staff passwords require at least 10 characters with letters and digits, and public users do not receive database function execution privileges. Hosted PostgreSQL rejects non-SSL external connections.
 
-The repository includes branded invitation and recovery templates in `supabase/templates/`, but the Supabase Free plan's built-in mail provider does not allow custom templates. Configure a custom SMTP provider before applying those templates or sending real driver invitations. Until then, password login works, but hosted invitation/recovery email is not ready for operations.
+Drivers do not receive email and do not create passwords. An authenticated staff action generates a one-time Supabase Auth token for an internal, non-routable identifier and returns a first-party `/driver/access` URL. Dispatch places that URL in the prepared WhatsApp message. The driver must press **Opna ökumannsskjá** before the token is consumed; successful confirmation creates the ordinary Supabase cookie session used by the existing driver RLS policies. A later assignment can generate a fresh link, and disabling the operator immediately removes access from an existing session. SMTP is not part of the customer or driver workflow.
 
 Create each additional staff user in Supabase Auth, then activate it explicitly:
 
@@ -108,10 +108,10 @@ npx supabase test db
 npx supabase db lint --local --schema public
 ```
 
-Then repeat the real customer workflow on a physical phone over the public preview: staff sign-in, address search, job creation, customer WhatsApp handoff, customer location confirmation, real phone photo upload, dispatch receipt, assignment, driver sign-in, private photo access, status changes, timeline, and billing handoff. Remove all test records and Storage objects afterward.
+Then repeat the real customer workflow on a physical phone over the public preview: staff sign-in, address search, job creation, customer WhatsApp handoff, customer location confirmation, real phone photo upload, dispatch receipt, assignment, driver WhatsApp access-link confirmation, private photo access, status changes, timeline, and billing handoff. Confirm that a used driver link fails in a clean session and that disabling the driver removes an existing session immediately. Remove all test records, Auth users, and Storage objects afterward.
 
 ## Moving from Free to paid Supabase
 
 Upgrade the existing `Road` project in the Supabase organization when its limits, uptime requirements, backup requirements, or launch schedule justify it. Keeping the same project preserves its project reference, API URL, database, Storage objects, and Vercel environment variables; a second database migration is unnecessary. Review the current [Supabase billing documentation](https://supabase.com/docs/guides/platform/billing-faq) before upgrading.
 
-The project region cannot be changed in place. If a different region is required later, plan a separate project migration. Also configure backups, custom SMTP, monitoring, and the final domain before declaring the environment production-ready. Supabase documents the relevant launch checks in its [production checklist](https://supabase.com/docs/guides/deployment/going-into-prod).
+The project region cannot be changed in place. If a different region is required later, plan a separate project migration. Also configure backups, monitoring, and the final domain before declaring the environment production-ready. Supabase documents the relevant launch checks in its [production checklist](https://supabase.com/docs/guides/deployment/going-into-prod).

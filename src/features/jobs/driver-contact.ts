@@ -68,7 +68,9 @@ export function buildDriverAssignmentMessage(
     "",
     ...operationalLines(summary),
     "",
-    "Skráðu þig inn til að sjá nákvæma staðsetningu og upplýsingar viðskiptavinar:",
+    "Opnaðu örugga tengilinn til að sjá nákvæma staðsetningu og upplýsingar viðskiptavinar:",
     driverUrl.trim(),
+    "",
+    "Tengillinn rennur út. Ekki framsenda tengilinn.",
   ].join("\n");
 }

@@ -45,11 +45,12 @@ New Auth users receive the non-operational `pending` role by default, so acciden
 Driver access is managed from the selected service provider in the dispatcher interface:
 
 1. Create the service provider, vehicles, and capabilities normally.
-2. Open **Ökumannsaðgangur**, enter the driver's email, and send the invitation.
-3. The driver opens the email, chooses a password, and lands on `/driver`.
-4. Dispatch can send a password-reset email, disable access immediately, or re-enable the same account without deleting operational data.
+2. Open **Ökumannsaðgangur** and create a private access link for the provider's registered phone number.
+3. Press **Senda í WhatsApp**, review the prepared message, and press Send in WhatsApp or WhatsApp Web.
+4. The driver opens the link, confirms **Opna ökumannsskjá**, and lands on `/driver` without an email account or password.
+5. Dispatch can generate another short-lived link when needed, disable access immediately, or re-enable the same account without deleting operational data.
 
-Driver contact in the MVP uses ordinary WhatsApp rather than an automated API. Each ranked driver has a prewritten availability request containing only the operational area, assistance, priority, and estimated distance. After assignment, a second action sends the active driver their Vegstoð login URL. Both actions open the registered driver's chat on a phone, WhatsApp Desktop, or WhatsApp Web; the dispatcher reviews and manually sends the message. Calling remains available as a fallback. This does not require WhatsApp Business Platform credentials.
+Driver contact in the MVP uses ordinary WhatsApp rather than an automated API. Each ranked driver has a prewritten availability request containing only the operational area, assistance, priority, and estimated distance. After assignment, a second action generates a private one-time Supabase Auth link and places it in the assignment message. Both actions open the registered driver's chat on a phone, WhatsApp Desktop, or WhatsApp Web; the dispatcher reviews and manually sends the message. Calling remains available as a fallback. This does not require WhatsApp Business Platform credentials.
 
 Customer intake is managed from the selected job:
 
@@ -73,7 +74,7 @@ The current billing slice is a validated ledger and workflow, not a payment proc
 
 Local customer photos are stored in the private `job-photos` Supabase Storage bucket. Uploads use short-lived signed upload tokens; reads pass through an application authorization route before receiving a five-minute signed object URL. Do not make this bucket public in hosted Supabase.
 
-Local invitation and recovery emails appear in Mailpit at `http://127.0.0.1:54324`. The hosted Free-plan Supabase project and public Vercel preview are configured as described in [docs/deployment.md](docs/deployment.md). Configure custom SMTP before applying the repository templates in `supabase/templates/` or sending real hosted driver invitations. `SUPABASE_SECRET_KEY` must contain a server-only `sb_secret_...` key in hosting; it is used for verified staff Auth administration and token-validated private customer-intake/storage operations, and must never reach browser code.
+The hosted Free-plan Supabase project and public Vercel preview are configured as described in [docs/deployment.md](docs/deployment.md). Customer and driver links are delivered through WhatsApp, so the operational workflow has no SMTP dependency. Staff accounts still use administrator-managed Supabase email/password login. `SUPABASE_SECRET_KEY` must contain a server-only `sb_secret_...` key in hosting; it is used for passwordless driver-link generation and token-validated private customer-intake/storage operations, and must never reach browser code.
 
 For a UI-only preview without Docker or credentials, run:
 
