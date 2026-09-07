@@ -136,11 +136,12 @@ Relevant files include:
 ### Hosted preview and Supabase Free project
 
 - Supabase project `Road` (`abpmzqtbllszqqetuubp`) is linked in `eu-west-1` on the Free plan.
-- All 21 migrations are applied. Hosted reference data contains 139,346 HMS addresses and 2,970 Icelandic place names; the database used about 94 MB at the last check.
+- All 22 migrations are applied. Hosted reference data contains 139,346 HMS addresses and 2,970 Icelandic place names; the database used about 94 MB at the last check.
 - The private `job-photos` bucket and tightened function execution permissions are verified.
 - Vercel Preview uses encrypted Supabase variables with `DEMO_MODE=false` and the stable address `https://vegstod.vercel.app`. The same encrypted variables are prepared for Production, but no production deployment is active.
 - Supabase Auth Site URL and redirects use the stable preview address while preserving local development redirects.
 - The automatic Git Preview passed the full hosted dispatcher → customer → driver → billing workflow. Commit `ba61a50` separately passed the current passwordless WhatsApp driver lifecycle and the provider → job → assignment → WhatsApp handoff → driver acceptance path. All disposable database, Storage, and Auth records were removed; see [`docs/hosted-audit-2026-09-06.md`](hosted-audit-2026-09-06.md) and [`docs/hosted-whatsapp-driver-audit-2026-09-06.md`](hosted-whatsapp-driver-audit-2026-09-06.md).
+- Commit `bbc89b4` passed a separate hosted phone-first audit: phone-only creation, generated WhatsApp handoff, customer assistance and description submission, pending-state removal, map visibility, matching, and assignment controls. The disposable job and its cascading records were removed; see [`docs/hosted-phone-first-intake-audit-2026-09-07.md`](hosted-phone-first-intake-audit-2026-09-07.md).
 - The real first admin is active and its simplified testing login was verified. Credentials are stored outside Git at `~/.config/vegstod/first-admin.json` with owner-only permissions; replace the testing password with a unique production password before launch.
 - Vercel is connected to the private GitHub repository `HelgasonF/road`. Feature-branch pushes create previews; `main` is the production branch and must not receive another merge until the release is approved.
 - Hosted Supabase blocks public self-signup, requires 10-character letter-and-number passwords for staff accounts, and enforces SSL for external PostgreSQL connections.
