@@ -32,6 +32,8 @@ The customer link's `first_opened_at` was set when WhatsApp requested the URL fo
 
 Alli advanced the job to **Á leiðinni** and reported that the portrait photos looked zoomed in on the driver screen. The stored files were intact; the shared gallery forced every thumbnail into a landscape frame with `object-fit: cover`, which cropped the top and bottom of portrait images. The gallery now uses `object-fit: contain` so the whole photo is visible inside each thumbnail, while opening it still returns the original private file.
 
+Commit `5b2cf68` passed lint, typecheck, and a production build, then deployed to the Vercel Preview and was assigned to `https://vegstod.vercel.app`. A 390 × 844 browser check on that stable address showed both portrait photos completely inside their thumbnail frames.
+
 The job was then reassigned to the owner's **Freyr símapróf 729124** driver account and a fresh passwordless assignment link was sent to the owner's WhatsApp self-chat for phone verification. This deliberate reassignment closed Alli's assignment history and returned the job to **Úthlutað** for the new driver.
 
 ## Retained demonstration state

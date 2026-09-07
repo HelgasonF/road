@@ -1,6 +1,6 @@
 # Hosted preview and Supabase operations
 
-Last updated: 6 September 2026
+Last updated: 7 September 2026
 
 ## Current hosted environment
 
@@ -15,9 +15,9 @@ Vegstoð currently has one external **preview** environment:
 
 There is no production deployment. The preview is intentionally public at the network layer so customers and drivers can open their secure links without a Vercel account. Staff routes still require Supabase authentication, customer routes require a random expiring one-time token, driver links establish a restricted Supabase session after explicit confirmation, and the photo bucket remains private.
 
-The hosted database contains the complete migration history and the official Icelandic address/place search data. One disposable provider/job dataset from the public-phone audit is temporarily retained for owner inspection; it is test data and must be removed afterward. At the last check the database used about 94 MB of the Free plan's 500 MB allowance. The imported reference data comprised 139,346 HMS addresses and 2,970 Icelandic place names.
+The hosted database contains the complete migration history and the official Icelandic address/place search data. The public-phone audit dataset and the Alli stakeholder-demonstration dataset are temporarily retained for owner inspection; they are test data and must be removed afterward using their owner-only manifests. At the last check the database used about 94 MB of the Free plan's 500 MB allowance. The imported reference data comprised 139,346 HMS addresses and 2,970 Icelandic place names.
 
-The automatic Git Preview completed the full hosted dispatcher → customer → driver → billing workflow on 6 September 2026. A follow-up on commit `ba61a50` verified the replacement passwordless WhatsApp driver links through provider and job creation, assignment handoff, clean-session redemption, one-time reuse rejection, returning access, driver acceptance, and immediate disable. A final physical-phone pass used installed WhatsApp, GPS, the native photo picker, the one-time driver link, private-photo display, every driver status, the staff timeline, and billing handoff over public HTTPS. See [`docs/hosted-audit-2026-09-06.md`](hosted-audit-2026-09-06.md), [`docs/hosted-whatsapp-driver-audit-2026-09-06.md`](hosted-whatsapp-driver-audit-2026-09-06.md), and [`docs/public-phone-audit-2026-09-06.md`](public-phone-audit-2026-09-06.md).
+The automatic Git Preview completed the full hosted dispatcher → customer → driver → billing workflow on 6 September 2026. A follow-up on commit `ba61a50` verified the replacement passwordless WhatsApp driver links through provider and job creation, assignment handoff, clean-session redemption, one-time reuse rejection, returning access, driver acceptance, and immediate disable. A final physical-phone pass used installed WhatsApp, GPS, the native photo picker, the one-time driver link, private-photo display, every driver status, the staff timeline, and billing handoff over public HTTPS. On 7 September, Alli completed another real WhatsApp customer and driver pass; the reported portrait-thumbnail cropping was corrected and the same job was reassigned to the owner's test driver for verification. See [`docs/hosted-audit-2026-09-06.md`](hosted-audit-2026-09-06.md), [`docs/hosted-whatsapp-driver-audit-2026-09-06.md`](hosted-whatsapp-driver-audit-2026-09-06.md), [`docs/public-phone-audit-2026-09-06.md`](public-phone-audit-2026-09-06.md), and [`docs/alli-live-demo-2026-09-07.md`](alli-live-demo-2026-09-07.md).
 
 The initial real admin is active and its login was verified against the preview. Its simplified testing credentials are stored outside the repository at `~/.config/vegstod/first-admin.json` with owner-only file permissions. The password must never be committed and must be replaced with a unique production password before launch.
 
