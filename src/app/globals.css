@@ -1420,7 +1420,7 @@ button.driver-job-contact { cursor: pointer; }
 .job-photo-heading span { align-items: center; background: var(--mint); border-radius: 999px; color: var(--pine); display: inline-flex; font-size: 8px; font-weight: 700; height: 18px; justify-content: center; margin-left: auto; min-width: 18px; }
 .job-photo-grid { display: grid; gap: 8px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .job-photo-grid a { background: #edf2ef; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); min-width: 0; overflow: hidden; position: relative; text-decoration: none; }
-.job-photo-grid img { aspect-ratio: 1.25; display: block; object-fit: cover; width: 100%; }
+.job-photo-grid img { aspect-ratio: 1.25; background: #edf2ef; display: block; object-fit: contain; width: 100%; }
 .job-photo-grid a > span { align-items: center; display: flex; gap: 4px; justify-content: space-between; padding: 6px 7px; }
 .job-photo-grid small { font-size: 8px; font-weight: 700; }
 .customer-notes-section { background: #fffaf0; }

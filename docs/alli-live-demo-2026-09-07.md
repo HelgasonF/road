@@ -28,9 +28,15 @@ The hosted Free Supabase project contains the customer submission, two completed
 
 The customer link's `first_opened_at` was set when WhatsApp requested the URL for its link preview, before Alli completed the form. This field therefore means the first request to the intake page, not guaranteed human viewing. `submitted_at` and the completed photo rows are the authoritative evidence that the customer finished the intake. The driver's explicit **Opna ökumannsskjá** confirmation continued to protect the one-time Auth token from link-preview consumption.
 
+## Owner photo review
+
+Alli advanced the job to **Á leiðinni** and reported that the portrait photos looked zoomed in on the driver screen. The stored files were intact; the shared gallery forced every thumbnail into a landscape frame with `object-fit: cover`, which cropped the top and bottom of portrait images. The gallery now uses `object-fit: contain` so the whole photo is visible inside each thumbnail, while opening it still returns the original private file.
+
+The job was then reassigned to the owner's **Freyr símapróf 729124** driver account and a fresh passwordless assignment link was sent to the owner's WhatsApp self-chat for phone verification. This deliberate reassignment closed Alli's assignment history and returned the job to **Úthlutað** for the new driver.
+
 ## Retained demonstration state
 
-- The Alli job remains accepted so the owner can inspect the dispatcher and driver experience.
+- The Alli job is assigned to the owner's test driver so the owner can inspect the same dispatcher and driver experience on a phone.
 - The two customer photos remain in private Supabase Storage and are visible only through the existing authorized routes.
-- The dedicated Alli provider, vehicle, Auth identity, assignment, customer link, audit rows, billing record, and job must be removed together after the demonstration is no longer needed.
+- The dedicated Alli provider, vehicle, Auth identity, customer link, photos, both assignment-history rows, audit rows, billing record, and job must be removed together after the demonstration. The existing owner test provider and its Auth identity should remain unless the owner deliberately retires that test account.
 - The four unassigned regional presentation jobs remain unchanged for map and matching demonstrations.
