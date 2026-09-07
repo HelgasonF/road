@@ -167,9 +167,20 @@ Five clearly marked presentation providers are stored in the hosted Supabase pro
 | Jón Einarsson | Suðurlandsaðstoð · SÝNISHORN | Hvolsvöllur | 230 km | 2 |
 | Katrín Magnúsdóttir | Borgarhjálp · SÝNISHORN | Reykjavík | 190 km | 2 |
 
-All five are active and available. Each provider has all eleven matching capabilities plus one service van and one recovery vehicle whose capabilities divide the general-assistance and recovery work. The four regional dummy phone numbers are visibly marked `SÝNI`; only the Reykjavík presentation provider routes WhatsApp testing to the owner's test phone.
+All five are active and available. Each provider has all eleven matching capabilities plus one service van and one recovery vehicle whose capabilities divide the general-assistance and recovery work. The four regional dummy phone numbers are visibly marked `SÝNI`; only the Reykjavík presentation provider routes WhatsApp testing to the owner's test phone. Provider notes now contain only their operating-area descriptions; the temporary “Sýniaðili fyrir kynningu” wording has been removed.
 
 The five service circles cover all 2,970 records in the hosted Iceland place index. The weakest indexed point still has about 55 km of spare radius. Direct hosted verification confirmed five providers, ten vehicles, 55 provider-capability rows, and 55 vehicle-capability rows. The deployed provider screen rendered the complete network and selected-provider details without browser-console errors. Deterministic presentation IDs and the owner-only manifest at `~/.config/vegstod/presentation-network.json` allow this network to be updated or removed later without touching other records.
+
+Four unassigned presentation jobs are positioned away from the provider bases so the job and driver markers remain distinct on the national map:
+
+| Customer | Location | Scenario | Priority | Nearest eligible driver |
+| --- | --- | --- | --- | --- |
+| Sara Björnsdóttir | Borgarnes | Jump start | Normal | Katrín Magnúsdóttir, 43.7 km |
+| Kristín Jónsdóttir | Blönduós | EV assistance | High | Anna S. Jónsdóttir, 99.8 km |
+| Einar Pálsson | Höfn í Hornafirði | 4×4 and accident recovery | Urgent | Elín Guðmundsdóttir, 119.0 km |
+| María Sigurðardóttir | Vík í Mýrdal | Tire assistance | Normal | Jón Einarsson, 70.9 km |
+
+Each job has realistic vehicle and incident information, a visibly marked dummy customer number, its required capability rows, no assignment, and the automatically created billing record. Hosted matching returned multiple eligible providers where their radii overlap and ordered them by distance. The deployed interface showed all four active jobs, separate map markers, and the exact candidate order without browser-console errors. Their deterministic IDs are also stored in the presentation manifest for safe later cleanup.
 
 The older provider from the physical-phone audit remains retained for owner inspection, so the hosted dashboard currently reports six active providers. It is separate from these five presentation providers and should be removed together with the rest of that audit dataset after inspection.
 
