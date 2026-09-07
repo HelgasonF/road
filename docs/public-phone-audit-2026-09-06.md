@@ -30,6 +30,6 @@ The audit used a disposable provider and job created specifically for this pass.
 ## Remaining cleanup and launch work
 
 - Keep the disposable phone-audit records only until the owner finishes inspecting the staff interface, then delete the Storage object, job relationships, job, driver Auth user, and provider.
-- Rotate the initial administrator temporary password after the owner signs in successfully.
+- The administrator uses a simplified password during owner testing; replace it with a unique production password before launch.
 - Remove the linked WhatsApp Web device after testing if it should not remain connected.
 - Complete the operational launch checklist before merging to `main` or creating a production deployment.

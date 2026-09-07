@@ -1,6 +1,6 @@
 # Vegstoð implementation status
 
-Last updated: 6 September 2026
+Last updated: 7 September 2026
 
 ## Maintenance checkpoint
 
@@ -13,8 +13,8 @@ The shutdown/resume state, active repository path, uncommitted work, restart com
 - A driver login is an authentication link to an operator; it is not a second driver or company record.
 - Dispatch remains manual. Matching suggests suitable operators, but a dispatcher makes the assignment.
 - Drivers use a dedicated mobile-first Vegstoð screen for operational job data.
-- Drivers never receive operational email and do not need an email address or password. Dispatch generates a private one-time Vegstoð access link and sends it manually to the registered phone through WhatsApp.
-- Driver availability contact in the MVP is a normal manual WhatsApp message opened from Vegstoð on a phone or computer. The dispatcher reviews and presses Send, so no paid WhatsApp Business Platform/API automation is required. Calling remains the fallback.
+- Drivers never receive operational email and do not need an email address or password. Dispatch generates a private one-time Vegstoð access link and delivers it to the registered phone through WhatsApp.
+- The tested MVP uses normal manual WhatsApp messages opened from Vegstoð on a phone or computer. The dispatcher reviews and presses Send. The official Meta WhatsApp Cloud API is now the planned production delivery channel; the existing manual `wa.me` handoff and calling remain operational fallbacks.
 - A customer does not need an account. Dispatch sends a 24-hour, job-specific link directly through a prepared WhatsApp handoff; it collects a confirmed location, vehicle details, problem description, and private photos inside Vegstoð.
 - Every payer pays Vegstoð. Vegstoð is the payer-facing seller in the system and separately settles with the assigned service provider; the provider never invoices the customer through this workflow.
 - Billing stays in a separate staff-only **Uppgjör** workspace so the dispatcher map remains operational. Drivers cannot see payer prices, provider totals, or Vegstoð's gross difference.
@@ -155,6 +155,39 @@ A physical phone with WhatsApp installed completed the live Preview workflow wit
 
 The disposable provider, job, Auth user, photo, and billing case remain temporarily available for the owner to inspect from the staff interface. See [`docs/public-phone-audit-2026-09-06.md`](public-phone-audit-2026-09-06.md).
 
+## Hosted presentation network
+
+Five clearly marked presentation providers are stored in the hosted Supabase project for the owner's system demonstration:
+
+| Driver | Company | Base | Radius | Vehicles |
+| --- | --- | --- | ---: | ---: |
+| Anna S. Jónsdóttir | Norðurhjálp · SÝNISHORN | Akureyri | 225 km | 2 |
+| Bjarni Ólafsson | Vestfjarðabjörgun · SÝNISHORN | Ísafjörður | 240 km | 2 |
+| Elín Guðmundsdóttir | Austurdráttur · SÝNISHORN | Egilsstaðir | 240 km | 2 |
+| Jón Einarsson | Suðurlandsaðstoð · SÝNISHORN | Hvolsvöllur | 230 km | 2 |
+| Katrín Magnúsdóttir | Borgarhjálp · SÝNISHORN | Reykjavík | 190 km | 2 |
+
+All five are active and available. Each provider has all eleven matching capabilities plus one service van and one recovery vehicle whose capabilities divide the general-assistance and recovery work. The four regional dummy phone numbers are visibly marked `SÝNI`; only the Reykjavík presentation provider routes WhatsApp testing to the owner's test phone.
+
+The five service circles cover all 2,970 records in the hosted Iceland place index. The weakest indexed point still has about 55 km of spare radius. Direct hosted verification confirmed five providers, ten vehicles, 55 provider-capability rows, and 55 vehicle-capability rows. The deployed provider screen rendered the complete network and selected-provider details without browser-console errors. Deterministic presentation IDs and the owner-only manifest at `~/.config/vegstod/presentation-network.json` allow this network to be updated or removed later without touching other records.
+
+The older provider from the physical-phone audit remains retained for owner inspection, so the hosted dashboard currently reports six active providers. It is separate from these five presentation providers and should be removed together with the rest of that audit dataset after inspection.
+
+## Planned WhatsApp Cloud API production slice
+
+The physical-phone audit proved the message content, secure links, and customer/driver journeys with the manual WhatsApp handoff. Production should build on that result by integrating the official Meta WhatsApp Cloud API directly where practical.
+
+1. Vegstoð should use a dedicated business-owned WhatsApp number rather than the owner's personal test number. The organization must create or complete its Meta Business Portfolio, WhatsApp Business Account, phone-number registration, verification, and billing setup before live credentials can be connected.
+2. The first approved utility templates should cover the secure customer-intake link, driver availability request, assigned-job/access link, and later the customer payment link. Icelandic and English variants are required where the recipient flow requires them.
+3. Driver availability should support structured **Laus** and **Ekki laus** replies. A positive reply can return the candidate to the dispatcher for deliberate assignment; it must not silently replace the existing manual assignment decision.
+4. API sends must be correlated to the job and recipient using Meta's WhatsApp message ID. Webhooks should update an explicit `queued`/`sent`/`delivered`/`read`/`failed` lifecycle, allowing the staff timeline to show verified delivery facts rather than only that a draft was opened.
+5. Sending must use an idempotent server-side outbox with safe retries and visible terminal failures. The current prepared `wa.me` action and phone call action must remain available when Meta rejects a template, the API is unavailable, or the registered number cannot receive WhatsApp messages.
+6. Access tokens stay server-only, webhook verification and signature checks happen before processing, and inbound events are deduplicated. Recipient opt-in and opt-out evidence must be stored, and business-initiated messages must follow Meta's approved-template and 24-hour customer-service-window rules.
+7. WhatsApp remains a delivery and response channel. Customer details, exact locations, notes, photos, billing data, and operational state stay in Vegstoð and private Supabase storage. Messages contain the minimum operational summary and expiring Vegstoð links; the existing one-time customer and driver access controls remain unchanged.
+8. Template-message fees and delivery policy are operational costs of this slice. Supabase does not need to be upgraded solely for the integration; capacity, retry volume, retention, and uptime should drive any later infrastructure upgrade.
+
+This slice is complete only after sandbox tests, template approval, webhook verification, retry/failure tests, opt-out handling, manual-fallback tests, and a real-phone pass prove customer delivery, driver replies, assignment delivery, one-time link use, and accurate staff-timeline statuses.
+
 ## Full verification snapshot
 
 The complete current working tree was rechecked on 6 September 2026:
@@ -171,28 +204,33 @@ The existing browser verification remains valid for the critical dispatcher → 
 
 ## Current readiness boundary
 
-The implemented flows are complete locally, and the complete dispatcher → customer → driver → billing path has passed against the hosted Supabase Free project and public Vercel Preview on a physical phone. The product is still not declared production-ready: the owner must finish inspecting and clean the retained test data, rotate the initial administrator password, and approve the operational launch checklist. The current link is a preview environment rather than a production release.
+The implemented flows are complete locally, and the complete dispatcher → customer → driver → billing path has passed against the hosted Supabase Free project and public Vercel Preview on a physical phone. The product is still not declared production-ready: the owner must finish inspecting and clean the retained test data, replace the simplified administrator testing password with a unique production password, and approve the operational launch checklist. The current link is a preview environment rather than a production release.
 
 ## Next slices
 
 1. Let the owner inspect the completed phone-audit job from the staff interface, then delete its disposable database, Storage, and Auth records.
-2. Rotate the initial administrator temporary password and remove the linked WhatsApp Web device if it should not remain connected.
-3. Promote a reviewed build to production only after the launch checklist is approved; upgrade the same Supabase project later when capacity, uptime, backup, or support requirements justify it.
-4. Select and integrate Iceland-compatible accounting/invoicing and payment providers only after an accountant confirms the invoice, VAT, refund, credit-note, provider-payment, and reconciliation requirements. Customer payment links will be delivered through the existing WhatsApp handoff.
+2. Replace the simplified administrator testing password with a unique production password before launch, and remove the linked WhatsApp Web device if it should not remain connected.
+3. Set up a dedicated Vegstoð business number and Meta WhatsApp Business assets, then implement the planned Cloud API messaging, delivery webhooks, driver availability replies, failure handling, and manual fallback.
+4. Promote a reviewed build to production only after the launch checklist is approved; upgrade the same Supabase project later when capacity, uptime, backup, or support requirements justify it.
+5. Select and integrate Iceland-compatible accounting/invoicing and payment providers only after an accountant confirms the invoice, VAT, refund, credit-note, provider-payment, and reconciliation requirements. Customer payment links should use the Cloud API with the manual WhatsApp handoff as fallback.
 
 ## Intended end-to-end workflow
 
 ```text
 Customer calls dispatcher
         -> dispatcher creates the job
-        -> dispatcher optionally sends a secure customer link
+        -> Vegstoð sends a secure customer link through WhatsApp
         -> customer confirms location and uploads photos
+        -> Vegstoð asks suitable drivers about availability
+        -> driver replies Laus or Ekki laus
         -> dispatcher assigns one operator/driver and vehicle
+        -> Vegstoð sends the assigned driver's secure access link
         -> driver accepts in the Vegstoð driver screen
         -> driver calls/navigates and updates job status
         -> dispatcher follows the same job through completion
         -> completed job becomes ready in Uppgjör
         -> Vegstoð invoices and collects from the payer
+        -> Vegstoð sends the customer payment link through WhatsApp
         -> Vegstoð approves and pays the provider separately
         -> both paid legs mark the case fully settled
 ```
@@ -203,6 +241,5 @@ Customer calls dispatcher
 - Automatic dispatch.
 - Continuous background driver tracking.
 - Native iOS/Android applications.
-- WhatsApp Business automation.
 - Automated legal invoice/accounting synchronization, online payment collection, refunds/credit notes, and bank payouts.
 - Rental-company and insurer account integrations beyond manual payer/reference capture.
