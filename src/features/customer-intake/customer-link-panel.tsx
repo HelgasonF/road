@@ -75,7 +75,7 @@ export function CustomerLinkPanel({ customerName, customerPhone, jobId, link }: 
           <div className="customer-whatsapp-handoff">
             <p>Tengillinn er tilbúinn. WhatsApp opnast með leiðbeiningum á ensku; þú ferð yfir þær og ýtir á Senda.</p>
             <a
-              aria-label={`Senda öruggan tengil til ${customerName} í WhatsApp`}
+              aria-label={`Senda öruggan tengil til ${customerName || "viðskiptavinar"} í WhatsApp`}
               className="customer-whatsapp-send"
               href={customerWhatsAppHref}
               rel="noreferrer"

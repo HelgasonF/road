@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, pgtap;
 
-select plan(8);
+select plan(11);
 
 select is(
   (
@@ -82,6 +82,33 @@ select ok(
     'EXECUTE'
   ),
   'authenticated staff retain access to application RPCs'
+);
+
+select ok(
+  has_function_privilege(
+    'authenticated',
+    'public.create_customer_intake_job(text,text,timestamp with time zone)',
+    'EXECUTE'
+  ),
+  'authenticated staff can create phone-first intake jobs'
+);
+
+select ok(
+  not has_function_privilege(
+    'authenticated',
+    'public.submit_customer_intake_v3(text,text,text,text,text,text,integer,text,double precision,double precision,text,public.location_source,text)',
+    'EXECUTE'
+  ),
+  'phone-first customer submission requires the server-only role'
+);
+
+select ok(
+  has_function_privilege(
+    'service_role',
+    'public.submit_customer_intake_v3(text,text,text,text,text,text,integer,text,double precision,double precision,text,public.location_source,text)',
+    'EXECUTE'
+  ),
+  'the server-only role can complete phone-first customer intake'
 );
 
 select * from finish();

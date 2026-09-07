@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+import { capabilityCodes } from "@/lib/domain/types";
+import { buildContactLinks } from "@/lib/contact-links";
+
 export const customerTokenSchema = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
 
 const optionalText = (maximum: number) => z.string().trim().max(maximum)
@@ -18,11 +21,19 @@ export const customerIntakeSchema = z.object({
   vehicleMake: optionalText(120),
   rentalCompany: optionalText(120),
   peopleCount: z.number().int().min(1).max(99),
+  requiredCapability: z.enum(capabilityCodes),
   latitude: z.number().min(62.5).max(67.5),
   longitude: z.number().min(-25.5).max(-12),
   locationLabel: z.string().trim().min(2).max(300),
   locationSource: z.enum(["gps", "map_pin"]),
   customerNotes: z.string().trim().min(5).max(4000),
+});
+
+export const quickCustomerIntakeJobSchema = z.object({
+  customerPhone: phoneSchema.refine(
+    (value) => buildContactLinks(value).whatsappHref !== null,
+    "Enter a telephone number that WhatsApp can open.",
+  ),
 });
 
 export const customerLinkCreationSchema = z.object({

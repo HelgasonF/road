@@ -36,6 +36,7 @@ type JobQueryRow = {
   notes: string | null;
   customer_notes: string | null;
   customer_intake_submitted_at: string | null;
+  intake_pending: boolean;
   created_at: string;
   updated_at: string;
   completed_at: string | null;
@@ -83,6 +84,7 @@ export async function getJobs(): Promise<Job[]> {
       notes,
       customer_notes,
       customer_intake_submitted_at,
+      intake_pending,
       created_at,
       updated_at,
       completed_at,
@@ -134,6 +136,7 @@ export async function getJobs(): Promise<Job[]> {
       notes: job.notes,
       customerNotes: job.customer_notes,
       customerIntakeSubmittedAt: job.customer_intake_submitted_at,
+      intakePending: job.intake_pending,
       photos: job.job_photos
         .filter((photo) => photo.uploaded_at !== null)
         .map((photo) => ({

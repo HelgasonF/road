@@ -18,7 +18,7 @@ Móttaka yfirfer alltaf tilbúin WhatsApp-skilaboð og ýtir sjálf á **Senda**
 
 ## Staða miðað við núverandi byggingu
 
-- Viðskiptavinaflæðið er tengt beint við WhatsApp: þegar öruggi tengillinn hefur verið búinn til opnar **Senda í WhatsApp** skráða númer viðskiptavinarins með einföldum leiðbeiningum á ensku og tenglinum. Engin afritun og líming er nauðsynleg.
+- Viðskiptavinaflæðið byrjar á **+**: móttaka slær aðeins inn símanúmer og velur **Búa til og opna WhatsApp**. Þá verður til verkefni sem bíður upplýsinga og skráð númer opnast með einföldum leiðbeiningum á ensku og öruggum tengli. Viðskiptavinurinn velur aðstoð, skrifar lýsingu og skráir staðsetningu og bílgögn; fyrst þá opnast röðun og úthlutun. Móttaka getur líka valið að fylla allt verkefnið út sjálf.
 - Ökumannsflæðið er einnig tengt beint við WhatsApp: framboðsfyrirspurn og úthlutunar-/innskráningartengill opnast með tilbúnum texta. Innskráningartengillinn er aðeins nothæfur einu sinni; nýr tengill er búinn til þegar þarf.
 - Í öllum tilvikum fer móttaka yfir textann og ýtir sjálf á **Senda** í WhatsApp. Gögn og myndir eru áfram inni í Vegstoð.
 

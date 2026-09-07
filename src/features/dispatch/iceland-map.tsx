@@ -214,7 +214,7 @@ export function IcelandMap({
     jobMarkersRef.current.forEach((marker) => marker.remove());
     jobMarkersRef.current.clear();
 
-    jobs.filter((job) => job.status !== "completed" && job.status !== "cancelled").forEach((job) => {
+    jobs.filter((job) => !job.intakePending && job.status !== "completed" && job.status !== "cancelled").forEach((job) => {
       const element = document.createElement("button");
       element.type = "button";
       element.className = `job-map-marker job-priority-${job.priority}`;
@@ -243,7 +243,7 @@ export function IcelandMap({
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    const job = jobs.find((item) => item.id === selectedJobId);
+    const job = jobs.find((item) => item.id === selectedJobId && !item.intakePending);
     const operator = operators.find((item) => item.id === selectedOperatorId);
     if (job) {
       map.easeTo({ center: [job.longitude, job.latitude], zoom: Math.max(map.getZoom(), 7), duration: 650 });

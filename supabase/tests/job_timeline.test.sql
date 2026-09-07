@@ -71,6 +71,8 @@ from public.profiles
 where role in ('admin', 'dispatcher')
 limit 1;
 
+grant select on timeline_test_identity to authenticated;
+
 insert into public.operators (
   id, name, phone, base_address, base_latitude, base_longitude,
   availability_status, service_radius_km

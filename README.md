@@ -16,6 +16,8 @@ npm run dev
 
 Copy the local Supabase URL and publishable key into `.env.local` using the variable names in `.env.example`. When that URL points to localhost, `npm run dev` resolves the local server-only `SECRET_KEY` from `supabase status` for the child process without printing or storing it. Never prefix a secret key with `NEXT_PUBLIC_`.
 
+After `npx supabase db reset`, the local-only dispatcher login is `dispatcher@vegstod.local` with password `LocalVegstod2026`. The seed file is not applied to the linked hosted project.
+
 The map uses MapLibre with OpenStreetMap tiles and needs no token. Address search and map-pin reverse lookup run entirely in PostgreSQL: `npm run addresses:import` streams the official [HMS Staðfangaskrá](https://hms.is/gogn-og-maelabord/grunngogntilnidurhals/stadfangaskra) and a small Icelandic place-name subset from OpenStreetMap into the local database. A pin near a registered house receives the nearest precise HMS address while retaining its exact clicked coordinates; other pins remain valid with a coordinate label. The source downloads are not committed to Git. Run the import after the first database reset and then weekly to follow the HMS update schedule.
 
 ### Android USB testing
@@ -52,13 +54,13 @@ Driver access is managed from the selected service provider in the dispatcher in
 
 Driver contact in the MVP uses ordinary WhatsApp rather than an automated API. Each ranked driver has a prewritten availability request containing only the operational area, assistance, priority, and estimated distance. After assignment, a second action generates a private one-time Supabase Auth link and places it in the assignment message. Both actions open the registered driver's chat on a phone, WhatsApp Desktop, or WhatsApp Web; the dispatcher reviews and manually sends the message. Calling remains available as a fallback. This does not require WhatsApp Business Platform credentials.
 
-Customer intake is managed from the selected job:
+Customer intake starts from the **+** button in the job list:
 
-1. Create the job with at least the caller and initial incident location.
-2. Open **Öruggur viðskiptavinatengill** and generate the 24-hour link. Generating another link revokes the previous one.
-3. Press **Senda í WhatsApp**. Vegstoð opens the customer's registered WhatsApp chat with clear English instructions and the secure URL; the dispatcher reviews the draft and presses Send. The raw token is available only at creation time and only its SHA-256 hash is stored.
-4. The customer uses the bilingual, account-free form to confirm GPS/map location, vehicle details, the problem, and up to six 10 MiB photos.
-5. Submission is one-time. Dispatch sees the information immediately, and private photos become visible to the assigned driver only after assignment.
+1. Enter only the caller's phone number and press **Búa til og opna WhatsApp**. Staff can switch to the full form when they want to enter every field themselves.
+2. Vegstoð atomically creates a pending job and 24-hour link, then opens the customer's WhatsApp chat with clear English instructions and the secure URL. The dispatcher reviews the draft and presses Send. The raw token is available only at creation time and only its SHA-256 hash is stored.
+3. The pending job remains visible in the list, but is omitted from the map and driver matching and cannot be assigned.
+4. The customer uses the bilingual, account-free form to enter their name, confirm GPS/map location, choose the required assistance, describe the problem, add vehicle/rental/people details, and optionally upload up to six 10 MiB photos.
+5. Submission is one-time and unlocks matching and assignment immediately. Private photos become visible to the assigned driver only after assignment.
 
 Billing and provider settlement are handled in the separate staff-only **Uppgjör** workspace at `/billing`:
 

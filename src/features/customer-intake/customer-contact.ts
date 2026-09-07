@@ -4,13 +4,17 @@ function oneLine(value: string) {
 
 export function buildCustomerIntakeWhatsAppMessage(customerName: string, customerUrl: string) {
   const name = oneLine(customerName);
+  const greeting = name ? `Hello ${name},` : "Hello,";
+  const instructions = name
+    ? "Please confirm your name, location, vehicle details, the assistance you need and a short description. You can also upload photos."
+    : "Please add your name, confirm your location, vehicle details, the assistance you need and a short description. You can also upload photos.";
 
   return [
-    `Hello ${name},`,
+    greeting,
     "",
     "Vegstoð has created a secure link for your roadside-assistance request.",
     "",
-    "Please confirm your location, vehicle details and the problem. You can also upload photos.",
+    instructions,
     "",
     customerUrl.trim(),
     "",

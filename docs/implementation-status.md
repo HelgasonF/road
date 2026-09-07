@@ -15,7 +15,7 @@ The shutdown/resume state, active repository path, uncommitted work, restart com
 - Drivers use a dedicated mobile-first Vegstoð screen for operational job data.
 - Drivers never receive operational email and do not need an email address or password. Dispatch generates a private one-time Vegstoð access link and delivers it to the registered phone through WhatsApp.
 - The tested MVP uses normal manual WhatsApp messages opened from Vegstoð on a phone or computer. The dispatcher reviews and presses Send. The official Meta WhatsApp Cloud API is now the planned production delivery channel; the existing manual `wa.me` handoff and calling remain operational fallbacks.
-- A customer does not need an account. Dispatch sends a 24-hour, job-specific link directly through a prepared WhatsApp handoff; it collects a confirmed location, registration, vehicle brand from a common-brand list or free-text fallback, optional rental company, number of people involved, problem description, and private photos inside Vegstoð.
+- A customer does not need an account. From the new-job **+** modal, dispatch can enter only the phone number and immediately open a prepared WhatsApp handoff with a 24-hour job-specific link. The customer enters their name, confirmed location, assistance type, description, registration, vehicle brand from a common-brand list or free-text fallback, optional rental company, number of people involved, and private photos inside Vegstoð. Staff can still switch to the complete manual job form.
 - Every payer pays Vegstoð. Vegstoð is the payer-facing seller in the system and separately settles with the assigned service provider; the provider never invoices the customer through this workflow.
 - Billing stays in a separate staff-only **Uppgjör** workspace so the dispatcher map remains operational. Drivers cannot see payer prices, provider totals, or Vegstoð's gross difference.
 - Each job has a separate staff-only unified timeline. It shows verified system facts and labels external WhatsApp/phone actions only as links or drafts opened, never as a confirmed send or connected call.
@@ -36,7 +36,8 @@ The shutdown/resume state, active repository path, uncommitted work, restart com
 - Driver-only Row Level Security for the linked operator, vehicles, assignments, jobs, requirements, and history.
 - Mobile driver screen with availability, accept/decline, customer contact, an embedded incident map and pin, navigation, vehicle details, and controlled job-status progression.
 - Dispatcher-managed passwordless driver links through WhatsApp, visible access status, one-time token use, immediate disable, and re-enable without deleting provider data.
-- Dispatcher-created customer intake links with automatic rotation/revocation, a bilingual mobile form, common vehicle-brand selection with an “Other” fallback, optional rental-company entry, required people count, GPS or map-pin confirmation, and one-time submission.
+- Phone-first job creation from the **+** modal, with an immediate prepared WhatsApp handoff and an optional complete staff-entered form.
+- Dispatcher-created customer intake links with automatic rotation/revocation, a bilingual mobile form, required assistance selector and written description, common vehicle-brand selection with an “Other” fallback, optional rental-company entry, required people count, GPS or map-pin confirmation, and one-time submission.
 - Direct customer WhatsApp handoff using the registered phone number, clear English instructions, and the newly generated secure link; no copy-and-paste step is required.
 - Private job-photo upload to Supabase Storage, with access limited to staff, the currently assigned driver, and the active temporary customer link.
 - Separate staff billing workspace with payer queues, provider settlement, invoice/payment states, locked finalized amounts, financial audit history, and deep links to the operational job.
@@ -75,6 +76,17 @@ The account-free intake and private-photo flow was verified locally in three sep
 4. Dispatch immediately saw the submitted description, intake status, and private thumbnail on Sophie's existing job.
 5. Dispatch reassigned that job to Bjarni. His restricted driver screen showed the updated vehicle data, customer description, incident map, and photo.
 6. Opening the staff/driver photo endpoint without a session returned HTTP 404. Database tests also prove that a driver sees photo metadata only for their own current assignments and cannot read customer-link hashes.
+
+## Completed phone-first intake slice
+
+The new-job workflow now follows the intended minimum-input path while retaining the complete dispatcher form:
+
+1. Pressing **+** opens a phone-only form. One action atomically creates the pending job and its hashed 24-hour customer link, then opens the registered number in WhatsApp with the English instructions and link. The dispatcher still reviews the draft and presses Send.
+2. The success state keeps an **Opna WhatsApp aftur** fallback in case the browser blocks or closes the first handoff. The raw link is held only in that browser state and is not persisted in readable form.
+3. A pending job is visible by phone number in the dispatcher list but has no map marker, driver ranking, or assignment controls. The assignment RPC also rejects it directly.
+4. The customer form requires one of the eleven assistance types plus a written description. Submission stores both, replaces the placeholder location and name, marks the one-time link submitted, clears the pending state, and immediately enables normal matching and assignment.
+5. Switching to **Ég vil skrá allar upplýsingar sjálf/ur** restores the existing complete job form for staff-entered jobs.
+6. A clean local database rebuild and browser pass verified the phone-only modal, full-form switch, pending list/detail state, map exclusion, assistance selector, one-time submission, direct Supabase persistence, and matching unlock. No external WhatsApp message was sent during this automated pass.
 
 ## Completed driver-contact build slice
 
@@ -207,15 +219,15 @@ The complete current working tree was rechecked on 6 September 2026:
 
 - `npm run build` passed with all application routes, including dispatcher, staff billing, the staff job timeline, customer intake, private photo delivery, passwordless driver-link confirmation, and the driver screen.
 - `npm run typecheck` and `npm run lint` passed without errors.
-- `npm test` passed all 126 tests across 25 Vitest files, including deterministic customer-link expiry formatting, customer vehicle-context validation, customer and driver WhatsApp handoffs, one-time driver-link validation, and international-number routing.
-- `npx supabase test db` passed all 180 assertions across seven pgTAP files, covering the dispatch schema, customer rental-company and people-count persistence, indexed HMS reverse geocoding, driver isolation/access management, customer-link lifecycle and first opening, private-photo authorization, contact-event audit isolation, billing handoff, financial transitions, value locking, audited-only mutation privileges, function execution grants, and driver financial isolation.
+- `npm test` passed all 130 tests across 25 Vitest files, including phone-first WhatsApp-number validation, assistance selection, deterministic customer-link expiry formatting, customer vehicle-context validation, customer and driver WhatsApp handoffs, one-time driver-link validation, and international-number routing.
+- `npx supabase test db` passed all 200 assertions across eight pgTAP files from a clean local reset, covering phone-first pending-job creation, assignment blocking, assistance-aware intake submission and matching unlock, dispatch schema, customer-link lifecycle, private-photo authorization, contact-event audit isolation, billing transitions, function permissions, and driver isolation.
 - `npx supabase db lint --local --schema public` reported no application-schema errors. A whole-database lint also reports known analyzer findings inside Supabase's installed PostGIS extension functions; these are vendor extension code rather than Vegstoð migrations.
 - `npm audit --omit=dev` reported zero production dependency vulnerabilities.
 - `git diff --check` passed, and the repository scan found no committed Mapbox token, Supabase secret, placeholder TODO/FIXME, or accidental application debug logging. The importer intentionally prints its completed import summary when run from the terminal.
 
 The existing browser verification remains valid for the critical dispatcher → customer → driver path, including an unauthenticated phone-sized customer session, a real private image upload, one-time customer-link consumption, reassignment, driver-only visibility, and rejection of an anonymous private-photo request. A fresh hosted pass on 6 September exercised the automatic Git Preview through provider and vehicle creation, the former driver-invitation path, customer intake, assignment, every driver status through completion, five financial audit actions through full settlement, timeline aggregation, access revocation, and complete cleanup; see [`docs/hosted-audit-2026-09-06.md`](hosted-audit-2026-09-06.md). The follow-up current-revision pass exercised new and returning WhatsApp driver links, one-time use, assignment handoff auditing, phone-sized assigned-job visibility, driver acceptance, revocation, direct persistence checks, and complete cleanup; see [`docs/hosted-whatsapp-driver-audit-2026-09-06.md`](hosted-whatsapp-driver-audit-2026-09-06.md). The physical Android pass additionally covered native photo selection, dialer and WhatsApp browser handoffs, dispatcher assignment, driver acceptance, exact map rendering, authorized photo delivery, and progression to `en_route`. The application produced no application-console errors after the development-origin fix; headless Chromium emitted only its known WebGL software-rendering performance warnings while drawing MapLibre, while the Android map cancelled superseded OpenStreetMap tile requests during normal redraws.
 
-The 7 September customer-form revision additionally passed the deployed HTML check for every new field and representative vehicle makes, direct visual inspection at desktop and narrow viewport sizes, active-link state verification, and a hosted migration dry run showing no pending migrations. The review deliberately stopped before submission so the retained stakeholder record was not overwritten.
+The 7 September vehicle-form revision additionally passed the deployed HTML check for every new field and representative vehicle makes, direct visual inspection at desktop and narrow viewport sizes, active-link state verification, and a hosted migration dry run showing no pending migrations. The review deliberately stopped before submission so the retained stakeholder record was not overwritten. The later phone-first slice used a separate disposable local job and left the retained stakeholder record untouched.
 
 ## Current readiness boundary
 
@@ -233,9 +245,10 @@ The implemented flows are complete locally, and the complete dispatcher → cust
 
 ```text
 Customer calls dispatcher
-        -> dispatcher creates the job
-        -> Vegstoð sends a secure customer link through WhatsApp
-        -> customer confirms location and uploads photos
+        -> dispatcher enters the phone number and opens WhatsApp
+        -> Vegstoð creates a pending job and secure customer link
+        -> customer chooses assistance, describes the issue, confirms location, and uploads photos
+        -> Vegstoð unlocks matching and assignment
         -> Vegstoð asks suitable drivers about availability
         -> driver replies Laus or Ekki laus
         -> dispatcher assigns one operator/driver and vehicle

@@ -4,6 +4,7 @@ import {
   customerIntakeSchema,
   customerPhotoPreparationSchema,
   customerTokenSchema,
+  quickCustomerIntakeJobSchema,
 } from "./schemas";
 
 const token = "a".repeat(43);
@@ -28,6 +29,7 @@ describe("customerIntakeSchema", () => {
     vehicleMake: "Renault",
     rentalCompany: "Blue Car Rental",
     peopleCount: 3,
+    requiredCapability: "tire_assistance",
     latitude: 64.255,
     longitude: -21.13,
     locationLabel: "Current GPS location",
@@ -60,6 +62,23 @@ describe("customerIntakeSchema", () => {
 
   it("requires a useful problem description", () => {
     expect(customerIntakeSchema.safeParse({ ...valid, customerNotes: "No" }).success).toBe(false);
+  });
+
+  it("requires a supported assistance type", () => {
+    expect(customerIntakeSchema.safeParse({ ...valid, requiredCapability: "helicopter" }).success)
+      .toBe(false);
+  });
+});
+
+describe("quickCustomerIntakeJobSchema", () => {
+  it("accepts Icelandic and international telephone numbers", () => {
+    expect(quickCustomerIntakeJobSchema.safeParse({ customerPhone: "6597003" }).success).toBe(true);
+    expect(quickCustomerIntakeJobSchema.safeParse({ customerPhone: "+44 7700 900123" }).success).toBe(true);
+  });
+
+  it("rejects a value without a dialable number", () => {
+    expect(quickCustomerIntakeJobSchema.safeParse({ customerPhone: "phone" }).success).toBe(false);
+    expect(quickCustomerIntakeJobSchema.safeParse({ customerPhone: "123" }).success).toBe(false);
   });
 });
 

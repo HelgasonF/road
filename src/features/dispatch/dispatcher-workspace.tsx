@@ -190,7 +190,11 @@ export function DispatcherWorkspace({
                 {filteredJobs.map((job) => (
                   <button className={`job-row ${selectedJobId === job.id ? "job-row-selected" : ""}`} key={job.id} type="button" onClick={() => selectJob(job.id)}>
                     <span className={`job-row-icon job-priority-${job.priority}`}><BriefcaseBusiness size={16} /></span>
-                    <span className="operator-row-copy"><strong>{job.customerName}</strong><small>{job.locationLabel}</small><span><i className={`job-status-dot job-status-${job.status}`} />{jobStatusLabels[job.status]}<b>·</b>{jobPriorityLabels[job.priority]}</span></span>
+                    <span className="operator-row-copy">
+                      <strong>{job.intakePending ? job.customerPhone : job.customerName}</strong>
+                      <small>{job.intakePending ? "Bíður eftir upplýsingum viðskiptavinar" : job.locationLabel}</small>
+                      <span><i className={`job-status-dot ${job.intakePending ? "job-status-pending-intake" : `job-status-${job.status}`}`} />{job.intakePending ? "Bíður viðskiptavinar" : jobStatusLabels[job.status]}<b>·</b>{jobPriorityLabels[job.priority]}</span>
+                    </span>
                   </button>
                 ))}
                 {filteredJobs.length === 0 ? <p className="list-empty">{is.noJobs}<br /><button className="inline-create-button" type="button" disabled={demoMode} onClick={() => setJobEditor(null)}>{is.newJob}</button></p> : null}
@@ -234,7 +238,7 @@ export function DispatcherWorkspace({
       </div>
 
       {operatorEditor !== undefined ? <OperatorEditor key={operatorEditor?.id ?? "new"} capabilities={capabilities} operator={operatorEditor} onClose={() => setOperatorEditor(undefined)} onSaved={(operatorId) => { setSelectedOperatorId(operatorId); setOperatorEditor(undefined); setMode("operators"); router.refresh(); }} /> : null}
-      {jobEditor !== undefined ? <JobEditor key={jobEditor?.id ?? "new-job"} capabilities={capabilities} job={jobEditor} onClose={() => setJobEditor(undefined)} onSaved={(jobId) => { setSelectedJobId(jobId); setJobEditor(undefined); setMode("jobs"); router.refresh(); }} /> : null}
+      {jobEditor !== undefined ? <JobEditor key={jobEditor?.id ?? "new-job"} capabilities={capabilities} job={jobEditor} onClose={() => setJobEditor(undefined)} onQuickCreated={(jobId) => { setSelectedJobId(jobId); setMode("jobs"); router.refresh(); }} onSaved={(jobId) => { setSelectedJobId(jobId); setJobEditor(undefined); setMode("jobs"); router.refresh(); }} /> : null}
       {vehicleEditor.open && selectedOperator ? <VehicleEditor key={vehicleEditor.vehicle?.id ?? "new-vehicle"} capabilities={capabilities} operatorId={selectedOperator.id} vehicle={vehicleEditor.vehicle} onClose={() => setVehicleEditor({ open: false, vehicle: null })} onSaved={() => { setVehicleEditor({ open: false, vehicle: null }); router.refresh(); }} /> : null}
     </main>
   );

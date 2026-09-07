@@ -196,6 +196,7 @@ export interface Job {
   notes: string | null;
   customerNotes: string | null;
   customerIntakeSubmittedAt: string | null;
+  intakePending: boolean;
   photos: JobPhoto[];
   requiredCapabilities: CapabilityCode[];
   assignment: JobAssignment | null;

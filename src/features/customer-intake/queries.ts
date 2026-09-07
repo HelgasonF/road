@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { LocationSource } from "@/lib/domain/types";
+import type { CapabilityCode, LocationSource } from "@/lib/domain/types";
 import { hasSupabaseAdminConfig } from "@/lib/config";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -37,6 +37,7 @@ export interface ActiveCustomerIntake {
     vehicleMake: string | null;
     rentalCompany: string | null;
     peopleCount: number | null;
+    requiredCapability: CapabilityCode | null;
     latitude: number;
     longitude: number;
     locationLabel: string;
@@ -105,7 +106,11 @@ export async function getCustomerIntakePageData(token: string): Promise<Customer
 
   await admin.rpc("mark_customer_intake_link_opened", { p_link_id: link.id });
 
-  const [{ data: job, error: jobError }, { data: photos, error: photosError }] = await Promise.all([
+  const [
+    { data: job, error: jobError },
+    { data: photos, error: photosError },
+    { data: requirements, error: requirementsError },
+  ] = await Promise.all([
     admin
       .from("jobs")
       .select(`
@@ -116,6 +121,7 @@ export async function getCustomerIntakePageData(token: string): Promise<Customer
         vehicle_make,
         rental_company,
         people_count,
+        intake_pending,
         latitude,
         longitude,
         location_label,
@@ -130,9 +136,15 @@ export async function getCustomerIntakePageData(token: string): Promise<Customer
       .eq("customer_intake_link_id", link.id)
       .not("uploaded_at", "is", null)
       .order("created_at"),
+    admin
+      .from("job_required_capabilities")
+      .select("capability_code")
+      .eq("job_id", link.job_id)
+      .order("created_at")
+      .limit(1),
   ]);
 
-  if (jobError || photosError || !job) return { status: "unavailable" };
+  if (jobError || photosError || requirementsError || !job) return { status: "unavailable" };
 
   return {
     status: "active",
@@ -140,15 +152,18 @@ export async function getCustomerIntakePageData(token: string): Promise<Customer
     expiresAt: link.expires_at,
     job: {
       id: job.id,
-      customerName: job.customer_name,
+      customerName: job.intake_pending ? "" : job.customer_name,
       customerPhone: job.customer_phone,
       vehicleRegistration: job.vehicle_registration,
       vehicleMake: job.vehicle_make,
       rentalCompany: job.rental_company,
       peopleCount: job.people_count,
+      requiredCapability: requirements?.[0]?.capability_code ?? null,
       latitude: job.latitude,
       longitude: job.longitude,
-      locationLabel: job.location_label ?? `${job.latitude.toFixed(5)}, ${job.longitude.toFixed(5)}`,
+      locationLabel: job.intake_pending
+        ? ""
+        : job.location_label ?? `${job.latitude.toFixed(5)}, ${job.longitude.toFixed(5)}`,
       locationSource: job.location_source,
       customerNotes: job.customer_notes,
     },

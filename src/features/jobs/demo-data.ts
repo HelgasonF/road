@@ -21,6 +21,7 @@ export const demoJobs: Job[] = [
     notes: "Sprungið dekk og ekkert varadekk.",
     customerNotes: null,
     customerIntakeSubmittedAt: null,
+    intakePending: false,
     photos: [],
     requiredCapabilities: ["tire_assistance"],
     assignment: null,
@@ -47,6 +48,7 @@ export const demoJobs: Job[] = [
     notes: "Rafhlaða tóm og þarf örugga aðstoð.",
     customerNotes: null,
     customerIntakeSubmittedAt: null,
+    intakePending: false,
     photos: [],
     requiredCapabilities: ["ev_assistance", "towing"],
     assignment: {

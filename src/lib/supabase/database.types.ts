@@ -174,6 +174,7 @@ export type Database = {
           notes: string | null;
           customer_notes: string | null;
           customer_intake_submitted_at: string | null;
+          intake_pending: boolean;
           created_by: string;
           created_at: string;
           updated_at: string;
@@ -198,6 +199,7 @@ export type Database = {
           notes?: string | null;
           customer_notes?: string | null;
           customer_intake_submitted_at?: string | null;
+          intake_pending?: boolean;
           created_by: string;
           created_at?: string;
           updated_at?: string;
@@ -523,6 +525,10 @@ export type Database = {
         Args: { p_job_id: string; p_token_hash: string; p_expires_at: string };
         Returns: string;
       };
+      create_customer_intake_job: {
+        Args: { p_customer_phone: string; p_token_hash: string; p_expires_at: string };
+        Returns: string;
+      };
       mark_customer_intake_link_opened: {
         Args: { p_link_id: string };
         Returns: string;
@@ -566,6 +572,24 @@ export type Database = {
           p_vehicle_make: string | null;
           p_rental_company: string | null;
           p_people_count: number;
+          p_latitude: number;
+          p_longitude: number;
+          p_location_label: string;
+          p_location_source: LocationSource;
+          p_customer_notes: string;
+        };
+        Returns: string;
+      };
+      submit_customer_intake_v3: {
+        Args: {
+          p_token_hash: string;
+          p_customer_name: string;
+          p_customer_phone: string;
+          p_vehicle_registration: string | null;
+          p_vehicle_make: string | null;
+          p_rental_company: string | null;
+          p_people_count: number;
+          p_required_capability: CapabilityCode;
           p_latitude: number;
           p_longitude: number;
           p_location_label: string;

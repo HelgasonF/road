@@ -1,3 +1,28 @@
+-- Local-only dispatcher account used by the browser workflow and pgTAP tests.
+-- Supabase never applies seed.sql to the linked hosted project.
+insert into auth.users (
+  instance_id, id, aud, role, email, encrypted_password,
+  email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
+  created_at, updated_at
+) values (
+  '00000000-0000-0000-0000-000000000000',
+  '00000000-0000-4000-8000-000000000001',
+  'authenticated',
+  'authenticated',
+  'dispatcher@vegstod.local',
+  extensions.crypt('LocalVegstod2026', extensions.gen_salt('bf')),
+  now(),
+  '{"provider":"email","providers":["email"]}'::jsonb,
+  '{"display_name":"Local Dispatcher"}'::jsonb,
+  now(),
+  now()
+)
+on conflict (id) do nothing;
+
+update public.profiles
+set role = 'admin'
+where id = '00000000-0000-4000-8000-000000000001';
+
 insert into public.operators (
   id, name, phone, company_name, is_active, availability_status,
   base_address, base_latitude, base_longitude, service_radius_km, notes

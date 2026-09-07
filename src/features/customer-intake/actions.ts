@@ -15,6 +15,7 @@ import {
   customerLinkRevocationSchema,
   customerPhotoMutationSchema,
   customerPhotoPreparationSchema,
+  quickCustomerIntakeJobSchema,
 } from "./schemas";
 import { getActiveCustomerLinkByToken } from "./queries";
 import { createCustomerIntakeToken, hashCustomerIntakeToken } from "./tokens";
@@ -23,6 +24,39 @@ const PHOTO_BUCKET = "job-photos";
 const LINK_LIFETIME_MS = 24 * 60 * 60 * 1000;
 const demoError = "Ekki er hægt að búa til viðskiptavinatengil í sýnisham.";
 const unavailableError = "Tengillinn er útrunninn, hefur verið afturkallaður eða þegar notaður.";
+
+export async function createQuickCustomerIntakeJobAction(
+  input: unknown,
+): Promise<ActionResult<{ jobId: string; path: string; expiresAt: string }>> {
+  if (isDemoMode()) return { ok: false, error: demoError };
+  if (!(await getVerifiedStaffSession())) return { ok: false, error: "Innskráning rann út." };
+
+  const parsed = quickCustomerIntakeJobSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: "Sláðu inn gilt símanúmer með landskóða ef númerið er erlent.",
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+
+  const rawToken = createCustomerIntakeToken();
+  const expiresAt = new Date(Date.now() + LINK_LIFETIME_MS).toISOString();
+  const supabase = await createClient();
+  const { data: jobId, error } = await supabase.rpc("create_customer_intake_job", {
+    p_customer_phone: parsed.data.customerPhone,
+    p_token_hash: hashCustomerIntakeToken(rawToken),
+    p_expires_at: expiresAt,
+  });
+
+  if (error || !jobId) return { ok: false, error: "Ekki tókst að búa til verkefni og tengil." };
+  revalidatePath("/");
+  revalidatePath(`/jobs/${jobId}/history`);
+  return {
+    ok: true,
+    data: { jobId, path: `/customer/${rawToken}`, expiresAt },
+  };
+}
 
 const photoExtensions: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -91,7 +125,7 @@ export async function submitCustomerIntakeAction(input: unknown): Promise<Action
 
   const value = parsed.data;
   const admin = createAdminClient();
-  const { data: jobId, error } = await admin.rpc("submit_customer_intake_v2", {
+  const { data: jobId, error } = await admin.rpc("submit_customer_intake_v3", {
     p_token_hash: hashCustomerIntakeToken(value.token),
     p_customer_name: value.customerName,
     p_customer_phone: value.customerPhone,
@@ -99,6 +133,7 @@ export async function submitCustomerIntakeAction(input: unknown): Promise<Action
     p_vehicle_make: value.vehicleMake,
     p_rental_company: value.rentalCompany,
     p_people_count: value.peopleCount,
+    p_required_capability: value.requiredCapability,
     p_latitude: value.latitude,
     p_longitude: value.longitude,
     p_location_label: value.locationLabel,

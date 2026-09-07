@@ -14,7 +14,9 @@ import {
 import { FormEvent, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
-import type { LocationSource } from "@/lib/domain/types";
+import type { CapabilityCode, LocationSource } from "@/lib/domain/types";
+import { capabilityCodes } from "@/lib/domain/types";
+import { capabilityLabels } from "@/lib/i18n/is";
 import { createClient } from "@/lib/supabase/client";
 import {
   finalizeCustomerPhotoUploadAction,
@@ -70,7 +72,7 @@ const copy = {
   en: {
     eyebrow: "Secure roadside assistance link",
     title: "Confirm your details",
-    intro: "Share the exact location, vehicle information and photos with Vegstoð dispatch.",
+    intro: "Share the exact location, vehicle information, assistance needed and photos with Vegstoð dispatch.",
     contact: "Your contact information",
     name: "Full name",
     phone: "Telephone number including country code",
@@ -93,6 +95,9 @@ const copy = {
     locationLabel: "Location description",
     mapHelp: "Tap the map or drag the pin to correct the location.",
     problem: "What happened?",
+    assistance: "Type of assistance",
+    chooseAssistance: "Choose the assistance you need",
+    description: "Description",
     problemPlaceholder: "For example: flat front-left tyre, vehicle is safely off the road…",
     photos: "Photos",
     photosHelp: "Optional. Add up to 6 photos of the vehicle, damage and surroundings. Maximum 10 MB each.",
@@ -105,7 +110,7 @@ const copy = {
   is: {
     eyebrow: "Öruggur tengill fyrir vegaaðstoð",
     title: "Staðfestu upplýsingarnar",
-    intro: "Sendu nákvæma staðsetningu, upplýsingar um ökutækið og myndir til aðgerðastjórnar Vegstoðar.",
+    intro: "Sendu nákvæma staðsetningu, upplýsingar um ökutækið, aðstoðina sem þarf og myndir til aðgerðastjórnar Vegstoðar.",
     contact: "Samskiptaupplýsingar",
     name: "Fullt nafn",
     phone: "Símanúmer með landskóða",
@@ -128,6 +133,9 @@ const copy = {
     locationLabel: "Lýsing á staðsetningu",
     mapHelp: "Snertu kortið eða dragðu pinnann til að leiðrétta staðsetninguna.",
     problem: "Hvað gerðist?",
+    assistance: "Tegund aðstoðar",
+    chooseAssistance: "Veldu aðstoðina sem þú þarft",
+    description: "Lýsing",
     problemPlaceholder: "Til dæmis: sprungið vinstra framdekk, bíllinn er örugglega utan vegar…",
     photos: "Myndir",
     photosHelp: "Valfrjálst. Bættu við allt að 6 myndum af ökutæki, skemmdum og umhverfi. Hámark 10 MB hver.",
@@ -138,6 +146,20 @@ const copy = {
     privacy: "Myndir eru einkagögn og aðeins sýnilegar starfsfólki Vegstoðar og úthlutuðum ökumanni.",
   },
 } as const;
+
+const assistanceLabelsEn: Record<CapabilityCode, string> = {
+  towing: "Towing",
+  flatbed: "Flatbed transport",
+  jump_start: "Jump start",
+  tire_assistance: "Tyre assistance",
+  fuel_delivery: "Fuel delivery",
+  lockout: "Vehicle lockout",
+  four_by_four_recovery: "4×4 recovery",
+  ev_assistance: "Electric vehicle assistance",
+  accident_recovery: "Accident recovery",
+  heavy_vehicle: "Heavy vehicle assistance",
+  other: "Other assistance",
+};
 
 interface CustomerIntakeFormProps {
   expiresAt: string;
@@ -289,6 +311,7 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token }: Cus
         vehicleMake,
         rentalCompany: String(form.get("rentalCompany") ?? ""),
         peopleCount: Number(form.get("peopleCount")),
+        requiredCapability: String(form.get("requiredCapability") ?? ""),
         latitude,
         longitude,
         locationLabel,
@@ -368,7 +391,23 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token }: Cus
 
         <section className="customer-form-card">
           <div className="customer-card-heading"><span>4</span><div><h2>{t.problem}</h2><p>{language === "en" ? "Include anything the driver should know before arriving." : "Skráðu allt sem ökumaður þarf að vita áður en hann kemur."}</p></div></div>
-          <label className="customer-description"><textarea name="customerNotes" defaultValue={job.customerNotes ?? ""} placeholder={t.problemPlaceholder} minLength={5} maxLength={4000} required /></label>
+          <div className="customer-problem-fields">
+            <label>
+              <span>{t.assistance}</span>
+              <select name="requiredCapability" defaultValue={job.requiredCapability ?? ""} required>
+                <option value="" disabled>{t.chooseAssistance}</option>
+                {capabilityCodes.map((capability) => (
+                  <option key={capability} value={capability}>
+                    {language === "en" ? assistanceLabelsEn[capability] : capabilityLabels[capability]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="customer-description">
+              <span>{t.description}</span>
+              <textarea name="customerNotes" defaultValue={job.customerNotes ?? ""} placeholder={t.problemPlaceholder} minLength={5} maxLength={4000} required />
+            </label>
+          </div>
         </section>
 
         <section className="customer-form-card">

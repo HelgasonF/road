@@ -73,6 +73,9 @@ export function JobDetail({ customerLink, demoMode, job, matches, operators, onC
     ? operators.find((operator) => operator.id === job.assignment?.operatorId) ?? null
     : null;
   const isClosed = job.status === "completed" || job.status === "cancelled";
+  const availableStatuses = job.intakePending
+    ? jobStatuses.filter((status) => status === "new" || status === "cancelled")
+    : jobStatuses;
   const assignmentUnchanged = Boolean(
     job.assignment
       && job.assignment.operatorId === selectedOperatorId
@@ -118,14 +121,14 @@ export function JobDetail({ customerLink, demoMode, job, matches, operators, onC
       <header className="detail-header">
         <span className={`job-avatar job-priority-${job.priority}`}><Route size={22} /></span>
         <div className="detail-title">
-          <span className={`status-pill job-status-${job.status}`}>{jobStatusLabels[job.status]}</span>
-          <h2>{job.customerName}</h2>
-          <p>{job.locationLabel}</p>
+          <span className={`status-pill ${job.intakePending ? "job-status-pending-intake" : `job-status-${job.status}`}`}>{job.intakePending ? "Bíður viðskiptavinar" : jobStatusLabels[job.status]}</span>
+          <h2>{job.intakePending ? job.customerPhone : job.customerName}</h2>
+          <p>{job.intakePending ? "Upplýsingatengill hefur verið búinn til" : job.locationLabel}</p>
         </div>
         <button className="icon-button" type="button" disabled={demoMode} onClick={onEdit} aria-label={is.editJob}><Pencil size={16} /></button>
       </header>
 
-      <ContactActions personName={job.customerName} phone={job.customerPhone} />
+      <ContactActions personName={job.intakePending ? "Viðskiptavinur" : job.customerName} phone={job.customerPhone} />
 
       <div className="job-detail-action-links">
         <Link className="job-timeline-link" href={`/jobs/${job.id}/history`}><History size={17} /> Skoða feril verkefnis</Link>
@@ -134,7 +137,7 @@ export function JobDetail({ customerLink, demoMode, job, matches, operators, onC
 
       {!demoMode && !isClosed ? (
         <CustomerLinkPanel
-          customerName={job.customerName}
+          customerName={job.intakePending ? "" : job.customerName}
           customerPhone={job.customerPhone}
           jobId={job.id}
           link={customerLink}
@@ -143,27 +146,43 @@ export function JobDetail({ customerLink, demoMode, job, matches, operators, onC
 
       <section className="detail-section">
         <h3>{is.jobLocation}</h3>
-        <div className="info-row"><MapPin size={18} /><div><strong>{job.locationLabel}</strong><span>{job.latitude.toFixed(4)}, {job.longitude.toFixed(4)}</span></div></div>
+        {job.intakePending ? (
+          <p className="pending-intake-copy">Viðskiptavinurinn hefur ekki enn staðfest staðsetninguna.</p>
+        ) : (
+          <div className="info-row"><MapPin size={18} /><div><strong>{job.locationLabel}</strong><span>{job.latitude.toFixed(4)}, {job.longitude.toFixed(4)}</span></div></div>
+        )}
       </section>
 
       <section className="detail-section">
         <h3>{is.requiredAssistance}</h3>
-        <div className="tag-list">{job.requiredCapabilities.map((capability) => <span className="capability-tag" key={capability}>{capabilityLabels[capability]}</span>)}</div>
+        {job.intakePending ? (
+          <p className="pending-intake-copy">Viðskiptavinurinn velur tegund aðstoðar í upplýsingatenglinum.</p>
+        ) : (
+          <div className="tag-list">{job.requiredCapabilities.map((capability) => <span className="capability-tag" key={capability}>{capabilityLabels[capability]}</span>)}</div>
+        )}
       </section>
 
-      <section className="detail-section job-summary-grid">
-        <div><Clock3 size={15} /><span><small>{is.priority}</small><strong>{jobPriorityLabels[job.priority]}</strong></span></div>
-        <div><Truck size={15} /><span><small>Ökutæki</small><strong>{[job.vehicleMake, job.vehicleModel].filter(Boolean).join(" ") || job.vehicleType || "Óskráð"}</strong></span></div>
-        <div><UsersRound size={15} /><span><small>Fjöldi fólks</small><strong>{job.peopleCount ?? "Óskráð"}</strong></span></div>
-        {job.rentalCompany ? <div><Building2 size={15} /><span><small>Bílaleiga</small><strong>{job.rentalCompany}</strong></span></div> : null}
-      </section>
+      {!job.intakePending ? (
+        <section className="detail-section job-summary-grid">
+          <div><Clock3 size={15} /><span><small>{is.priority}</small><strong>{jobPriorityLabels[job.priority]}</strong></span></div>
+          <div><Truck size={15} /><span><small>Ökutæki</small><strong>{[job.vehicleMake, job.vehicleModel].filter(Boolean).join(" ") || job.vehicleType || "Óskráð"}</strong></span></div>
+          <div><UsersRound size={15} /><span><small>Fjöldi fólks</small><strong>{job.peopleCount ?? "Óskráð"}</strong></span></div>
+          {job.rentalCompany ? <div><Building2 size={15} /><span><small>Bílaleiga</small><strong>{job.rentalCompany}</strong></span></div> : null}
+        </section>
+      ) : null}
 
       {job.notes ? <section className="detail-section notes-section"><h3>{is.notes}</h3><p>{job.notes}</p></section> : null}
       {job.customerNotes ? <section className="detail-section notes-section customer-notes-section"><h3>Lýsing viðskiptavinar</h3><p>{job.customerNotes}</p></section> : null}
       <JobPhotoGallery photos={job.photos} />
 
-      <section className="detail-section">
-        <h3>{is.assignment}</h3>
+      {job.intakePending ? (
+        <section className="detail-section pending-intake-panel">
+          <h3>{is.assignment}</h3>
+          <p>Hægt verður að raða þjónustuaðilum og úthluta verkefninu þegar viðskiptavinurinn hefur sent upplýsingarnar.</p>
+        </section>
+      ) : (
+        <section className="detail-section">
+          <h3>{is.assignment}</h3>
         {job.assignment ? (
           <div className="current-assignment-block">
             <div className="current-assignment"><UserRound size={18} /><span><strong>{job.assignment.operatorName}</strong><small>{job.assignment.vehicleName ?? "Ekkert ökutæki valið"}</small></span></div>
@@ -186,9 +205,10 @@ export function JobDetail({ customerLink, demoMode, job, matches, operators, onC
             <button className="primary-button full-button" type="button" disabled={demoMode || pending || !selectedOperatorId || assignmentUnchanged} onClick={assign}>{pending ? is.saving : assignmentUnchanged ? is.assignmentUnchanged : job.assignment ? is.reassign : is.assign}</button>
           </div>
         ) : null}
-      </section>
+        </section>
+      )}
 
-      {!isClosed ? (
+      {!isClosed && !job.intakePending ? (
         <section className="detail-section">
           <div className="matching-heading">
             <div><h3>Röðun þjónustuaðila</h3><span>{suitableCount === 1 ? "1 hentugur" : `${suitableCount} hentugir`} af {candidates.length}</span></div>
@@ -223,7 +243,7 @@ export function JobDetail({ customerLink, demoMode, job, matches, operators, onC
       <section className="detail-section">
         <h3>{is.jobStatus}</h3>
         <div className="status-update-row">
-          <select value={nextStatus} onChange={(event) => setNextStatus(event.target.value as JobStatus)}>{jobStatuses.map((status) => <option key={status} value={status}>{jobStatusLabels[status]}</option>)}</select>
+          <select value={nextStatus} onChange={(event) => setNextStatus(event.target.value as JobStatus)}>{availableStatuses.map((status) => <option key={status} value={status}>{jobStatusLabels[status]}</option>)}</select>
           <button className="secondary-button" type="button" disabled={demoMode || pending || nextStatus === job.status} onClick={updateStatus}><CheckCircle2 size={15} /> Uppfæra</button>
         </div>
       </section>

@@ -78,9 +78,11 @@ Relevant files include:
 
 ### Direct customer WhatsApp handoff
 
-- The copy-and-paste customer-link workflow was removed.
-- After generating a secure 24-hour intake link, dispatch now receives a direct **Senda í WhatsApp** action for the customer's registered number.
-- The prepared customer message is English only and contains the customer's name, simple instructions, the secure Vegstoð URL, the 24-hour expiry, and a warning not to forward it.
+- The copy-and-paste customer-link workflow was removed. The default **+** path now asks only for the customer's phone number.
+- **Búa til og opna WhatsApp** atomically creates a visible pending job and secure 24-hour intake link, then opens the registered number with the prepared message. The modal retains an **Opna WhatsApp aftur** fallback.
+- The prepared customer message is English only and asks for the customer's name, location, vehicle, assistance type, written description, and optional photos. It contains the secure Vegstoð URL, 24-hour expiry, and a warning not to forward it.
+- Pending jobs remain visible in the list but are excluded from the map, matching, and assignment. Customer submission clears the pending state and enables normal dispatch.
+- Staff can switch the same modal to the complete manual job form.
 - WhatsApp carries only the message and secure link. Location, vehicle information, problem details, and photos are submitted to Vegstoð and private Supabase Storage.
 - Dispatch still reviews the prepared message and presses Send in ordinary WhatsApp/WhatsApp Web. No paid WhatsApp Business API is involved.
 - A real browser handoff reached WhatsApp with the correct international number and secure URL. No message was sent and all disposable records were cleaned up.
@@ -91,7 +93,11 @@ Relevant files include:
 - `src/features/customer-intake/customer-contact.test.ts`
 - `src/features/customer-intake/customer-link-panel.tsx`
 - `src/features/customer-intake/customer-link-panel.test.tsx`
+- `src/features/customer-intake/customer-intake-form.tsx`
+- `src/features/jobs/editor.tsx`
 - `src/features/jobs/job-detail.tsx`
+- `supabase/migrations/20260907224000_add_phone_first_customer_intake.sql`
+- `supabase/tests/phone_first_intake.test.sql`
 
 ### Passwordless driver WhatsApp access
 
@@ -152,8 +158,8 @@ The current application code was fully checked on 7 September 2026:
 - `npm run build` passed.
 - `npm run typecheck` passed.
 - `npm run lint` passed.
-- `npm test` passed all 126 tests across 25 Vitest files.
-- `npx supabase test db` passed all 180 assertions across seven pgTAP files.
+- `npm test` passed all 130 tests across 25 Vitest files.
+- `npx supabase test db` passed all 200 assertions across eight pgTAP files after a clean local database reset.
 - `npx supabase db lint --local --schema public` reported no application-schema errors.
 - `git diff --check` passed.
 
