@@ -23,6 +23,7 @@ import {
   submitCustomerIntakeAction,
 } from "./actions";
 import { CustomerLocationMap } from "./customer-location-map";
+import { formatCustomerLinkExpiry } from "./format";
 import type { ActiveCustomerIntake, CustomerIntakePhoto } from "./queries";
 import { CUSTOMER_PHOTO_LIMIT } from "./schemas";
 
@@ -315,7 +316,7 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token }: Cus
       <form className="customer-intake-form" onSubmit={submit}>
         <section className="customer-intake-intro">
           <div><p className="eyebrow"><LockKeyhole size={14} /> {t.eyebrow}</p><h1>{t.title}</h1><p>{t.intro}</p></div>
-          <span><ShieldCheck size={20} /> {new Date(expiresAt).toLocaleString(language === "is" ? "is-IS" : "en-GB", { dateStyle: "medium", timeStyle: "short" })}</span>
+          <span><ShieldCheck size={20} /> {formatCustomerLinkExpiry(expiresAt, language)}</span>
         </section>
 
         <section className="customer-form-card">

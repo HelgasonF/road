@@ -10,6 +10,7 @@ import {
   revokeCustomerIntakeLinkAction,
 } from "./actions";
 import { buildCustomerIntakeWhatsAppMessage } from "./customer-contact";
+import { formatCustomerLinkExpiry } from "./format";
 import type { CustomerIntakeLinkSummary } from "./queries";
 
 interface CustomerLinkPanelProps {
@@ -66,7 +67,7 @@ export function CustomerLinkPanel({ customerName, customerPhone, jobId, link }: 
       <div className="customer-link-heading"><div><h3>Öruggur viðskiptavinatengill</h3><p>Staðsetning, ökutæki og einkamyndir án innskráningar.</p></div><LockKeyhole size={19} /></div>
 
       {submitted ? <p className="customer-link-status status-submitted"><Check size={15} /> Upplýsingar mótteknar</p> : null}
-      {active ? <p className="customer-link-status status-active"><Link2 size={15} /> Virkur til {new Date(link.expiresAt).toLocaleString("is-IS", { dateStyle: "short", timeStyle: "short" })}</p> : null}
+      {active ? <p className="customer-link-status status-active"><Link2 size={15} /> Virkur til {formatCustomerLinkExpiry(link.expiresAt, "is")}</p> : null}
       {link && !active && !submitted ? <p className="customer-link-status">Tengill er útrunninn eða hefur verið afturkallaður.</p> : null}
 
       {generatedUrl ? (

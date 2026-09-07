@@ -143,6 +143,7 @@ Relevant files include:
 - The hosted project contains five clearly marked presentation providers based in Reykjavík, Hvolsvöllur, Akureyri, Ísafjörður, and Egilsstaðir. They are all available, each has two vehicles and all eleven matching capabilities, and their 190–240 km service circles cover all 2,970 places in the application's hosted Iceland place index. The generic presentation comment has been removed from their notes. Four unassigned jobs in Borgarnes, Blönduós, Höfn, and Vík use separate map positions and produce different verified nearest-driver rankings; each also has its automatic billing record. Their deterministic provider, vehicle, and job IDs are recorded outside Git at `~/.config/vegstod/presentation-network.json` for safe later cleanup.
 - A separate real WhatsApp demonstration for Alli completed customer submission with two private photos, assignment to **Alli Dráttarbíll**, passwordless driver activation, and driver acceptance. Alli reported that portrait thumbnails appeared zoomed because the gallery cropped them to a landscape frame; the gallery now shows the complete image. The job was reassigned to **Freyr símapróf 729124** and its fresh driver link was sent to the owner's WhatsApp self-chat for phone inspection. See [`docs/alli-live-demo-2026-09-07.md`](alli-live-demo-2026-09-07.md). Together with the retained physical-phone audit dataset, the hosted dashboard has seven providers and five active jobs.
 - Customer intake section 2 now uses a common vehicle-make dropdown with an **Other** free-text fallback, an optional rental-company field, and a required count of people involved. The last two values have dedicated hosted job columns and appear on both the dispatcher and driver screens.
+- Customer-link expiry timestamps use an explicit Iceland UTC format shared by the dispatcher panel and public form. This prevents the server/browser locale mismatch found during the hosted form review.
 
 ## Last completed verification
 
@@ -151,7 +152,7 @@ The current application code was fully checked on 7 September 2026:
 - `npm run build` passed.
 - `npm run typecheck` passed.
 - `npm run lint` passed.
-- `npm test` passed all 125 tests across 24 Vitest files.
+- `npm test` passed all 126 tests across 25 Vitest files.
 - `npx supabase test db` passed all 180 assertions across seven pgTAP files.
 - `npx supabase db lint --local --schema public` reported no application-schema errors.
 - `git diff --check` passed.
