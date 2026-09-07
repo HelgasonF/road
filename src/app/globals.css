@@ -1450,11 +1450,15 @@ button.driver-job-contact { cursor: pointer; }
 .customer-fields-two label > span,
 .customer-location-label > span { color: #465a58; font-size: 11px; font-weight: 700; }
 .customer-fields-two input,
+.customer-fields-two select,
 .customer-location-label input,
 .customer-description textarea { background: #fbfcfb; border: 1px solid #cedbd6; border-radius: 10px; font-size: 14px; min-height: 45px; padding: 11px 12px; width: 100%; }
 .customer-fields-two input:focus,
+.customer-fields-two select:focus,
 .customer-location-label input:focus,
 .customer-description textarea:focus { background: white; border-color: var(--pine); outline: 3px solid rgba(14, 75, 70, 0.1); }
+.customer-fields-two .customer-field-wide { grid-column: 1 / -1; }
+.customer-field-help { color: var(--muted); font-size: 10px; line-height: 1.4; }
 .customer-location-actions { align-items: center; display: flex; gap: 12px; justify-content: space-between; margin-bottom: 12px; }
 .customer-location-actions > span { color: var(--muted); font-family: monospace; font-size: 11px; }
 .customer-gps-button { align-items: center; background: var(--pine); border: 0; border-radius: 10px; color: white; display: inline-flex; font-size: 12px; font-weight: 700; gap: 8px; padding: 11px 13px; }

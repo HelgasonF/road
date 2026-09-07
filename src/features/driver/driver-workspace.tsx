@@ -226,6 +226,8 @@ export function DriverWorkspace({ demoMode, jobs, operator }: DriverWorkspacePro
                   <div className="driver-card-heading"><CarFront size={20} /><span><small>Ökutæki viðskiptavinar</small><strong>{jobVehicle(selectedJob)}</strong></span></div>
                   <dl className="driver-facts">
                     <div><dt>Skráning</dt><dd>{selectedJob.vehicleRegistration ?? "Óskráð"}</dd></div>
+                    <div><dt>Fjöldi fólks</dt><dd>{selectedJob.peopleCount ?? "Óskráð"}</dd></div>
+                    {selectedJob.rentalCompany ? <div><dt>Bílaleiga</dt><dd>{selectedJob.rentalCompany}</dd></div> : null}
                     <div><dt>Forgangur</dt><dd>{jobPriorityLabels[selectedJob.priority]}</dd></div>
                   </dl>
                 </section>

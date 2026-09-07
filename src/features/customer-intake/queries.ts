@@ -35,8 +35,8 @@ export interface ActiveCustomerIntake {
     customerPhone: string;
     vehicleRegistration: string | null;
     vehicleMake: string | null;
-    vehicleModel: string | null;
-    vehicleType: string | null;
+    rentalCompany: string | null;
+    peopleCount: number | null;
     latitude: number;
     longitude: number;
     locationLabel: string;
@@ -114,8 +114,8 @@ export async function getCustomerIntakePageData(token: string): Promise<Customer
         customer_phone,
         vehicle_registration,
         vehicle_make,
-        vehicle_model,
-        vehicle_type,
+        rental_company,
+        people_count,
         latitude,
         longitude,
         location_label,
@@ -144,8 +144,8 @@ export async function getCustomerIntakePageData(token: string): Promise<Customer
       customerPhone: job.customer_phone,
       vehicleRegistration: job.vehicle_registration,
       vehicleMake: job.vehicle_make,
-      vehicleModel: job.vehicle_model,
-      vehicleType: job.vehicle_type,
+      rentalCompany: job.rental_company,
+      peopleCount: job.people_count,
       latitude: job.latitude,
       longitude: job.longitude,
       locationLabel: job.location_label ?? `${job.latitude.toFixed(5)}, ${job.longitude.toFixed(5)}`,

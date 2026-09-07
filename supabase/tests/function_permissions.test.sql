@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions, pgtap;
 
-select plan(6);
+select plan(8);
 
 select is(
   (
@@ -55,6 +55,24 @@ select ok(
     'EXECUTE'
   ),
   'the server-only role can submit validated customer intake'
+);
+
+select ok(
+  not has_function_privilege(
+    'authenticated',
+    'public.submit_customer_intake_v2(text,text,text,text,text,text,integer,double precision,double precision,text,public.location_source,text)',
+    'EXECUTE'
+  ),
+  'updated customer intake submission requires the server-only role'
+);
+
+select ok(
+  has_function_privilege(
+    'service_role',
+    'public.submit_customer_intake_v2(text,text,text,text,text,text,integer,double precision,double precision,text,public.location_source,text)',
+    'EXECUTE'
+  ),
+  'the server-only role can submit updated customer intake'
 );
 
 select ok(

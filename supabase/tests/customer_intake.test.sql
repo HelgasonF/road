@@ -3,12 +3,14 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(32);
+select plan(34);
 
 select has_table('public', 'customer_intake_links', 'customer intake links table exists');
 select has_table('public', 'job_photos', 'job photos table exists');
 select has_column('public', 'jobs', 'customer_notes', 'jobs store customer-provided notes separately');
 select has_column('public', 'jobs', 'customer_intake_submitted_at', 'jobs record customer intake submission time');
+select has_column('public', 'jobs', 'rental_company', 'jobs store the customer-provided rental company');
+select has_column('public', 'jobs', 'people_count', 'jobs store the number of people involved');
 select has_function('public', 'create_customer_intake_link', 'staff link creation RPC exists');
 select has_function('public', 'revoke_customer_intake_link', 'staff link revocation RPC exists');
 select has_function('public', 'submit_customer_intake', 'atomic customer submission RPC exists');
@@ -67,7 +69,7 @@ select ok(
 select ok(
   has_function_privilege(
     'service_role',
-    'public.submit_customer_intake(text,text,text,text,text,text,text,double precision,double precision,text,public.location_source,text)',
+    'public.submit_customer_intake_v2(text,text,text,text,text,text,integer,double precision,double precision,text,public.location_source,text)',
     'EXECUTE'
   ),
   'server service role can execute customer submission RPC'
@@ -156,14 +158,14 @@ select is(
 reset role;
 set local role service_role;
 select lives_ok(
-  $$select public.submit_customer_intake(
+  $$select public.submit_customer_intake_v2(
     repeat('b', 64),
     'Updated Tourist',
     '+354 555 2000',
     'ABC12',
     'Toyota',
-    'RAV4',
-    'Jeppi',
+    'Blue Car Rental',
+    3,
     64.2550,
     -21.1300,
     'Þingvellir',
@@ -181,8 +183,8 @@ select is(
       'phone', customer_phone,
       'registration', vehicle_registration,
       'make', vehicle_make,
-      'model', vehicle_model,
-      'type', vehicle_type,
+      'rental_company', rental_company,
+      'people_count', people_count,
       'label', location_label,
       'source', location_source,
       'notes', customer_notes
@@ -195,8 +197,8 @@ select is(
     'phone', '+354 555 2000',
     'registration', 'ABC12',
     'make', 'Toyota',
-    'model', 'RAV4',
-    'type', 'Jeppi',
+    'rental_company', 'Blue Car Rental',
+    'people_count', 3,
     'label', 'Þingvellir',
     'source', 'gps',
     'notes', 'Flat tyre on the front-left wheel'
@@ -218,8 +220,8 @@ select ok(
 
 set local role service_role;
 select throws_ok(
-  $$select public.submit_customer_intake(
-    repeat('b', 64), 'Again', '555-2000', null, null, null, null,
+  $$select public.submit_customer_intake_v2(
+    repeat('b', 64), 'Again', '555-2000', null, null, null, 1,
     64.2, -21.1, 'Again', 'gps', 'Duplicate submission'
   )$$,
   'P0002',

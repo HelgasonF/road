@@ -91,14 +91,14 @@ export async function submitCustomerIntakeAction(input: unknown): Promise<Action
 
   const value = parsed.data;
   const admin = createAdminClient();
-  const { data: jobId, error } = await admin.rpc("submit_customer_intake", {
+  const { data: jobId, error } = await admin.rpc("submit_customer_intake_v2", {
     p_token_hash: hashCustomerIntakeToken(value.token),
     p_customer_name: value.customerName,
     p_customer_phone: value.customerPhone,
     p_vehicle_registration: value.vehicleRegistration,
     p_vehicle_make: value.vehicleMake,
-    p_vehicle_model: value.vehicleModel,
-    p_vehicle_type: value.vehicleType,
+    p_rental_company: value.rentalCompany,
+    p_people_count: value.peopleCount,
     p_latitude: value.latitude,
     p_longitude: value.longitude,
     p_location_label: value.locationLabel,

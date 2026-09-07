@@ -28,6 +28,43 @@ import { CUSTOMER_PHOTO_LIMIT } from "./schemas";
 
 type Language = "en" | "is";
 
+const OTHER_VEHICLE_MAKE = "__other";
+const vehicleMakes = [
+  "Alfa Romeo",
+  "Audi",
+  "BMW",
+  "BYD",
+  "Chevrolet",
+  "Citroën",
+  "Dacia",
+  "Fiat",
+  "Ford",
+  "Honda",
+  "Hyundai",
+  "Isuzu",
+  "Jaguar",
+  "Jeep",
+  "Kia",
+  "Land Rover",
+  "Lexus",
+  "Mazda",
+  "Mercedes-Benz",
+  "Mitsubishi",
+  "Nissan",
+  "Opel",
+  "Peugeot",
+  "Polestar",
+  "Porsche",
+  "Renault",
+  "Škoda",
+  "Subaru",
+  "Suzuki",
+  "Tesla",
+  "Toyota",
+  "Volkswagen",
+  "Volvo",
+] as const;
+
 const copy = {
   en: {
     eyebrow: "Secure roadside assistance link",
@@ -37,10 +74,16 @@ const copy = {
     name: "Full name",
     phone: "Telephone number including country code",
     vehicle: "Vehicle",
+    vehicleHelp: "Add the vehicle make, rental company if applicable, and number of people involved.",
     registration: "Registration number",
-    make: "Make",
-    model: "Model",
-    type: "Vehicle type or colour",
+    make: "Vehicle make",
+    chooseMake: "Choose a make",
+    otherMake: "Other / not listed",
+    writeMake: "Write the vehicle make",
+    rentalCompany: "Rental company (if applicable)",
+    rentalPlaceholder: "For example: Hertz or Blue Car Rental",
+    peopleCount: "Number of people involved",
+    peopleHelp: "Include yourself in the total.",
     location: "Confirm the vehicle location",
     gps: "Use my current GPS location",
     confirming: "Finding your location…",
@@ -66,10 +109,16 @@ const copy = {
     name: "Fullt nafn",
     phone: "Símanúmer með landskóða",
     vehicle: "Ökutæki",
+    vehicleHelp: "Skráðu bíltegund, bílaleigu ef við á og fjölda fólks.",
     registration: "Skráningarnúmer",
-    make: "Tegund",
-    model: "Gerð",
-    type: "Ökutækisflokkur eða litur",
+    make: "Bíltegund (framleiðandi)",
+    chooseMake: "Veldu bíltegund",
+    otherMake: "Önnur / ekki á lista",
+    writeMake: "Skrifaðu bíltegundina",
+    rentalCompany: "Bílaleiga (ef við á)",
+    rentalPlaceholder: "Til dæmis Hertz eða Blue Car Rental",
+    peopleCount: "Fjöldi fólks",
+    peopleHelp: "Teldu þig með í heildarfjöldanum.",
     location: "Staðfestu staðsetningu ökutækisins",
     gps: "Nota núverandi GPS-staðsetningu",
     confirming: "Finn staðsetningu…",
@@ -98,7 +147,14 @@ interface CustomerIntakeFormProps {
 
 export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token }: CustomerIntakeFormProps) {
   const router = useRouter();
+  const initialVehicleMake = job.vehicleMake?.trim() ?? "";
+  const knownInitialVehicleMake = vehicleMakes.find(
+    (make) => make.toLocaleLowerCase() === initialVehicleMake.toLocaleLowerCase(),
+  );
   const [language, setLanguage] = useState<Language>("en");
+  const [vehicleMakeSelection, setVehicleMakeSelection] = useState(
+    knownInitialVehicleMake ?? (initialVehicleMake ? OTHER_VEHICLE_MAKE : ""),
+  );
   const [latitude, setLatitude] = useState(job.latitude);
   const [longitude, setLongitude] = useState(job.longitude);
   const [locationLabel, setLocationLabel] = useState(job.locationLabel);
@@ -219,6 +275,9 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token }: Cus
       return;
     }
     const form = new FormData(event.currentTarget);
+    const vehicleMake = vehicleMakeSelection === OTHER_VEHICLE_MAKE
+      ? String(form.get("vehicleMakeOther") ?? "")
+      : vehicleMakeSelection;
     setError(null);
     startTransition(async () => {
       const result = await submitCustomerIntakeAction({
@@ -226,9 +285,9 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token }: Cus
         customerName: String(form.get("customerName") ?? ""),
         customerPhone: String(form.get("customerPhone") ?? ""),
         vehicleRegistration: String(form.get("vehicleRegistration") ?? ""),
-        vehicleMake: String(form.get("vehicleMake") ?? ""),
-        vehicleModel: String(form.get("vehicleModel") ?? ""),
-        vehicleType: String(form.get("vehicleType") ?? ""),
+        vehicleMake,
+        rentalCompany: String(form.get("rentalCompany") ?? ""),
+        peopleCount: Number(form.get("peopleCount")),
         latitude,
         longitude,
         locationLabel,
@@ -268,12 +327,22 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token }: Cus
         </section>
 
         <section className="customer-form-card">
-          <div className="customer-card-heading"><span>2</span><div><h2>{t.vehicle}</h2><p>{language === "en" ? "Add what you know; only the registration is usually enough." : "Skráðu það sem þú veist; skráningarnúmer nægir oft."}</p></div></div>
+          <div className="customer-card-heading"><span>2</span><div><h2>{t.vehicle}</h2><p>{t.vehicleHelp}</p></div></div>
           <div className="customer-fields-two">
             <label><span>{t.registration}</span><input name="vehicleRegistration" defaultValue={job.vehicleRegistration ?? ""} autoCapitalize="characters" maxLength={24} /></label>
-            <label><span>{t.make}</span><input name="vehicleMake" defaultValue={job.vehicleMake ?? ""} maxLength={120} /></label>
-            <label><span>{t.model}</span><input name="vehicleModel" defaultValue={job.vehicleModel ?? ""} maxLength={120} /></label>
-            <label><span>{t.type}</span><input name="vehicleType" defaultValue={job.vehicleType ?? ""} maxLength={120} /></label>
+            <label>
+              <span>{t.make}</span>
+              <select value={vehicleMakeSelection} onChange={(event) => setVehicleMakeSelection(event.target.value)}>
+                <option value="">{t.chooseMake}</option>
+                {vehicleMakes.map((make) => <option key={make} value={make}>{make}</option>)}
+                <option value={OTHER_VEHICLE_MAKE}>{t.otherMake}</option>
+              </select>
+            </label>
+            {vehicleMakeSelection === OTHER_VEHICLE_MAKE ? (
+              <label className="customer-field-wide"><span>{t.writeMake}</span><input name="vehicleMakeOther" defaultValue={knownInitialVehicleMake ? "" : initialVehicleMake} maxLength={120} required /></label>
+            ) : null}
+            <label><span>{t.rentalCompany}</span><input name="rentalCompany" defaultValue={job.rentalCompany ?? ""} placeholder={t.rentalPlaceholder} maxLength={120} /></label>
+            <label><span>{t.peopleCount}</span><input name="peopleCount" defaultValue={job.peopleCount ?? 1} aria-describedby="people-count-help" inputMode="numeric" min={1} max={99} required type="number" /><small id="people-count-help" className="customer-field-help">{t.peopleHelp}</small></label>
           </div>
         </section>
 

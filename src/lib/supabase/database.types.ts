@@ -162,6 +162,8 @@ export type Database = {
           vehicle_make: string | null;
           vehicle_model: string | null;
           vehicle_type: string | null;
+          rental_company: string | null;
+          people_count: number | null;
           latitude: number;
           longitude: number;
           location: unknown;
@@ -185,6 +187,8 @@ export type Database = {
           vehicle_make?: string | null;
           vehicle_model?: string | null;
           vehicle_type?: string | null;
+          rental_company?: string | null;
+          people_count?: number | null;
           latitude: number;
           longitude: number;
           location_label?: string | null;
@@ -545,6 +549,23 @@ export type Database = {
           p_vehicle_make: string | null;
           p_vehicle_model: string | null;
           p_vehicle_type: string | null;
+          p_latitude: number;
+          p_longitude: number;
+          p_location_label: string;
+          p_location_source: LocationSource;
+          p_customer_notes: string;
+        };
+        Returns: string;
+      };
+      submit_customer_intake_v2: {
+        Args: {
+          p_token_hash: string;
+          p_customer_name: string;
+          p_customer_phone: string;
+          p_vehicle_registration: string | null;
+          p_vehicle_make: string | null;
+          p_rental_company: string | null;
+          p_people_count: number;
           p_latitude: number;
           p_longitude: number;
           p_location_label: string;

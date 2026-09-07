@@ -25,6 +25,8 @@ type JobQueryRow = {
   vehicle_make: string | null;
   vehicle_model: string | null;
   vehicle_type: string | null;
+  rental_company: string | null;
+  people_count: number | null;
   latitude: number;
   longitude: number;
   location_label: string | null;
@@ -70,6 +72,8 @@ export async function getJobs(): Promise<Job[]> {
       vehicle_make,
       vehicle_model,
       vehicle_type,
+      rental_company,
+      people_count,
       latitude,
       longitude,
       location_label,
@@ -119,6 +123,8 @@ export async function getJobs(): Promise<Job[]> {
       vehicleMake: job.vehicle_make,
       vehicleModel: job.vehicle_model,
       vehicleType: job.vehicle_type,
+      rentalCompany: job.rental_company,
+      peopleCount: job.people_count,
       latitude: job.latitude,
       longitude: job.longitude,
       locationLabel: job.location_label ?? `${job.latitude.toFixed(4)}, ${job.longitude.toFixed(4)}`,

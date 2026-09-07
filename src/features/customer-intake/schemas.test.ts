@@ -26,8 +26,8 @@ describe("customerIntakeSchema", () => {
     customerPhone: "+33 6 12 34 56 78",
     vehicleRegistration: "AB-123-CD",
     vehicleMake: "Renault",
-    vehicleModel: "Captur",
-    vehicleType: "Passenger car",
+    rentalCompany: "Blue Car Rental",
+    peopleCount: 3,
     latitude: 64.255,
     longitude: -21.13,
     locationLabel: "Current GPS location",
@@ -39,12 +39,18 @@ describe("customerIntakeSchema", () => {
     const result = customerIntakeSchema.parse({
       ...valid,
       vehicleRegistration: "  ab-123-cd  ",
-      vehicleModel: "   ",
+      rentalCompany: "   ",
     });
 
     expect(result.vehicleRegistration).toBe("AB-123-CD");
-    expect(result.vehicleModel).toBeNull();
+    expect(result.rentalCompany).toBeNull();
     expect(result.customerPhone).toBe(valid.customerPhone);
+  });
+
+  it("requires a valid number of people", () => {
+    expect(customerIntakeSchema.safeParse({ ...valid, peopleCount: 0 }).success).toBe(false);
+    expect(customerIntakeSchema.safeParse({ ...valid, peopleCount: 3.5 }).success).toBe(false);
+    expect(customerIntakeSchema.safeParse({ ...valid, peopleCount: 100 }).success).toBe(false);
   });
 
   it("rejects a location outside the Iceland operating bounds", () => {
