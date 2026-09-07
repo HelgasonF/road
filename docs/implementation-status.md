@@ -15,7 +15,7 @@ The shutdown/resume state, active repository path, uncommitted work, restart com
 - Drivers use a dedicated mobile-first Vegstoð screen for operational job data.
 - Drivers never receive operational email and do not need an email address or password. Dispatch generates a private one-time Vegstoð access link and delivers it to the registered phone through WhatsApp.
 - The tested MVP uses normal manual WhatsApp messages opened from Vegstoð on a phone or computer. The dispatcher reviews and presses Send. The official Meta WhatsApp Cloud API is now the planned production delivery channel; the existing manual `wa.me` handoff and calling remain operational fallbacks.
-- A customer does not need an account. Dispatch sends a 24-hour, job-specific link directly through a prepared WhatsApp handoff; it collects a confirmed location, registration, vehicle make from a common-brand list or free-text fallback, optional rental company, number of people involved, problem description, and private photos inside Vegstoð.
+- A customer does not need an account. Dispatch sends a 24-hour, job-specific link directly through a prepared WhatsApp handoff; it collects a confirmed location, registration, vehicle brand from a common-brand list or free-text fallback, optional rental company, number of people involved, problem description, and private photos inside Vegstoð.
 - Every payer pays Vegstoð. Vegstoð is the payer-facing seller in the system and separately settles with the assigned service provider; the provider never invoices the customer through this workflow.
 - Billing stays in a separate staff-only **Uppgjör** workspace so the dispatcher map remains operational. Drivers cannot see payer prices, provider totals, or Vegstoð's gross difference.
 - Each job has a separate staff-only unified timeline. It shows verified system facts and labels external WhatsApp/phone actions only as links or drafts opened, never as a confirmed send or connected call.
@@ -36,7 +36,7 @@ The shutdown/resume state, active repository path, uncommitted work, restart com
 - Driver-only Row Level Security for the linked operator, vehicles, assignments, jobs, requirements, and history.
 - Mobile driver screen with availability, accept/decline, customer contact, an embedded incident map and pin, navigation, vehicle details, and controlled job-status progression.
 - Dispatcher-managed passwordless driver links through WhatsApp, visible access status, one-time token use, immediate disable, and re-enable without deleting provider data.
-- Dispatcher-created customer intake links with automatic rotation/revocation, a bilingual mobile form, common vehicle-make selection with an “Other” fallback, optional rental-company entry, required people count, GPS or map-pin confirmation, and one-time submission.
+- Dispatcher-created customer intake links with automatic rotation/revocation, a bilingual mobile form, common vehicle-brand selection with an “Other” fallback, optional rental-company entry, required people count, GPS or map-pin confirmation, and one-time submission.
 - Direct customer WhatsApp handoff using the registered phone number, clear English instructions, and the newly generated secure link; no copy-and-paste step is required.
 - Private job-photo upload to Supabase Storage, with access limited to staff, the currently assigned driver, and the active temporary customer link.
 - Separate staff billing workspace with payer queues, provider settlement, invoice/payment states, locked finalized amounts, financial audit history, and deep links to the operational job.

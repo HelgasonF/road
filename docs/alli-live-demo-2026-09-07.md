@@ -8,7 +8,7 @@ No private customer or driver access token is stored in this document.
 
 ## Customer-form revision review
 
-At the owner's request, customer intake section 2 was revised and deployed on commit `d13f081`. It now provides a common vehicle-make dropdown with an **Other** free-text fallback, an optional free-text rental-company field, and a required count of people involved. The new rental-company and people-count values use dedicated hosted `jobs` columns and are shown to dispatch and the assigned driver after submission.
+At the owner's request, customer intake section 2 was revised and deployed on commit `d13f081`. It now provides a common vehicle-brand dropdown with an **Other** free-text fallback, an optional free-text rental-company field, and a required count of people involved. The new rental-company and people-count values use dedicated hosted `jobs` columns and are shown to dispatch and the assigned driver after submission.
 
 A fresh correction link was generated for Alli's retained job and opened in the owner's Chrome session to inspect the deployed form. It remains active and unsubmitted, and no new WhatsApp message was sent to Alli. Alli's original submitted details and photos therefore remain unchanged. The link record identifier and expiry are stored without the raw token in the owner-only demonstration manifest.
 
