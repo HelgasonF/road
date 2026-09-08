@@ -171,6 +171,7 @@ export interface JobAssignment {
 
 export interface JobPhoto {
   id: string;
+  storagePath: string;
   originalFilename: string;
   contentType: string;
   sizeBytes: number;

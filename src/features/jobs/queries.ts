@@ -43,6 +43,7 @@ type JobQueryRow = {
   job_required_capabilities: { capability_code: CapabilityCode }[];
   job_photos: {
     id: string;
+    storage_path: string;
     original_filename: string;
     content_type: string;
     size_bytes: number;
@@ -91,6 +92,7 @@ export async function getJobs(): Promise<Job[]> {
       job_required_capabilities (capability_code),
       job_photos (
         id,
+        storage_path,
         original_filename,
         content_type,
         size_bytes,
@@ -141,6 +143,7 @@ export async function getJobs(): Promise<Job[]> {
         .filter((photo) => photo.uploaded_at !== null)
         .map((photo) => ({
           id: photo.id,
+          storagePath: photo.storage_path,
           originalFilename: photo.original_filename,
           contentType: photo.content_type,
           sizeBytes: photo.size_bytes,
