@@ -34,7 +34,7 @@ SUPABASE_SECRET_KEY
 DEMO_MODE=false
 ```
 
-`SUPABASE_SECRET_KEY` must remain server-only and must never use a `NEXT_PUBLIC_` prefix. It generates driver Auth links and performs the narrowly scoped customer-link and Storage operations. The local `.vercel/` link metadata is ignored by Git.
+`SUPABASE_SECRET_KEY` must remain server-only and must never use a `NEXT_PUBLIC_` prefix. It performs the narrowly scoped account-free customer-link and Storage operations. Driver Auth administration runs inside Supabase's `driver-access-v1` Edge Function and no longer reads this key from Vercel. The local `.vercel/` link metadata is ignored by Git.
 
 Create a new preview from the linked working tree with:
 
@@ -71,11 +71,14 @@ The repository is linked to the hosted project. Check and apply migrations with:
 npx supabase migration list
 npx supabase db push --dry-run
 npx supabase db push
+npx supabase functions deploy driver-access-v1
 ```
 
 The hosted Auth Site URL is `https://vegstod.vercel.app`. Its allowed redirect URLs also include that address plus local `127.0.0.1:3000` and `localhost:3000` development URLs. Email/password authentication and TOTP remain available for staff accounts. Public self-signup is disabled, staff passwords require at least 10 characters with letters and digits, and public users do not receive database function execution privileges. Hosted PostgreSQL rejects non-SSL external connections.
 
-Drivers do not receive email and do not create passwords. An authenticated staff action generates a one-time Supabase Auth token for an internal, non-routable identifier and returns a first-party `/driver/access` URL. Dispatch places that URL in the prepared WhatsApp message. The driver must press **Opna ökumannsskjá** before the token is consumed; successful confirmation creates the ordinary Supabase cookie session used by the existing driver RLS policies. A later assignment can generate a fresh link, and disabling the operator immediately removes access from an existing session. SMTP is not part of the customer or driver workflow.
+Drivers do not receive email and do not create passwords. An authenticated staff action calls the versioned `driver-access-v1` Edge Function with the caller's access token. The function confirms the caller is staff before using its built-in service-role credential for Auth administration, then returns only a first-party `/driver/access` URL. Dispatch places that URL in the prepared WhatsApp message. The driver must press **Opna ökumannsskjá** before the token is consumed; successful confirmation creates the ordinary Supabase cookie session used by the existing driver RLS policies. A later assignment can generate a fresh link, and disabling the operator immediately removes access from an existing session. SMTP is not part of the customer or driver workflow.
+
+The Realtime publication contains only `jobs`, `job_assignments`, and `operators`. RLS still filters future subscribers. The current Next.js web app does not subscribe yet and keeps its existing request/refresh behavior.
 
 Create each additional staff user in Supabase Auth, then activate it explicitly:
 

@@ -74,9 +74,9 @@ Every job also has a staff-only **Ferill verkefnis** page at `/jobs/[jobId]/hist
 
 The current billing slice is a validated ledger and workflow, not a payment processor or accounting-system integration. Recording an invoice or payment does not itself issue a legal invoice, charge a card, initiate a bank transfer, or file VAT. Those actions remain manual until a production accounting/payment integration is selected and verified.
 
-Local customer photos are stored in the private `job-photos` Supabase Storage bucket. Uploads use short-lived signed upload tokens; reads pass through an application authorization route before receiving a five-minute signed object URL. Do not make this bucket public in hosted Supabase.
+Local customer photos are stored in the private `job-photos` Supabase Storage bucket. Uploads use short-lived signed upload tokens. Authenticated staff and the currently assigned driver request five-minute signed read URLs directly from Storage; a `storage.objects` policy ties each object path to the existing RLS-protected `job_photos` metadata. Do not make this bucket public in hosted Supabase.
 
-The hosted Free-plan Supabase project and public Vercel preview are configured as described in [docs/deployment.md](docs/deployment.md). Customer and driver links are delivered through WhatsApp, so the operational workflow has no SMTP dependency. Staff accounts still use administrator-managed Supabase email/password login. `SUPABASE_SECRET_KEY` must contain a server-only `sb_secret_...` key in hosting; it is used for passwordless driver-link generation and token-validated private customer-intake/storage operations, and must never reach browser code.
+The hosted Free-plan Supabase project and public Vercel preview are configured as described in [docs/deployment.md](docs/deployment.md). Customer and driver links are delivered through WhatsApp, so the operational workflow has no SMTP dependency. Staff accounts still use administrator-managed Supabase email/password login. Passwordless driver Auth administration runs in the versioned `driver-access-v1` Supabase Edge Function after an explicit staff authorization check. `SUPABASE_SECRET_KEY` remains required by Vercel only for token-validated, account-free customer-intake and Storage operations and must never reach browser code.
 
 For a UI-only preview without Docker or credentials, run:
 
