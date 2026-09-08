@@ -3,11 +3,10 @@
 import { revalidatePath } from "next/cache";
 
 import { getVerifiedStaffSession } from "@/lib/auth/session";
-import { hasSupabaseAdminConfig, isDemoMode } from "@/lib/config";
+import { isDemoMode } from "@/lib/config";
 import type { ActionResult } from "@/lib/domain/types";
-import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { buildDriverAccessPath, getDriverAuthEmail } from "./driver-access";
+import { invokeDriverAccessFunction } from "./driver-access-api";
 import {
   availabilityInputSchema,
   driverAccessLinkSchema,
@@ -20,7 +19,26 @@ import {
 
 const demoError = "Ekki er hægt að vista breytingar í sýnisham.";
 const authError = "Innskráning rann út. Skráðu þig inn aftur.";
-const adminConfigError = "Stjórnendalykill Supabase vantar á þjóninum.";
+
+const driverAccessErrors: Record<string, string> = {
+  access_state_update_failed: "Ekki tókst að vista aðgangsstöðuna.",
+  auth_access_update_failed: "Ekki tókst að breyta innskráningaraðganginum.",
+  auth_user_missing_identifier: "Innskráningin hefur ekkert innra auðkenni.",
+  auth_user_not_found: "Innskráningin fannst ekki í Supabase Auth.",
+  authentication_required: authError,
+  driver_access_disabled: "Virkjaðu ökumannsaðganginn áður en nýr tengill er búinn til.",
+  driver_access_not_linked: "Enginn ökumannsaðgangur er skráður.",
+  invalid_verification_type: "Supabase skilaði óþekktri tegund ökumannstengils.",
+  link_generation_failed: "Ekki tókst að búa til öruggan ökumannstengil.",
+  link_timestamp_failed: "Ekki tókst að skrá nýja ökumannstengilinn.",
+  link_user_failed: "Ekki tókst að tengja ökumannsaðganginn við þjónustuaðilann.",
+  operator_not_found: "Þjónustuaðilinn fannst ekki.",
+  staff_access_required: "Aðeins starfsfólk getur breytt ökumannsaðgangi.",
+};
+
+function driverAccessError(code: string, fallback: string) {
+  return driverAccessErrors[code] ?? fallback;
+}
 
 function validationError(error: { flatten: () => { fieldErrors: Record<string, string[]> } }) {
   return {
@@ -105,124 +123,45 @@ export async function updateAvailabilityAction(input: unknown): Promise<ActionRe
   return { ok: true };
 }
 
-async function getDriverAccessTarget(operatorId: string) {
-  const supabase = await createClient();
-  const { data: operator, error } = await supabase
-    .from("operators")
-    .select("id, user_id, name, driver_access_disabled_at")
-    .eq("id", operatorId)
-    .maybeSingle();
-
-  if (error || !operator) return { error: "Þjónustuaðilinn fannst ekki." } as const;
-  return { operator } as const;
-}
-
 export async function createDriverAccessLinkAction(input: unknown): Promise<ActionResult<{ path: string }>> {
   if (isDemoMode()) return { ok: false, error: demoError };
   if (!(await getVerifiedStaffSession())) return { ok: false, error: authError };
-  if (!hasSupabaseAdminConfig()) return { ok: false, error: adminConfigError };
 
   const parsed = driverAccessLinkSchema.safeParse(input);
   if (!parsed.success) return validationError(parsed.error);
 
-  const supabase = await createClient();
-  const target = await getDriverAccessTarget(parsed.data.operatorId);
-  if ("error" in target) return { ok: false, error: target.error };
-  if (target.operator.driver_access_disabled_at) {
-    return { ok: false, error: "Virkjaðu ökumannsaðganginn áður en nýr tengill er búinn til." };
-  }
-
-  const admin = createAdminClient();
-  const createsUser = !target.operator.user_id;
-  let authEmail = getDriverAuthEmail(target.operator.id);
-
-  if (target.operator.user_id) {
-    const { data: existingUser, error: userError } = await admin.auth.admin.getUserById(target.operator.user_id);
-    if (userError || !existingUser.user) return { ok: false, error: "Innskráningin fannst ekki í Supabase Auth." };
-    if (!existingUser.user.email) return { ok: false, error: "Innskráningin hefur ekkert innra auðkenni." };
-    authEmail = existingUser.user.email;
-  }
-
-  const { data, error } = await admin.auth.admin.generateLink({
-    type: "magiclink",
-    email: authEmail,
-    options: {
-      data: {
-        display_name: target.operator.name,
-        operator_id: target.operator.id,
-      },
-    },
+  const result = await invokeDriverAccessFunction<{ path: string }>({
+    action: "create_link",
+    operatorId: parsed.data.operatorId,
   });
-
-  if (error || !data.user || !data.properties.hashed_token) {
-    return { ok: false, error: "Ekki tókst að búa til öruggan ökumannstengil." };
-  }
-  const verificationType = data.properties.verification_type;
-  if (verificationType !== "signup" && verificationType !== "magiclink") {
-    if (createsUser) await admin.auth.admin.deleteUser(data.user.id);
-    return { ok: false, error: "Supabase skilaði óþekktri tegund ökumannstengils." };
-  }
-
-  if (createsUser) {
-    const { error: linkError } = await supabase.rpc("link_driver_user", {
-      p_operator_id: target.operator.id,
-      p_user_id: data.user.id,
-    });
-
-    if (linkError) {
-      await admin.auth.admin.deleteUser(data.user.id);
-      return { ok: false, error: "Ekki tókst að tengja ökumannsaðganginn við þjónustuaðilann." };
-    }
-  }
-
-  const { error: timestampError } = await supabase
-    .from("operators")
-    .update({ driver_access_link_created_at: new Date().toISOString() })
-    .eq("id", target.operator.id);
-
-  if (timestampError) {
-    if (createsUser) await admin.auth.admin.deleteUser(data.user.id);
-    return { ok: false, error: "Ekki tókst að skrá nýja ökumannstengilinn." };
+  if (!result.ok) {
+    return {
+      ok: false,
+      error: driverAccessError(result.errorCode, "Ekki tókst að búa til öruggan ökumannstengil."),
+    };
   }
 
   revalidatePath("/");
-  return {
-    ok: true,
-    data: { path: buildDriverAccessPath(data.properties.hashed_token, verificationType) },
-  };
+  return { ok: true, data: result.data };
 }
 
 export async function setDriverAccessDisabledAction(input: unknown): Promise<ActionResult<{ message: string }>> {
   if (isDemoMode()) return { ok: false, error: demoError };
   if (!(await getVerifiedStaffSession())) return { ok: false, error: authError };
-  if (!hasSupabaseAdminConfig()) return { ok: false, error: adminConfigError };
 
   const parsed = driverAccessToggleSchema.safeParse(input);
   if (!parsed.success) return validationError(parsed.error);
 
-  const target = await getDriverAccessTarget(parsed.data.operatorId);
-  if ("error" in target) return { ok: false, error: target.error };
-  if (!target.operator.user_id) return { ok: false, error: "Enginn ökumannsaðgangur er skráður." };
-
-  const admin = createAdminClient();
-  const { error: authUpdateError } = await admin.auth.admin.updateUserById(
-    target.operator.user_id,
-    { ban_duration: parsed.data.disabled ? "876000h" : "none" },
-  );
-  if (authUpdateError) return { ok: false, error: "Ekki tókst að breyta innskráningaraðganginum." };
-
-  const supabase = await createClient();
-  const { error: stateError } = await supabase.rpc("set_driver_access_disabled", {
-    p_operator_id: target.operator.id,
-    p_disabled: parsed.data.disabled,
+  const result = await invokeDriverAccessFunction<{ disabled: boolean }>({
+    action: "set_disabled",
+    operatorId: parsed.data.operatorId,
+    disabled: parsed.data.disabled,
   });
-
-  if (stateError) {
-    await admin.auth.admin.updateUserById(
-      target.operator.user_id,
-      { ban_duration: parsed.data.disabled ? "none" : "876000h" },
-    );
-    return { ok: false, error: "Ekki tókst að vista aðgangsstöðuna." };
+  if (!result.ok) {
+    return {
+      ok: false,
+      error: driverAccessError(result.errorCode, "Ekki tókst að breyta ökumannsaðganginum."),
+    };
   }
 
   revalidatePath("/");
