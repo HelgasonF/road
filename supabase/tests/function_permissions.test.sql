@@ -78,7 +78,7 @@ select ok(
 select ok(
   has_function_privilege(
     'authenticated',
-    'public.save_job(uuid,text,text,text,text,text,text,double precision,double precision,text,public.location_source,public.job_priority,text,text[])',
+    'public.save_job(uuid,text,text,text,text,text,integer,double precision,double precision,text,public.location_source,public.job_priority,text,text[])',
     'EXECUTE'
   ),
   'authenticated staff retain access to application RPCs'

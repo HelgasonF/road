@@ -165,7 +165,7 @@ export function JobDetail({ customerLink, demoMode, job, matches, operators, onC
       {!job.intakePending ? (
         <section className="detail-section job-summary-grid">
           <div><Clock3 size={15} /><span><small>{is.priority}</small><strong>{jobPriorityLabels[job.priority]}</strong></span></div>
-          <div><Truck size={15} /><span><small>Ökutæki</small><strong>{[job.vehicleMake, job.vehicleModel].filter(Boolean).join(" ") || job.vehicleType || "Óskráð"}</strong></span></div>
+          <div><Truck size={15} /><span><small>Bílamerki</small><strong>{job.vehicleMake || "Óskráð"}</strong></span></div>
           <div><UsersRound size={15} /><span><small>Fjöldi fólks</small><strong>{job.peopleCount ?? "Óskráð"}</strong></span></div>
           {job.rentalCompany ? <div><Building2 size={15} /><span><small>Bílaleiga</small><strong>{job.rentalCompany}</strong></span></div> : null}
         </section>

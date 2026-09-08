@@ -8,8 +8,8 @@ const validJob = {
   customerPhone: "555 0123",
   vehicleRegistration: "AB-123",
   vehicleMake: "Toyota",
-  vehicleModel: "RAV4",
-  vehicleType: "Fólksbíll",
+  rentalCompany: "Blue Car Rental",
+  peopleCount: 3,
   latitude: 64.1265,
   longitude: -21.8174,
   locationLabel: "Bústaðavegur 151, Reykjavík",
@@ -51,20 +51,24 @@ describe("jobInputSchema", () => {
       ...validJob,
       vehicleRegistration: "  ",
       vehicleMake: "",
-      vehicleModel: " ",
-      vehicleType: "",
+      rentalCompany: " ",
       notes: "",
     });
 
     expect(result.vehicleRegistration).toBeNull();
     expect(result.vehicleMake).toBeNull();
-    expect(result.vehicleModel).toBeNull();
-    expect(result.vehicleType).toBeNull();
+    expect(result.rentalCompany).toBeNull();
     expect(result.notes).toBeNull();
   });
 
   it("requires a customer phone value containing dialable digits", () => {
     expect(jobInputSchema.safeParse({ ...validJob, customerPhone: "sendu skilaboð" }).success).toBe(false);
+  });
+
+  it("requires a whole people count between one and 99", () => {
+    expect(jobInputSchema.safeParse({ ...validJob, peopleCount: 0 }).success).toBe(false);
+    expect(jobInputSchema.safeParse({ ...validJob, peopleCount: 2.5 }).success).toBe(false);
+    expect(jobInputSchema.safeParse({ ...validJob, peopleCount: 100 }).success).toBe(false);
   });
 
   it.each([

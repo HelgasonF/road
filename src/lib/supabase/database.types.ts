@@ -441,8 +441,8 @@ export type Database = {
           p_customer_phone: string;
           p_vehicle_registration: string | null;
           p_vehicle_make: string | null;
-          p_vehicle_model: string | null;
-          p_vehicle_type: string | null;
+          p_rental_company: string | null;
+          p_people_count: number;
           p_latitude: number;
           p_longitude: number;
           p_location_label: string;

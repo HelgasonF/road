@@ -56,7 +56,7 @@ Driver contact in the MVP uses ordinary WhatsApp rather than an automated API. E
 
 Customer intake starts from the **+** button in the job list:
 
-1. Enter only the caller's phone number and press **Búa til og opna WhatsApp**. Staff can switch to the full form when they want to enter every field themselves.
+1. Enter only the caller's phone number and press **Búa til og opna WhatsApp**. Staff can switch to the full form when they want to enter every field themselves; its vehicle section uses the same registration, brand dropdown/free-text fallback, rental-company, and people-count fields as the customer form.
 2. Vegstoð atomically creates a pending job and 24-hour link, then opens the customer's WhatsApp chat with clear English instructions and the secure URL. The dispatcher reviews the draft and presses Send. The raw token is available only at creation time and only its SHA-256 hash is stored.
 3. The pending job remains visible in the list, but is omitted from the map and driver matching and cannot be assigned.
 4. The customer uses the bilingual, account-free form to enter their name, confirm GPS/map location, choose the required assistance, describe the problem, add vehicle/rental/people details, and optionally upload up to six 10 MiB photos.

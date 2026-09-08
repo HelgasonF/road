@@ -159,11 +159,6 @@ select ok(
 );
 
 select ok(
-  to_regprocedure('public.save_job(uuid,text,text,text,text,text,text,double precision,double precision,text,public.location_source,public.job_priority,text,text[])') is not null,
-  'atomic job save RPC exists'
-);
-
-select ok(
   to_regprocedure('public.assign_job(uuid,uuid,uuid,text)') is not null,
   'assignment RPC exists'
 );
@@ -301,6 +296,38 @@ insert into public.jobs (
 
 insert into public.job_required_capabilities (job_id, capability_code)
 values ('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeee2', 'towing');
+
+select public.save_job(
+  'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeee2',
+  'Manual form customer',
+  '555-0011',
+  'MANUAL1',
+  'Toyota',
+  'Blue Car Rental',
+  3,
+  64.1500,
+  -21.9426,
+  'Manual form location',
+  'manual',
+  'normal',
+  'Manual form notes',
+  array['towing']
+);
+
+select results_eq(
+  $$
+    select
+      job.vehicle_make,
+      job.rental_company,
+      job.people_count,
+      job.vehicle_model,
+      job.vehicle_type
+    from public.jobs job
+    where job.id = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeee2'
+  $$,
+  $$values ('Toyota'::text, 'Blue Car Rental'::text, 3::integer, null::text, null::text)$$,
+  'atomic job save stores the dispatcher vehicle fields and clears retired fields'
+);
 
 select ok(
   (select within_service_area

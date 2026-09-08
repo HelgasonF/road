@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 
 import type { CapabilityCode, LocationSource } from "@/lib/domain/types";
 import { capabilityCodes } from "@/lib/domain/types";
+import { OTHER_VEHICLE_MAKE, vehicleMakes } from "@/lib/domain/vehicle-makes";
 import { capabilityLabels } from "@/lib/i18n/is";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -30,43 +31,6 @@ import type { ActiveCustomerIntake, CustomerIntakePhoto } from "./queries";
 import { CUSTOMER_PHOTO_LIMIT } from "./schemas";
 
 type Language = "en" | "is";
-
-const OTHER_VEHICLE_MAKE = "__other";
-const vehicleMakes = [
-  "Alfa Romeo",
-  "Audi",
-  "BMW",
-  "BYD",
-  "Chevrolet",
-  "Citroën",
-  "Dacia",
-  "Fiat",
-  "Ford",
-  "Honda",
-  "Hyundai",
-  "Isuzu",
-  "Jaguar",
-  "Jeep",
-  "Kia",
-  "Land Rover",
-  "Lexus",
-  "Mazda",
-  "Mercedes-Benz",
-  "Mitsubishi",
-  "Nissan",
-  "Opel",
-  "Peugeot",
-  "Polestar",
-  "Porsche",
-  "Renault",
-  "Škoda",
-  "Subaru",
-  "Suzuki",
-  "Tesla",
-  "Toyota",
-  "Volkswagen",
-  "Volvo",
-] as const;
 
 const copy = {
   en: {

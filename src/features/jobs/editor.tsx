@@ -10,6 +10,7 @@ import { AddressSearchField } from "@/features/location/address-search-field";
 import { buildWhatsAppHref } from "@/lib/contact-links";
 import type { Capability, CapabilityCode, Job } from "@/lib/domain/types";
 import { jobPriorities } from "@/lib/domain/types";
+import { OTHER_VEHICLE_MAKE, vehicleMakes } from "@/lib/domain/vehicle-makes";
 import { capabilityLabels, is, jobPriorityLabels } from "@/lib/i18n/is";
 import { saveJobAction } from "./actions";
 
@@ -34,6 +35,13 @@ export function JobEditor({ capabilities, job, onClose, onQuickCreated, onSaved 
   const [quickLink, setQuickLink] = useState<QuickLinkResult | null>(null);
   const [selectedCapabilities, setSelectedCapabilities] = useState<CapabilityCode[]>(
     job?.requiredCapabilities ?? [],
+  );
+  const initialVehicleMake = job?.vehicleMake?.trim() ?? "";
+  const knownInitialVehicleMake = vehicleMakes.find(
+    (make) => make.toLocaleLowerCase() === initialVehicleMake.toLocaleLowerCase(),
+  );
+  const [vehicleMakeSelection, setVehicleMakeSelection] = useState(
+    knownInitialVehicleMake ?? (initialVehicleMake ? OTHER_VEHICLE_MAKE : ""),
   );
 
   function submitQuick(event: FormEvent<HTMLFormElement>) {
@@ -80,6 +88,9 @@ export function JobEditor({ capabilities, job, onClose, onQuickCreated, onSaved 
     event.preventDefault();
     setError(null);
     const form = new FormData(event.currentTarget);
+    const vehicleMake = vehicleMakeSelection === OTHER_VEHICLE_MAKE
+      ? String(form.get("vehicleMakeOther") ?? "")
+      : vehicleMakeSelection;
 
     startTransition(async () => {
       const result = await saveJobAction({
@@ -87,9 +98,9 @@ export function JobEditor({ capabilities, job, onClose, onQuickCreated, onSaved 
         customerName: String(form.get("customerName") ?? ""),
         customerPhone: String(form.get("customerPhone") ?? ""),
         vehicleRegistration: String(form.get("vehicleRegistration") ?? ""),
-        vehicleMake: String(form.get("vehicleMake") ?? ""),
-        vehicleModel: String(form.get("vehicleModel") ?? ""),
-        vehicleType: String(form.get("vehicleType") ?? ""),
+        vehicleMake,
+        rentalCompany: String(form.get("rentalCompany") ?? ""),
+        peopleCount: Number(form.get("peopleCount")),
         latitude: Number(form.get("latitude")),
         longitude: Number(form.get("longitude")),
         locationLabel: String(form.get("locationLabel") ?? ""),
@@ -206,9 +217,19 @@ export function JobEditor({ capabilities, job, onClose, onQuickCreated, onSaved 
             <div className="form-grid form-grid-two">
               <label className="field"><span>{is.registrationNumber}</span><input name="vehicleRegistration" defaultValue={job?.vehicleRegistration ?? ""} /></label>
               <label className="field"><span>{is.priority}</span><select name="priority" defaultValue={job?.priority ?? "normal"}>{jobPriorities.map((priority) => <option key={priority} value={priority}>{jobPriorityLabels[priority]}</option>)}</select></label>
-              <label className="field"><span>Tegund bifreiðar</span><input name="vehicleType" defaultValue={job?.vehicleType ?? ""} placeholder="T.d. fólksbíll eða húsbíll" /></label>
-              <label className="field"><span>Tegund / framleiðandi</span><input name="vehicleMake" defaultValue={job?.vehicleMake ?? ""} placeholder="T.d. Toyota" /></label>
-              <label className="field"><span>Gerð</span><input name="vehicleModel" defaultValue={job?.vehicleModel ?? ""} placeholder="T.d. RAV4" /></label>
+              <label className="field">
+                <span>Bílamerki</span>
+                <select value={vehicleMakeSelection} onChange={(event) => setVehicleMakeSelection(event.target.value)}>
+                  <option value="">Veldu bílamerki</option>
+                  {vehicleMakes.map((make) => <option key={make} value={make}>{make}</option>)}
+                  <option value={OTHER_VEHICLE_MAKE}>Önnur / ekki á lista</option>
+                </select>
+              </label>
+              {vehicleMakeSelection === OTHER_VEHICLE_MAKE ? (
+                <label className="field"><span>Skrifaðu bílamerkið</span><input name="vehicleMakeOther" defaultValue={knownInitialVehicleMake ? "" : initialVehicleMake} maxLength={120} required /></label>
+              ) : null}
+              <label className="field"><span>Bílaleiga (ef við á)</span><input name="rentalCompany" defaultValue={job?.rentalCompany ?? ""} placeholder="T.d. Hertz eða Blue Car Rental" maxLength={120} /></label>
+              <label className="field"><span>Fjöldi fólks</span><input name="peopleCount" defaultValue={job?.peopleCount ?? 1} inputMode="numeric" min={1} max={99} required type="number" /></label>
             </div>
 
             <label className="field"><span>{is.notes}</span><textarea name="notes" defaultValue={job?.notes ?? ""} rows={3} /></label>

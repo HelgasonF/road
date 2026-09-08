@@ -59,9 +59,7 @@ const visibleAvailabilityStatuses: AvailabilityStatus[] = [
 ];
 
 function jobVehicle(job: Job) {
-  return [job.vehicleMake, job.vehicleModel].filter(Boolean).join(" ")
-    || job.vehicleType
-    || "Ökutæki óskráð";
+  return job.vehicleMake || "Bílamerki óskráð";
 }
 
 export function DriverWorkspace({ demoMode, jobs, operator }: DriverWorkspaceProps) {

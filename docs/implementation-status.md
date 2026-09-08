@@ -1,6 +1,6 @@
 # Vegstoð implementation status
 
-Last updated: 7 September 2026
+Last updated: 8 September 2026
 
 ## Maintenance checkpoint
 
@@ -15,7 +15,7 @@ The shutdown/resume state, active repository path, uncommitted work, restart com
 - Drivers use a dedicated mobile-first Vegstoð screen for operational job data.
 - Drivers never receive operational email and do not need an email address or password. Dispatch generates a private one-time Vegstoð access link and delivers it to the registered phone through WhatsApp.
 - The tested MVP uses normal manual WhatsApp messages opened from Vegstoð on a phone or computer. The dispatcher reviews and presses Send. The official Meta WhatsApp Cloud API is now the planned production delivery channel; the existing manual `wa.me` handoff and calling remain operational fallbacks.
-- A customer does not need an account. From the new-job **+** modal, dispatch can enter only the phone number and immediately open a prepared WhatsApp handoff with a 24-hour job-specific link. The customer enters their name, confirmed location, assistance type, description, registration, vehicle brand from a common-brand list or free-text fallback, optional rental company, number of people involved, and private photos inside Vegstoð. Staff can still switch to the complete manual job form.
+- A customer does not need an account. From the new-job **+** modal, dispatch can enter only the phone number and immediately open a prepared WhatsApp handoff with a 24-hour job-specific link. The customer enters their name, confirmed location, assistance type, description, registration, vehicle brand from a common-brand list or free-text fallback, optional rental company, number of people involved, and private photos inside Vegstoð. Staff can still switch to a complete manual job form with the same vehicle fields.
 - Every payer pays Vegstoð. Vegstoð is the payer-facing seller in the system and separately settles with the assigned service provider; the provider never invoices the customer through this workflow.
 - Billing stays in a separate staff-only **Uppgjör** workspace so the dispatcher map remains operational. Drivers cannot see payer prices, provider totals, or Vegstoð's gross difference.
 - Each job has a separate staff-only unified timeline. It shows verified system facts and labels external WhatsApp/phone actions only as links or drafts opened, never as a confirmed send or connected call.
@@ -85,8 +85,8 @@ The new-job workflow now follows the intended minimum-input path while retaining
 2. The success state keeps an **Opna WhatsApp aftur** fallback in case the browser blocks or closes the first handoff. The raw link is held only in that browser state and is not persisted in readable form.
 3. A pending job is visible by phone number in the dispatcher list but has no map marker, driver ranking, or assignment controls. The assignment RPC also rejects it directly.
 4. The customer form requires one of the eleven assistance types plus a written description. Submission stores both, replaces the placeholder location and name, marks the one-time link submitted, clears the pending state, and immediately enables normal matching and assignment.
-5. Switching to **Ég vil skrá allar upplýsingar sjálf/ur** restores the existing complete job form for staff-entered jobs.
-6. A clean local database rebuild and browser pass verified the phone-only modal, full-form switch, pending list/detail state, map exclusion, assistance selector, one-time submission, direct Supabase persistence, and matching unlock. No external WhatsApp message was sent during this automated pass.
+5. Switching to **Ég vil skrá allar upplýsingar sjálf/ur** opens the complete staff form. Its vehicle section mirrors the customer form with registration, the shared brand list and **Other** fallback, optional rental-company name, and required people count. The retired free-text vehicle-type and model inputs are removed.
+6. A clean local database rebuild and browser pass verified the phone-only modal, full-form switch, pending list/detail state, map exclusion, assistance selector, one-time submission, direct Supabase persistence, and matching unlock. A second dispatcher-form browser pass saved the shared vehicle fields and verified their database values directly. No external WhatsApp message was sent during these automated passes.
 
 ## Completed driver-contact build slice
 
@@ -129,7 +129,7 @@ The timeline is connected to the existing operational and financial records with
 
 The first external environment is now connected without upgrading Supabase:
 
-1. The repository is linked to the healthy Supabase Free project `Road` (`abpmzqtbllszqqetuubp`) in `eu-west-1`; all 22 migrations are applied.
+1. The repository is linked to the healthy Supabase Free project `Road` (`abpmzqtbllszqqetuubp`) in `eu-west-1`; all 23 migrations are applied.
 2. The hosted database contains 139,346 HMS addresses and 2,970 Icelandic place names, uses about 94 MB, and has an explicitly private `job-photos` bucket.
 3. Public/anonymous execution was removed from every application function. Authenticated users cannot invoke trigger-only functions, and customer submission/audit RPCs remain restricted to the server service role. The local pgTAP regression suite and direct hosted catalog assertions verify these boundaries.
 4. Vercel Preview has encrypted publishable and server-only Supabase variables with `DEMO_MODE=false`. The stable public test address is `https://vegstod.vercel.app`; the same variables are prepared for Production, but no production deployment is active. The private GitHub repository is connected for automatic feature-branch previews, with `main` reserved as the production branch.
@@ -216,11 +216,11 @@ This slice is complete only after sandbox tests, template approval, webhook veri
 
 ## Full verification snapshot
 
-The complete current working tree was rechecked on 7 September 2026:
+The complete current working tree was rechecked on 8 September 2026:
 
 - `npm run build` passed with all application routes, including dispatcher, staff billing, the staff job timeline, customer intake, private photo delivery, passwordless driver-link confirmation, and the driver screen.
 - `npm run typecheck` and `npm run lint` passed without errors.
-- `npm test` passed all 130 tests across 25 Vitest files, including phone-first WhatsApp-number validation, assistance selection, deterministic customer-link expiry formatting, customer vehicle-context validation, customer and driver WhatsApp handoffs, one-time driver-link validation, and international-number routing.
+- `npm test` passed all 131 tests across 25 Vitest files, including dispatcher and customer vehicle-context validation, phone-first WhatsApp-number validation, assistance selection, deterministic customer-link expiry formatting, customer and driver WhatsApp handoffs, one-time driver-link validation, and international-number routing.
 - `npx supabase test db` passed all 200 assertions across eight pgTAP files from a clean local reset, covering phone-first pending-job creation, assignment blocking, assistance-aware intake submission and matching unlock, dispatch schema, customer-link lifecycle, private-photo authorization, contact-event audit isolation, billing transitions, function permissions, and driver isolation.
 - `npx supabase db lint --local --schema public` reported no application-schema errors. A whole-database lint also reports known analyzer findings inside Supabase's installed PostGIS extension functions; these are vendor extension code rather than Vegstoð migrations.
 - `npm audit --omit=dev` reported zero production dependency vulnerabilities.

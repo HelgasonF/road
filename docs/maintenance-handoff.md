@@ -1,6 +1,6 @@
 # Road / Vegstoð maintenance handoff
 
-Updated: 7 September 2026 (Atlantic/Reykjavik)
+Updated: 8 September 2026 (Atlantic/Reykjavik)
 
 This is the current resume point for local work and the hosted preview.
 
@@ -83,6 +83,7 @@ Relevant files include:
 - The prepared customer message is English only and asks for the customer's name, location, vehicle, assistance type, written description, and optional photos. It contains the secure Vegstoð URL, 24-hour expiry, and a warning not to forward it.
 - Pending jobs remain visible in the list but are excluded from the map, matching, and assignment. Customer submission clears the pending state and enables normal dispatch.
 - Staff can switch the same modal to the complete manual job form.
+- The complete form now mirrors the customer vehicle section: registration, shared brand dropdown with an **Other** field, optional rental-company name, and required people count. The retired free-text vehicle-type and model fields were removed.
 - WhatsApp carries only the message and secure link. Location, vehicle information, problem details, and photos are submitted to Vegstoð and private Supabase Storage.
 - Dispatch still reviews the prepared message and presses Send in ordinary WhatsApp/WhatsApp Web. No paid WhatsApp Business API is involved.
 - A real browser handoff reached WhatsApp with the correct international number and secure URL. No message was sent and all disposable records were cleaned up.
@@ -136,7 +137,7 @@ Relevant files include:
 ### Hosted preview and Supabase Free project
 
 - Supabase project `Road` (`abpmzqtbllszqqetuubp`) is linked in `eu-west-1` on the Free plan.
-- All 22 migrations are applied. Hosted reference data contains 139,346 HMS addresses and 2,970 Icelandic place names; the database used about 94 MB at the last check.
+- All 23 migrations are applied. Hosted reference data contains 139,346 HMS addresses and 2,970 Icelandic place names; the database used about 94 MB at the last check.
 - The private `job-photos` bucket and tightened function execution permissions are verified.
 - Vercel Preview uses encrypted Supabase variables with `DEMO_MODE=false` and the stable address `https://vegstod.vercel.app`. The same encrypted variables are prepared for Production, but no production deployment is active.
 - Supabase Auth Site URL and redirects use the stable preview address while preserving local development redirects.
@@ -154,12 +155,12 @@ Relevant files include:
 
 ## Last completed verification
 
-The current application code was fully checked on 7 September 2026:
+The current application code was fully checked on 8 September 2026:
 
 - `npm run build` passed.
 - `npm run typecheck` passed.
 - `npm run lint` passed.
-- `npm test` passed all 130 tests across 25 Vitest files.
+- `npm test` passed all 131 tests across 25 Vitest files.
 - `npx supabase test db` passed all 200 assertions across eight pgTAP files after a clean local database reset.
 - `npx supabase db lint --local --schema public` reported no application-schema errors.
 - `git diff --check` passed.
