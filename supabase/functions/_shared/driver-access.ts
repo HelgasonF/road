@@ -8,4 +8,3 @@ export function buildDriverAccessPath(tokenHash: string, type: DriverAccessToken
   const query = new URLSearchParams({ token_hash: tokenHash, type });
   return `/driver/access?${query.toString()}`;
 }
-

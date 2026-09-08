@@ -53,4 +53,3 @@ export async function invokeDriverAccessFunction<T>(
   if (!data?.data) return { ok: false, errorCode: "invalid_function_response" };
   return { ok: true, data: data.data };
 }
-
