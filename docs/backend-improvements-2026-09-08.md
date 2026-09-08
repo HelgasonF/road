@@ -18,7 +18,9 @@ This change prepared the existing Supabase backend for more than one authenticat
 - Hosted migration application and Edge Function deployment completed successfully.
 - Hosted tests resolved all three uploaded metadata paths to exact private Storage objects, permitted the assigned driver to create signed URLs, and denied an anonymous caller.
 - Hosted function tests returned only the first-party driver path, rejected a driver JWT at the explicit staff boundary, and restored the test driver to active after disable/re-enable.
-- The complete TypeScript, ESLint, Vitest, production build, and deployed-browser checks are recorded with the final deployment below.
+- TypeScript, ESLint, all 134 Vitest tests, the Next.js production build, and `git diff --check` passed.
+- Vercel preview `https://vegstod-9fvhi7fff-freyrs-projects-fad4047a.vercel.app` reached `Ready` and the stable preview alias `https://vegstod.vercel.app` was moved to it.
+- The deployed staff browser loaded both retained Alli photos from Supabase Storage signed URLs, produced no application console errors, and generated the normal WhatsApp assignment handoff through the rewired Server Action.
 
 ## Compatibility
 
