@@ -1,8 +1,10 @@
 # Road / Vegstoð maintenance handoff
 
-Updated: 8 September 2026 (Atlantic/Reykjavik)
+Updated: 11 September 2026 (Atlantic/Reykjavik)
 
 This is the current resume point for local work and the hosted preview.
+
+The active Meta WhatsApp/MCP setup has a dedicated restart-safe checkpoint in [`docs/meta-mcp-resume-2026-09-11.md`](meta-mcp-resume-2026-09-11.md). Read it before changing a Meta app, WABA, phone number, System User, webhook, or Supabase WhatsApp secret.
 
 ## Resume from the correct repository
 
