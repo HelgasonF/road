@@ -73,10 +73,10 @@ export function formatBillingDate(value: string | null) {
 
 export function isPastDue(dueDate: string | null, today = new Date()) {
   if (!dueDate) return false;
-  const localToday = [
-    today.getFullYear(),
-    String(today.getMonth() + 1).padStart(2, "0"),
-    String(today.getDate()).padStart(2, "0"),
+  const icelandToday = [
+    today.getUTCFullYear(),
+    String(today.getUTCMonth() + 1).padStart(2, "0"),
+    String(today.getUTCDate()).padStart(2, "0"),
   ].join("-");
-  return dueDate < localToday;
+  return dueDate < icelandToday;
 }

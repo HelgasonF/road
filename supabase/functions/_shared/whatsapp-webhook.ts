@@ -1,7 +1,28 @@
 export type WhatsAppWebhookEvent = {
+  messages: WhatsAppInboundMessage[];
   payload: Record<string, unknown>;
   payloadSha256: string;
+  statuses: WhatsAppDeliveryEvent[];
   wabaId: string | null;
+};
+
+export type WhatsAppDeliveryEvent = {
+  errorCode: string | null;
+  messageId: string;
+  occurredAt: string;
+  recipientPhone: string | null;
+  status: "sent" | "delivered" | "read" | "failed";
+};
+
+export type WhatsAppInboundMessage = {
+  contextMessageId: string | null;
+  messageId: string;
+  messageType: string;
+  occurredAt: string;
+  phoneNumberId: string | null;
+  replyClassification: "available" | "unavailable" | "unknown";
+  senderPhone: string;
+  textBody: string | null;
 };
 
 type WhatsAppWebhookHandlerOptions = {
@@ -76,6 +97,152 @@ function getWabaId(payload: Record<string, unknown>) {
   return isRecord(firstEntry) && typeof firstEntry.id === "string" ? firstEntry.id : null;
 }
 
+function limitedString(value: unknown, maxLength: number) {
+  return typeof value === "string" && value.length > 0
+    ? value.slice(0, maxLength)
+    : null;
+}
+
+function numericString(value: unknown, maxLength = 32) {
+  const textValue = limitedString(value, maxLength);
+  return textValue && /^[0-9]+$/.test(textValue) ? textValue : null;
+}
+
+function metaTimestamp(value: unknown) {
+  const timestamp = typeof value === "string" && /^[0-9]{1,12}$/.test(value)
+    ? Number(value)
+    : Number.NaN;
+  if (!Number.isSafeInteger(timestamp) || timestamp < 0) return null;
+
+  const date = new Date(timestamp * 1_000);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function firstErrorCode(value: unknown) {
+  if (!Array.isArray(value) || !isRecord(value[0])) return null;
+  const code = value[0].code;
+  if (typeof code === "number" && Number.isSafeInteger(code)) return String(code);
+  return limitedString(code, 120);
+}
+
+function inboundText(message: Record<string, unknown>) {
+  if (isRecord(message.text)) return limitedString(message.text.body, 4_096);
+  if (isRecord(message.button)) return limitedString(message.button.text, 4_096);
+  if (!isRecord(message.interactive)) return null;
+
+  const buttonReply = message.interactive.button_reply;
+  if (isRecord(buttonReply)) {
+    return limitedString(buttonReply.title, 4_096) ?? limitedString(buttonReply.id, 4_096);
+  }
+
+  const listReply = message.interactive.list_reply;
+  if (isRecord(listReply)) {
+    return limitedString(listReply.title, 4_096) ?? limitedString(listReply.id, 4_096);
+  }
+
+  return null;
+}
+
+function normalizeReply(value: string | null) {
+  if (!value) return "unknown" as const;
+  const normalized = value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLocaleLowerCase("is")
+    .replace(/[.!?]+$/g, "")
+    .replace(/\s+/g, " ");
+
+  if ([
+    "ekki laus",
+    "nei",
+    "no",
+    "not available",
+    "unavailable",
+    "driver_unavailable",
+  ].includes(normalized)) return "unavailable" as const;
+
+  if ([
+    "laus",
+    "ja",
+    "yes",
+    "available",
+    "driver_available",
+  ].includes(normalized)) return "available" as const;
+
+  return "unknown" as const;
+}
+
+function extractWebhookData(payload: Record<string, unknown>) {
+  const statuses: WhatsAppDeliveryEvent[] = [];
+  const messages: WhatsAppInboundMessage[] = [];
+
+  if (!Array.isArray(payload.entry)) return { messages, statuses };
+
+  for (const entry of payload.entry) {
+    if (!isRecord(entry) || !Array.isArray(entry.changes)) continue;
+
+    for (const change of entry.changes) {
+      if (!isRecord(change) || change.field !== "messages" || !isRecord(change.value)) continue;
+      const phoneNumberId = isRecord(change.value.metadata)
+        ? numericString(change.value.metadata.phone_number_id)
+        : null;
+
+      if (Array.isArray(change.value.statuses)) {
+        for (const statusValue of change.value.statuses) {
+          if (!isRecord(statusValue)) continue;
+          const messageId = limitedString(statusValue.id, 255);
+          const occurredAt = metaTimestamp(statusValue.timestamp);
+          const status = statusValue.status;
+          if (
+            !messageId
+            || !occurredAt
+            || !["sent", "delivered", "read", "failed"].includes(String(status))
+          ) continue;
+
+          statuses.push({
+            errorCode: firstErrorCode(statusValue.errors),
+            messageId,
+            occurredAt,
+            recipientPhone: numericString(statusValue.recipient_id, 15),
+            status: status as WhatsAppDeliveryEvent["status"],
+          });
+        }
+      }
+
+      if (Array.isArray(change.value.messages)) {
+        for (const messageValue of change.value.messages) {
+          if (!isRecord(messageValue)) continue;
+          const messageId = limitedString(messageValue.id, 255);
+          const occurredAt = metaTimestamp(messageValue.timestamp);
+          const senderPhone = numericString(messageValue.from, 15);
+          const rawType = limitedString(messageValue.type, 40);
+          if (!messageId || !occurredAt || !senderPhone || !rawType) continue;
+
+          const messageType = /^[a-z_]+$/.test(rawType) ? rawType : "unknown";
+          const textBody = inboundText(messageValue);
+          const contextMessageId = isRecord(messageValue.context)
+            ? limitedString(messageValue.context.id, 255)
+            : null;
+
+          messages.push({
+            contextMessageId,
+            messageId,
+            messageType,
+            occurredAt,
+            phoneNumberId,
+            replyClassification: normalizeReply(textBody),
+            senderPhone,
+            textBody,
+          });
+        }
+      }
+    }
+  }
+
+  return { messages, statuses };
+}
+
 function isWhatsAppPayload(value: unknown): value is Record<string, unknown> {
   return isRecord(value)
     && value.object === "whatsapp_business_account"
@@ -146,7 +313,9 @@ export function createWhatsAppWebhookHandler({
       }
 
       try {
+        const extracted = extractWebhookData(payload);
         await persistEvent({
+          ...extracted,
           payload,
           payloadSha256: await bodySha256(body),
           wabaId: getWabaId(payload),

@@ -73,10 +73,7 @@ Do not treat the missing App Review submission as a universal blocker: Meta says
 
 ## Next production steps
 
-1. Use Meta's supported coexistence onboarding for the existing WhatsApp Business app number. Review the phone-app effects before starting its synchronization window; do not use a migration or manual registration as a shortcut.
-2. Repeat the read-only inspection after onboarding. Require the real Phone Number ID to report `is_on_biz_app: true`, `platform_type: CLOUD_API`, and a connected/verified state before changing Vegstoð's sender configuration.
-3. Subscribe production WABA `931911699982634` to app `1403947388469576`, then verify a signed test webhook.
-4. Create and approve the operational message templates, implement the idempotent outbox and status/reply handling, and run a full physical-phone test before switching away from the sandbox.
+A later product decision established that the business does not need to retain WhatsApp Business phone-app messaging: customers make cellular calls to `+354 853 7704`, then Vegstoð sends customer and driver links through Cloud API. The Coexistence analysis above remains the historical answer to the earlier requirement, but it no longer controls implementation. The current authoritative sequence is in [the resume checkpoint](meta-mcp-resume-2026-09-11.md): finish the sandbox backend and templates, back up any required phone-app chats, release the number at final cutover, register it directly with Cloud API, subscribe the real WABA, and run the physical-phone production test. Independent Tech Provider onboarding is not part of this route.
 
 ## Audit trace
 

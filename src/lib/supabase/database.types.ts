@@ -14,6 +14,10 @@ import type {
 } from "@/lib/domain/types";
 
 type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+type WhatsAppMessagePurpose = "customer_intake" | "driver_availability" | "driver_assignment" | "test";
+type WhatsAppOutboundState = "queued" | "sending" | "accepted" | "sent" | "delivered" | "read" | "failed" | "delivery_unknown" | "cancelled";
+type WhatsAppDeliveryStatus = "sent" | "delivered" | "read" | "failed";
+type WhatsAppReplyClassification = "available" | "unavailable" | "unknown";
 
 export type Database = {
   public: {
@@ -167,6 +171,116 @@ export type Database = {
           waba_id?: string | null;
           payload: Json;
           received_at?: string;
+        };
+        Update: never;
+        Relationships: [];
+      };
+      whatsapp_outbound_messages: {
+        Row: {
+          id: string;
+          idempotency_key: string;
+          purpose: WhatsAppMessagePurpose;
+          job_id: string | null;
+          operator_id: string | null;
+          customer_intake_link_id: string | null;
+          recipient_phone: string;
+          template_name: string;
+          template_language: string;
+          payload_sha256: string;
+          state: WhatsAppOutboundState;
+          meta_message_id: string | null;
+          attempt_count: number;
+          last_attempt_at: string | null;
+          accepted_at: string | null;
+          failure_code: string | null;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          idempotency_key: string;
+          purpose: WhatsAppMessagePurpose;
+          job_id?: string | null;
+          operator_id?: string | null;
+          customer_intake_link_id?: string | null;
+          recipient_phone: string;
+          template_name: string;
+          template_language: string;
+          payload_sha256: string;
+          state?: WhatsAppOutboundState;
+          meta_message_id?: string | null;
+          attempt_count?: number;
+          last_attempt_at?: string | null;
+          accepted_at?: string | null;
+          failure_code?: string | null;
+          created_by: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["whatsapp_outbound_messages"]["Insert"]>;
+        Relationships: [];
+      };
+      whatsapp_delivery_events: {
+        Row: {
+          id: number;
+          webhook_event_id: string;
+          outbound_message_id: string | null;
+          meta_message_id: string;
+          status: WhatsAppDeliveryStatus;
+          recipient_phone: string | null;
+          error_code: string | null;
+          occurred_at: string;
+          recorded_at: string;
+        };
+        Insert: {
+          id?: number;
+          webhook_event_id: string;
+          outbound_message_id?: string | null;
+          meta_message_id: string;
+          status: WhatsAppDeliveryStatus;
+          recipient_phone?: string | null;
+          error_code?: string | null;
+          occurred_at: string;
+          recorded_at?: string;
+        };
+        Update: never;
+        Relationships: [];
+      };
+      whatsapp_inbound_messages: {
+        Row: {
+          id: string;
+          webhook_event_id: string;
+          meta_message_id: string;
+          context_message_id: string | null;
+          outbound_message_id: string | null;
+          job_id: string | null;
+          operator_id: string | null;
+          waba_id: string | null;
+          phone_number_id: string | null;
+          sender_phone: string;
+          message_type: string;
+          text_body: string | null;
+          reply_classification: WhatsAppReplyClassification;
+          received_at: string;
+          recorded_at: string;
+        };
+        Insert: {
+          id?: string;
+          webhook_event_id: string;
+          meta_message_id: string;
+          context_message_id?: string | null;
+          outbound_message_id?: string | null;
+          job_id?: string | null;
+          operator_id?: string | null;
+          waba_id?: string | null;
+          phone_number_id?: string | null;
+          sender_phone: string;
+          message_type: string;
+          text_body?: string | null;
+          reply_classification?: WhatsAppReplyClassification;
+          received_at: string;
+          recorded_at?: string;
         };
         Update: never;
         Relationships: [];
@@ -560,6 +674,43 @@ export type Database = {
         };
         Returns: number;
       };
+      reserve_whatsapp_outbound_message: {
+        Args: {
+          p_idempotency_key: string;
+          p_purpose: WhatsAppMessagePurpose;
+          p_recipient_phone: string;
+          p_template_name: string;
+          p_template_language: string;
+          p_payload_sha256: string;
+          p_job_id?: string | null;
+          p_operator_id?: string | null;
+          p_customer_intake_link_id?: string | null;
+        };
+        Returns: Array<{
+          message_id: string;
+          message_state: WhatsAppOutboundState;
+          meta_message_id: string | null;
+          created: boolean;
+        }>;
+      };
+      claim_whatsapp_outbound_message: {
+        Args: { p_message_id: string; p_payload_sha256: string };
+        Returns: boolean;
+      };
+      accept_whatsapp_outbound_message: {
+        Args: { p_message_id: string; p_meta_message_id: string };
+        Returns: boolean;
+      };
+      ingest_whatsapp_webhook_event: {
+        Args: {
+          p_payload_sha256: string;
+          p_waba_id: string | null;
+          p_payload: Json;
+          p_statuses?: Json;
+          p_messages?: Json;
+        };
+        Returns: string;
+      };
       revoke_customer_intake_link: {
         Args: { p_link_id: string };
         Returns: undefined;
@@ -654,6 +805,10 @@ export type Database = {
       billing_action: BillingAction;
       job_contact_channel: JobContactChannel;
       job_contact_purpose: JobContactPurpose;
+      whatsapp_message_purpose: WhatsAppMessagePurpose;
+      whatsapp_outbound_state: WhatsAppOutboundState;
+      whatsapp_delivery_status: WhatsAppDeliveryStatus;
+      whatsapp_reply_classification: WhatsAppReplyClassification;
     };
     CompositeTypes: Record<string, never>;
   };

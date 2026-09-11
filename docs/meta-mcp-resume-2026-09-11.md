@@ -11,7 +11,7 @@ This is the authoritative restart point for the Meta WhatsApp setup. Read this f
 - Stable preview: `https://vegstod.vercel.app`
 - Supabase project: `abpmzqtbllszqqetuubp`
 - Public webhook: `https://abpmzqtbllszqqetuubp.supabase.co/functions/v1/whatsapp-webhook-v1`
-- The latest completed repository work is the WhatsApp webhook foundation, staff-only subscription management function, patched Next.js 16.3.5 upgrade, and live sandbox inbound verification.
+- The latest completed repository work is the WhatsApp webhook foundation, normalized delivery/reply processing, idempotent outbound send ledger and Edge Function, staff-only subscription management, patched Next.js 16.3.5 upgrade, and live sandbox inbound verification.
 
 ## Verified Meta assets
 
@@ -24,6 +24,12 @@ These are separate assets and must not be confused:
 - Owner: Iceland Road Assistance business portfolio
 - The app is valid; do not create a replacement app unless a later MCP audit proves an ownership problem.
 
+### Unused replacement app
+
+- A second development-mode app named `Vegstoð` (App ID `948727494391424`) was created while investigating the missing production-number bridge.
+- Its Independent Tech Provider onboarding is unnecessary for the agreed direct API design. Do not continue its business-verification flow or upload anyone's identity document for this purpose.
+- It has not replaced the original app or changed either phone number. Leave it unused until the owner chooses to archive it after the production connection succeeds.
+
 ### Real organization WhatsApp Business Account
 
 - WABA ID: `931911699982634`
@@ -31,9 +37,10 @@ These are separate assets and must not be confused:
 - Display name: `Iceland road assistance`
 - Meta Business Settings currently labels the asset `WhatsApp Business App` and showed the number as `Offline` on 11 September.
 - The existing `Employee` System User now has full access to this WABA as well as the existing Meta app and sandbox WABA. It is a server identity, not a human employee account.
-- A staff-authorized Graph read verified Phone Number ID `1209825652224082`, `is_on_biz_app: true`, platform `ON_PREMISE`, state `DISCONNECTED`/`NOT_VERIFIED`, and no subscribed apps. The permanent token can access the asset, but Cloud API/coexistence onboarding is not complete.
+- A staff-authorized Graph read verified Phone Number ID `1209825652224082`, `is_on_biz_app: true`, platform `ON_PREMISE`, state `DISCONNECTED`/`NOT_VERIFIED`, and no subscribed apps. The permanent token can access the asset, but direct Cloud API registration is not complete.
 - This is the intended production sender.
-- Do not delete, deregister, migrate, or replace this number until the MCP audit confirms the supported connection path and its effect on the existing WhatsApp Business app.
+- Do not release its WhatsApp Business phone-app registration until the approved templates, outbound backend, and sandbox tests are ready. Back up any chats that must be retained immediately before the planned Cloud API cutover.
+- Set its Meta business/WABA time zone to `Atlantic/Reykjavik` (`UTC+00:00`) if prompted.
 
 ### Meta sandbox WhatsApp Business Account
 
@@ -60,13 +67,21 @@ OAuth completed before the original checkpoint. The restart was verified success
 
 ## Completed MCP audit after restart
 
-Read the [Meta MCP audit](meta-mcp-audit-2026-09-11.md) for live observations, evidence limits, official coexistence guidance, and exact next checks.
+Read the [Meta MCP audit](meta-mcp-audit-2026-09-11.md) for the historical live observations and evidence limits. Its original Coexistence recommendation was superseded by the product decision below.
 
 - The app is in development mode, has no reported compliance violations, and has one enabled `whatsapp_business_account` subscription for `messages`.
 - MCP masks the callback path and returns no WABA IDs in that subscription. The later staff-only Graph inspection established the production phone record and confirmed that the real WABA currently has no app subscription.
 - Privacy/deletion URLs are missing; contact email is unverified; App Review reports no submission and a failed business-verification check. These are recorded facts, not proof that every own-business integration requires App Review.
-- Meta documents coexistence for retaining WhatsApp Business app use while adding Cloud API. Eligibility for this number/app still needs confirmation through the appropriate onboarding route; do not use migration or registration as a substitute.
-- The System User's real-WABA asset assignment is complete, and Supabase stores the production WABA ID separately for read-only inspection. No production subscription, message, number registration, migration, deregistration, or sender switch occurred. Continue with coexistence onboarding, not another restart or replacement app.
+- Meta documents Coexistence for retaining WhatsApp Business phone-app use while adding Cloud API. Vegstoð does not require that retained phone-app use, so its Tech Provider prerequisites do not apply to the selected design.
+- The System User's real-WABA asset assignment is complete, and Supabase stores the production WABA ID separately for read-only inspection. No production subscription, message, number registration, migration, deregistration, or sender switch occurred.
+
+## Product decision after the audit
+
+Customers will make normal cellular calls to `+354 853 7704`. A dispatcher will read caller ID, enter the customer number into Vegstoð, and send the intake link from Vegstoð through Cloud API. Driver messages follow the same server-side channel. The WhatsApp Business phone app does not need to remain registered after production cutover; cellular calls and SMS on the SIM are independent and continue normally.
+
+This makes direct Cloud API registration through the existing `Iceland road assistance` developer app the intended route. Coexistence, Embedded Signup for client businesses, Independent Tech Provider verification, and a paid BSP are unnecessary. The phone-app registration is released only at the final cutover because that ends its WhatsApp-app use and may affect chat history.
+
+Meta may still require verification of the tow-truck company's own business portfolio or an authorized representative before production registration. That is separate from becoming a Tech Provider. If Meta requires it, the owner or another authorized company representative completes it in the company's portfolio; the external developer does not claim personal ownership of the company.
 
 ## Original audit sequence (retained for reference)
 
@@ -79,15 +94,14 @@ Read the [Meta MCP audit](meta-mcp-audit-2026-09-11.md) for live observations, e
 
 ## Safe correction order
 
-1. Keep the existing app and sandbox unchanged.
-2. Establish whether the real WABA can keep using the WhatsApp Business app while adding Cloud API access. Stop before any migration/deregistration confirmation if the answer is unclear.
-3. Ensure the real WABA is owned by the same business portfolio and assigned to the correct System User/app using Meta Business Settings where MCP cannot manage assets.
-4. Obtain and verify the real Phone Number ID and a permanent token scoped to the real WABA without exposing either credential.
-5. Store separate sandbox and production identifiers in Supabase; do not overwrite the sandbox until production validation succeeds.
-6. Subscribe the real WABA to the existing signed webhook and send a Meta test payload.
-7. Register reusable customer-intake, driver-availability, and assignment/access templates once; Vegstoð will fill variables and send operational messages.
-8. Build the idempotent outbound outbox and webhook status/reply processor while preserving the current manual `wa.me` fallback.
-9. Run the full physical-phone customer and driver workflow before switching the active sender.
+1. Keep the original app, real WABA, and working sandbox; stop the replacement app's Tech Provider flow.
+2. Finish and deploy the idempotent outbound ledger plus normalized webhook status/reply processor while preserving manual `wa.me` actions.
+3. Create and approve reusable customer-intake, driver-availability, and assignment/access templates; configure their names and languages only as Supabase secrets.
+4. Run all outbound and reply paths against the sandbox, including duplicate requests, provider rejection, and ambiguous-delivery handling.
+5. Immediately before cutover, export any WhatsApp Business phone-app chats the owner needs to retain.
+6. Release `+354 853 7704` from the WhatsApp Business phone app and register that same number directly in Cloud API with Meta's SMS/voice code.
+7. Subscribe production WABA `931911699982634` to the existing signed webhook, switch the active Phone Number ID only after verification, and run the full physical-phone customer and driver workflow.
+8. Keep the manual WhatsApp and call actions available until the owner accepts the production test.
 
 ## Security boundary
 

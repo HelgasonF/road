@@ -39,9 +39,9 @@ const icelandicMonths = [
 
 function formatIcelandicDate(value: string) {
   const date = new Date(value);
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  return `${date.getDate()}. ${icelandicMonths[date.getMonth()]} kl. ${hours}:${minutes}`;
+  const hours = String(date.getUTCHours()).padStart(2, "0");
+  const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+  return `${date.getUTCDate()}. ${icelandicMonths[date.getUTCMonth()]} kl. ${hours}:${minutes}`;
 }
 
 export function OperatorDetail({

@@ -26,16 +26,28 @@ async function persistEvent(event: WhatsAppWebhookEvent) {
       },
     },
   );
-  const { error } = await admin
-    .from("whatsapp_webhook_events")
-    .upsert(
-      {
-        payload: event.payload,
-        payload_sha256: event.payloadSha256,
-        waba_id: event.wabaId,
-      },
-      { ignoreDuplicates: true, onConflict: "payload_sha256" },
-    );
+  const { error } = await admin.rpc("ingest_whatsapp_webhook_event", {
+    p_messages: event.messages.map((message) => ({
+      context_message_id: message.contextMessageId,
+      message_id: message.messageId,
+      message_type: message.messageType,
+      phone_number_id: message.phoneNumberId,
+      received_at: message.occurredAt,
+      reply_classification: message.replyClassification,
+      sender_phone: message.senderPhone,
+      text_body: message.textBody,
+    })),
+    p_payload: event.payload,
+    p_payload_sha256: event.payloadSha256,
+    p_statuses: event.statuses.map((status) => ({
+      error_code: status.errorCode,
+      message_id: status.messageId,
+      occurred_at: status.occurredAt,
+      recipient_phone: status.recipientPhone,
+      status: status.status,
+    })),
+    p_waba_id: event.wabaId,
+  });
 
   if (error) {
     console.error(`whatsapp-webhook-v1 persistence failed: ${error.code}`);

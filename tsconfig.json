@@ -34,6 +34,7 @@
     "node_modules",
     "supabase/functions/driver-access-v1",
     "supabase/functions/whatsapp-management-v1",
+    "supabase/functions/whatsapp-send-v1",
     "supabase/functions/whatsapp-webhook-v1"
   ]
 }

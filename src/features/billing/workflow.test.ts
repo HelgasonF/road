@@ -5,6 +5,7 @@ import {
   billingCaseMatchesQueue,
   formatIsk,
   getBillingQueue,
+  isPastDue,
   isBillingSettled,
 } from "./workflow";
 
@@ -108,5 +109,12 @@ describe("billing workflow", () => {
     expect(formatIsk(1_234_567)).toBe("1.234.567 kr.");
     expect(formatIsk(-8_500)).toBe("−8.500 kr.");
     expect(formatIsk(null)).toBe("—");
+  });
+
+  it("evaluates due dates using Iceland's year-round UTC calendar day", () => {
+    const instant = new Date("2026-09-12T00:15:00.000Z");
+
+    expect(isPastDue("2026-09-11", instant)).toBe(true);
+    expect(isPastDue("2026-09-12", instant)).toBe(false);
   });
 });
