@@ -54,9 +54,19 @@ Authentication: OAuth
 Requested scopes: developer_tools_mcp_app_read, developer_tools_mcp_app_management
 ```
 
-OAuth completed before this checkpoint. The Codex App must restart before the current tool registry can expose the Meta MCP tools. If Meta requests OAuth again after restart, complete it and select the existing `Iceland road assistance` app.
+OAuth completed before the original checkpoint. The restart was verified successful on 11 September 2026: all 11 Meta MCP tools are now available, and the existing `Iceland road assistance` app is accessible with admin role and read/manage permissions. No further restart or OAuth prompt was needed for the audit.
 
-## First actions after restart
+## Completed MCP audit after restart
+
+Read the [Meta MCP audit](meta-mcp-audit-2026-09-11.md) for live observations, evidence limits, official coexistence guidance, and exact next checks.
+
+- The app is in development mode, has no reported compliance violations, and has one enabled `whatsapp_business_account` subscription for `messages`.
+- MCP masks the callback path and returns no WABA IDs in that subscription. It cannot establish production WABA ownership, phone registration, or the real WABA-to-app subscription.
+- Privacy/deletion URLs are missing; contact email is unverified; App Review reports no submission and a failed business-verification check. These are recorded facts, not proof that every own-business integration requires App Review.
+- Meta documents coexistence for retaining WhatsApp Business app use while adding Cloud API. Eligibility for this number/app still needs confirmation through the appropriate onboarding route; do not use migration or registration as a substitute.
+- No Meta assets, subscriptions, numbers, credentials, or Supabase settings were changed. Continue with the audit's WABA-level checks, not another restart.
+
+## Original audit sequence (retained for reference)
 
 1. Confirm the Meta MCP server tools are available. The server documentation says there should be 11 tools.
 2. Use the read-only app-list tool first and locate App ID `1403947388469576`.
