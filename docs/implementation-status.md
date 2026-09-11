@@ -1,6 +1,6 @@
 # Vegstoð implementation status
 
-Last updated: 8 September 2026
+Last updated: 11 September 2026
 
 ## Maintenance checkpoint
 
@@ -204,9 +204,9 @@ The older provider from the physical-phone audit remains retained for owner insp
 
 The physical-phone audit proved the message content, secure links, and customer/driver journeys with the manual WhatsApp handoff. Production should build on that result by integrating the official Meta WhatsApp Cloud API directly where practical.
 
-On 11 September 2026, the Meta app and sandbox WhatsApp Business Account successfully delivered its first template message to a verified physical phone. Vegstoð then deployed `whatsapp-webhook-v1` and its additive inbox migration to the linked Supabase project. Hosted HTTPS checks proved the callback challenge succeeds only with the configured token; local signed-delivery checks proved HMAC rejection, durable storage, and request-level deduplication. The remaining production work starts with installing the Meta App Secret and subscribing the `messages` field, followed by the real number, billing, templates, permanent System User token, outbound outbox, status/reply processing, and full phone verification.
+On 11 September 2026, the Meta app and sandbox WhatsApp Business Account successfully delivered its first template message to a verified physical phone. Vegstoð then deployed `whatsapp-webhook-v1` and its additive inbox migration to the linked Supabase project. Hosted HTTPS checks proved the callback challenge succeeds only with the configured token; local signed-delivery checks proved HMAC rejection, durable storage, and request-level deduplication. The Meta App Secret and permanent access token are now installed in Supabase, and the new staff-only `whatsapp-management-v1` function successfully subscribed the app to the sandbox WABA and its `messages` webhook field. The remaining sandbox check is a fresh reply sent after subscription so receipt can be confirmed in the hosted inbox. Production work then continues with the real number, templates, outbound outbox, status/reply processing, and full phone verification.
 
-1. Vegstoð should use a dedicated business-owned WhatsApp number rather than the owner's personal test number. The organization must create or complete its Meta Business Portfolio, WhatsApp Business Account, phone-number registration, verification, and billing setup before live credentials can be connected.
+1. Vegstoð's intended production sender is the business number `+354 853 7704`; the active Meta sandbox sender remains `+1 555-601-6830`. The Icelandic number is currently registered in the organization's WhatsApp app, so its supported Meta Cloud API onboarding or migration path and chat continuity must be confirmed before replacing the sandbox Phone Number ID.
 2. The first approved utility templates should cover the secure customer-intake link, driver availability request, assigned-job/access link, and later the customer payment link. Icelandic and English variants are required where the recipient flow requires them.
 3. Driver availability should support structured **Laus** and **Ekki laus** replies. A positive reply can return the candidate to the dispatcher for deliberate assignment; it must not silently replace the existing manual assignment decision.
 4. API sends must be correlated to the job and recipient using Meta's WhatsApp message ID. Webhooks should update an explicit `queued`/`sent`/`delivered`/`read`/`failed` lifecycle, allowing the staff timeline to show verified delivery facts rather than only that a draft was opened.
@@ -219,14 +219,14 @@ This slice is complete only after sandbox tests, template approval, webhook veri
 
 ## Full verification snapshot
 
-The complete current working tree was rechecked on 8 September 2026:
+The complete current working tree was rechecked on 11 September 2026:
 
-- `npm run build` passed with all application routes, including dispatcher, staff billing, the staff job timeline, customer intake, private photo delivery, passwordless driver-link confirmation, and the driver screen.
+- `npm run build` passed on patched Next.js 16.3.5 with all application routes, including dispatcher, staff billing, the staff job timeline, customer intake, private photo delivery, passwordless driver-link confirmation, and the driver screen.
 - `npm run typecheck` and `npm run lint` passed without errors.
-- `npm test` passed all 134 tests across 27 Vitest files, including the versioned Edge Function client and direct authenticated Storage URL loading.
-- `npx supabase test db` passed all 209 assertions across nine pgTAP files from a clean local reset, including Storage object authorization and the restricted Realtime publication.
+- `npm test` passed all 142 tests across 29 Vitest files, including the versioned Edge Function clients, WhatsApp signature and Meta-subscription handling, and direct authenticated Storage URL loading.
+- `npx supabase test db` passed all 221 assertions across ten pgTAP files, including the webhook inbox, Storage object authorization, and the restricted Realtime publication.
 - `npx supabase db lint --local --schema public` reported no application-schema errors. A whole-database lint also reports known analyzer findings inside Supabase's installed PostGIS extension functions; these are vendor extension code rather than Vegstoð migrations.
-- `npm audit --omit=dev` reported zero production dependency vulnerabilities.
+- `npm audit` reported zero dependency vulnerabilities after Next.js, its image runtime, and the affected YAML parser were updated to patched releases.
 - `git diff --check` passed, and the repository scan found no committed Mapbox token, Supabase secret, placeholder TODO/FIXME, or accidental application debug logging. The importer intentionally prints its completed import summary when run from the terminal.
 
 The existing browser verification remains valid for the critical dispatcher → customer → driver path, including an unauthenticated phone-sized customer session, a real private image upload, one-time customer-link consumption, reassignment, driver-only visibility, and rejection of an anonymous private-photo request. A fresh hosted pass on 6 September exercised the automatic Git Preview through provider and vehicle creation, the former driver-invitation path, customer intake, assignment, every driver status through completion, five financial audit actions through full settlement, timeline aggregation, access revocation, and complete cleanup; see [`docs/hosted-audit-2026-09-06.md`](hosted-audit-2026-09-06.md). The follow-up current-revision pass exercised new and returning WhatsApp driver links, one-time use, assignment handoff auditing, phone-sized assigned-job visibility, driver acceptance, revocation, direct persistence checks, and complete cleanup; see [`docs/hosted-whatsapp-driver-audit-2026-09-06.md`](hosted-whatsapp-driver-audit-2026-09-06.md). The physical Android pass additionally covered native photo selection, dialer and WhatsApp browser handoffs, dispatcher assignment, driver acceptance, exact map rendering, authorized photo delivery, and progression to `en_route`. The application produced no application-console errors after the development-origin fix; headless Chromium emitted only its known WebGL software-rendering performance warnings while drawing MapLibre, while the Android map cancelled superseded OpenStreetMap tile requests during normal redraws.
@@ -241,7 +241,7 @@ The implemented flows are complete locally, and the complete dispatcher → cust
 
 1. Let the owner inspect the completed phone-audit job from the staff interface, then delete its disposable database, Storage, and Auth records.
 2. Replace the simplified administrator testing password with a unique production password before launch, and remove the linked WhatsApp Web device if it should not remain connected.
-3. Set up a dedicated Vegstoð business number and Meta WhatsApp Business assets, then implement the planned Cloud API messaging, delivery webhooks, driver availability replies, failure handling, and manual fallback.
+3. Onboard `+354 853 7704` as the production Meta sender, then implement the planned Cloud API outbox, delivery webhooks, driver availability replies, failure handling, and manual fallback.
 4. Promote a reviewed build to production only after the launch checklist is approved; upgrade the same Supabase project later when capacity, uptime, backup, or support requirements justify it.
 5. Select and integrate Iceland-compatible accounting/invoicing and payment providers only after an accountant confirms the invoice, VAT, refund, credit-note, provider-payment, and reconciliation requirements. Customer payment links should use the Cloud API with the manual WhatsApp handoff as fallback.
 

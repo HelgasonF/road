@@ -36,6 +36,8 @@ DEMO_MODE=false
 
 `SUPABASE_SECRET_KEY` must remain server-only and must never use a `NEXT_PUBLIC_` prefix. It performs the narrowly scoped account-free customer-link and Storage operations. Driver Auth administration runs inside Supabase's `driver-access-v1` Edge Function and no longer reads this key from Vercel. The local `.vercel/` link metadata is ignored by Git.
 
+On 11 September 2026, the local environment and both Vercel targets were refreshed to the current hosted Supabase publishable and server keys after an older retired publishable key was detected. A new Vercel deployment is required whenever these values change because public Next.js variables are embedded at build time.
+
 Create a new preview from the linked working tree with:
 
 ```bash
@@ -73,6 +75,7 @@ npx supabase db push --dry-run
 npx supabase db push
 npx supabase functions deploy driver-access-v1
 npx supabase functions deploy whatsapp-webhook-v1 --no-verify-jwt
+npx supabase functions deploy whatsapp-management-v1
 ```
 
 The hosted Auth Site URL is `https://vegstod.vercel.app`. Its allowed redirect URLs also include that address plus local `127.0.0.1:3000` and `localhost:3000` development URLs. Email/password authentication and TOTP remain available for staff accounts. Public self-signup is disabled, staff passwords require at least 10 characters with letters and digits, and public users do not receive database function execution privileges. Hosted PostgreSQL rejects non-SSL external connections.
@@ -93,7 +96,11 @@ The function intentionally disables Supabase JWT verification because Meta is th
 
 Signed deliveries are deduplicated by a SHA-256 hash of the raw request and stored in `whatsapp_webhook_events`. Only the Edge Function service role can insert; authenticated staff can read through RLS; drivers and anonymous callers cannot read or write the inbox. A failed database write returns a retryable response so Meta can redeliver it.
 
-The Meta sandbox outbound test passed on 11 September 2026. The callback challenge is deployed and verified directly over hosted HTTPS. Production inbound events remain disabled until the Meta App Secret has been installed in Supabase and the `messages` webhook field has been subscribed. Existing `wa.me` customer and driver actions remain the operational path until template approval, permanent-token setup, billing, send-status processing, and a physical-phone production test are complete.
+The Meta sandbox outbound test passed on 11 September 2026. The callback challenge is deployed and verified directly over hosted HTTPS. The Meta App Secret and permanent access token are installed only in Supabase secrets, the app is subscribed to the sandbox WABA, and the `messages` webhook field is subscribed. `whatsapp-management-v1` performed that setup only after a hosted staff session passed `is_staff()`; it returned no credentials. A fresh real inbound reply is still required to prove that Meta delivery reaches the hosted inbox.
+
+The active sandbox sender is `+1 555-601-6830` (Phone Number ID `1251932438011191`) in test WABA `1799725827819599`. The intended production sender is the business number `+354 853 7704`. That Icelandic number is currently registered in the organization's WhatsApp app and has not yet been registered as the app's Cloud API sender. Complete Meta's supported onboarding or migration flow and verify continuity before changing the configured Phone Number ID. Existing `wa.me` customer and driver actions remain the operational path until the production number, templates, outbox, send-status processing, and physical-phone production test are complete.
+
+The following values are server-only Supabase secrets: `WHATSAPP_APP_SECRET`, `WHATSAPP_ACCESS_TOKEN`, and `WHATSAPP_WEBHOOK_VERIFY_TOKEN`. The app ID, WABA ID, Phone Number ID, and Graph API version are also configured there so one runtime owns the complete Meta configuration. Never place any of them in a browser bundle or commit their values.
 
 Create each additional staff user in Supabase Auth, then activate it explicitly:
 
