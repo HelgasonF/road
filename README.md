@@ -54,6 +54,8 @@ Driver access is managed from the selected service provider in the dispatcher in
 
 Driver contact in the MVP uses ordinary WhatsApp rather than an automated API. Each ranked driver has a prewritten availability request containing only the operational area, assistance, priority, and estimated distance. After assignment, a second action generates a private one-time Supabase Auth link and places it in the assignment message. Both actions open the registered driver's chat on a phone, WhatsApp Desktop, or WhatsApp Web; the dispatcher reviews and manually sends the message. Calling remains available as a fallback. This does not require WhatsApp Business Platform credentials.
 
+WhatsApp Cloud API onboarding is in progress without changing that working flow. The hosted `whatsapp-webhook-v1` Supabase Edge Function now verifies Meta's callback token, checks every delivery against the app-secret HMAC signature, limits request size, and stores each signed request once in a staff-only webhook inbox. Automated outbound sends remain disabled until the real business number, billing, permanent System User token, approved templates, and end-to-end delivery tests are complete.
+
 Customer intake starts from the **+** button in the job list:
 
 1. Enter only the caller's phone number and press **Búa til og opna WhatsApp**. Staff can switch to the full form when they want to enter every field themselves; its vehicle section uses the same registration, brand dropdown/free-text fallback, rental-company, and people-count fields as the customer form.

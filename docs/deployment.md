@@ -1,6 +1,6 @@
 # Hosted preview and Supabase operations
 
-Last updated: 8 September 2026
+Last updated: 11 September 2026
 
 ## Current hosted environment
 
@@ -72,6 +72,7 @@ npx supabase migration list
 npx supabase db push --dry-run
 npx supabase db push
 npx supabase functions deploy driver-access-v1
+npx supabase functions deploy whatsapp-webhook-v1 --no-verify-jwt
 ```
 
 The hosted Auth Site URL is `https://vegstod.vercel.app`. Its allowed redirect URLs also include that address plus local `127.0.0.1:3000` and `localhost:3000` development URLs. Email/password authentication and TOTP remain available for staff accounts. Public self-signup is disabled, staff passwords require at least 10 characters with letters and digits, and public users do not receive database function execution privileges. Hosted PostgreSQL rejects non-SSL external connections.
@@ -79,6 +80,20 @@ The hosted Auth Site URL is `https://vegstod.vercel.app`. Its allowed redirect U
 Drivers do not receive email and do not create passwords. An authenticated staff action calls the versioned `driver-access-v1` Edge Function with the caller's access token. The function confirms the caller is staff before using its built-in service-role credential for Auth administration, then returns only a first-party `/driver/access` URL. Dispatch places that URL in the prepared WhatsApp message. The driver must press **Opna ökumannsskjá** before the token is consumed; successful confirmation creates the ordinary Supabase cookie session used by the existing driver RLS policies. A later assignment can generate a fresh link, and disabling the operator immediately removes access from an existing session. SMTP is not part of the customer or driver workflow.
 
 The Realtime publication contains only `jobs`, `job_assignments`, and `operators`. RLS still filters future subscribers. The current Next.js web app does not subscribe yet and keeps its existing request/refresh behavior.
+
+### WhatsApp Cloud API webhook
+
+Meta's production callback is the public, versioned Edge Function below:
+
+```text
+https://abpmzqtbllszqqetuubp.supabase.co/functions/v1/whatsapp-webhook-v1
+```
+
+The function intentionally disables Supabase JWT verification because Meta is the caller. Its own controls authenticate the two webhook phases: `WHATSAPP_WEBHOOK_VERIFY_TOKEN` must match the setup challenge, and `WHATSAPP_APP_SECRET` verifies the `X-Hub-Signature-256` HMAC over the unchanged request body before any payload is accepted. Both values are Supabase Edge Function secrets and must never enter Vercel, client code, Git, screenshots, or documentation.
+
+Signed deliveries are deduplicated by a SHA-256 hash of the raw request and stored in `whatsapp_webhook_events`. Only the Edge Function service role can insert; authenticated staff can read through RLS; drivers and anonymous callers cannot read or write the inbox. A failed database write returns a retryable response so Meta can redeliver it.
+
+The Meta sandbox outbound test passed on 11 September 2026. The callback challenge is deployed and verified directly over hosted HTTPS. Production inbound events remain disabled until the Meta App Secret has been installed in Supabase and the `messages` webhook field has been subscribed. Existing `wa.me` customer and driver actions remain the operational path until template approval, permanent-token setup, billing, send-status processing, and a physical-phone production test are complete.
 
 Create each additional staff user in Supabase Auth, then activate it explicitly:
 

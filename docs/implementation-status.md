@@ -200,9 +200,11 @@ Each job has realistic vehicle and incident information, a visibly marked dummy 
 
 The older provider from the physical-phone audit remains retained for owner inspection. The separate Alli live demonstration added one provider and one accepted job, so the hosted dashboard currently reports seven active providers and five active jobs. The retained audit and Alli records should each be removed with their related Auth, Storage, and database rows after inspection.
 
-## Planned WhatsApp Cloud API production slice
+## WhatsApp Cloud API production slice — in progress
 
 The physical-phone audit proved the message content, secure links, and customer/driver journeys with the manual WhatsApp handoff. Production should build on that result by integrating the official Meta WhatsApp Cloud API directly where practical.
+
+On 11 September 2026, the Meta app and sandbox WhatsApp Business Account successfully delivered its first template message to a verified physical phone. Vegstoð then deployed `whatsapp-webhook-v1` and its additive inbox migration to the linked Supabase project. Hosted HTTPS checks proved the callback challenge succeeds only with the configured token; local signed-delivery checks proved HMAC rejection, durable storage, and request-level deduplication. The remaining production work starts with installing the Meta App Secret and subscribing the `messages` field, followed by the real number, billing, templates, permanent System User token, outbound outbox, status/reply processing, and full phone verification.
 
 1. Vegstoð should use a dedicated business-owned WhatsApp number rather than the owner's personal test number. The organization must create or complete its Meta Business Portfolio, WhatsApp Business Account, phone-number registration, verification, and billing setup before live credentials can be connected.
 2. The first approved utility templates should cover the secure customer-intake link, driver availability request, assigned-job/access link, and later the customer payment link. Icelandic and English variants are required where the recipient flow requires them.

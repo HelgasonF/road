@@ -153,6 +153,24 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      whatsapp_webhook_events: {
+        Row: {
+          id: string;
+          payload_sha256: string;
+          waba_id: string | null;
+          payload: Json;
+          received_at: string;
+        };
+        Insert: {
+          id?: string;
+          payload_sha256: string;
+          waba_id?: string | null;
+          payload: Json;
+          received_at?: string;
+        };
+        Update: never;
+        Relationships: [];
+      };
       jobs: {
         Row: {
           id: string;
