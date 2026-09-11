@@ -2,6 +2,7 @@ import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.1
 
 import {
   ensureMessagesWebhookSubscription,
+  inspectWhatsAppBusinessAccount,
   MetaConfigurationError,
 } from "../_shared/whatsapp-management.ts";
 
@@ -33,8 +34,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function parseRequest(value: unknown) {
   if (
     !isRecord(value)
-    || value.action !== "ensure_messages_subscription"
     || Object.keys(value).length !== 1
+    || (
+      value.action !== "ensure_messages_subscription"
+      && value.action !== "inspect_production_account"
+    )
   ) {
     throw new FunctionFailure(400, "invalid_request");
   }
@@ -75,7 +79,7 @@ Deno.serve(async (request: Request) => {
       throw new FunctionFailure(401, "authentication_required");
     }
 
-    parseRequest(await request.json().catch(() => null));
+    const input = parseRequest(await request.json().catch(() => null));
 
     const supabaseUrl = requiredEnvironment("SUPABASE_URL").replace(/\/$/, "");
     const caller = createClient(
@@ -91,15 +95,23 @@ Deno.serve(async (request: Request) => {
     // restricted to dispatch staff before any protected credential is used.
     await requireStaff(caller);
 
-    const data = await ensureMessagesWebhookSubscription({
-      accessToken: requiredEnvironment("WHATSAPP_ACCESS_TOKEN"),
-      appId: numericId("WHATSAPP_APP_ID"),
-      appSecret: requiredEnvironment("WHATSAPP_APP_SECRET"),
-      callbackUrl: `${supabaseUrl}/functions/v1/whatsapp-webhook-v1`,
-      graphApiVersion: graphApiVersion(),
-      verifyToken: requiredEnvironment("WHATSAPP_WEBHOOK_VERIFY_TOKEN"),
-      wabaId: numericId("WHATSAPP_BUSINESS_ACCOUNT_ID"),
-    });
+    const accessToken = requiredEnvironment("WHATSAPP_ACCESS_TOKEN");
+    const version = graphApiVersion();
+    const data = input.action === "inspect_production_account"
+      ? await inspectWhatsAppBusinessAccount({
+        accessToken,
+        graphApiVersion: version,
+        wabaId: numericId("WHATSAPP_PRODUCTION_BUSINESS_ACCOUNT_ID"),
+      })
+      : await ensureMessagesWebhookSubscription({
+        accessToken,
+        appId: numericId("WHATSAPP_APP_ID"),
+        appSecret: requiredEnvironment("WHATSAPP_APP_SECRET"),
+        callbackUrl: `${supabaseUrl}/functions/v1/whatsapp-webhook-v1`,
+        graphApiVersion: version,
+        verifyToken: requiredEnvironment("WHATSAPP_WEBHOOK_VERIFY_TOKEN"),
+        wabaId: numericId("WHATSAPP_BUSINESS_ACCOUNT_ID"),
+      });
 
     return json({ data });
   } catch (error) {

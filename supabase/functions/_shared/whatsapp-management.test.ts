@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { ensureMessagesWebhookSubscription } from "./whatsapp-management";
+import {
+  ensureMessagesWebhookSubscription,
+  inspectWhatsAppBusinessAccount,
+} from "./whatsapp-management";
 
 const config = {
   accessToken: "permanent-system-user-token",
@@ -50,6 +53,62 @@ describe("WhatsApp webhook management", () => {
     expect(wabaInit).toMatchObject({
       method: "POST",
       headers: { Authorization: "Bearer permanent-system-user-token" },
+    });
+  });
+
+  it("reads and sanitizes a production WABA without changing it", async () => {
+    const fetcher = vi.fn()
+      .mockResolvedValueOnce(response({
+        data: [{
+          code_verification_status: "VERIFIED",
+          display_phone_number: "+354 853 7704",
+          id: "987654321012345",
+          is_on_biz_app: true,
+          platform_type: "CLOUD_API",
+          quality_rating: "GREEN",
+          status: "CONNECTED",
+          verified_name: "Iceland road assistance",
+        }],
+      }))
+      .mockResolvedValueOnce(response({
+        data: [{
+          whatsapp_business_api_data: {
+            id: config.appId,
+            link: "https://example.invalid/app",
+            name: "Iceland road assistance",
+          },
+        }],
+      }));
+
+    await expect(inspectWhatsAppBusinessAccount({
+      accessToken: config.accessToken,
+      graphApiVersion: config.graphApiVersion,
+      wabaId: "931911699982634",
+    }, fetcher)).resolves.toEqual({
+      phoneNumbers: [{
+        codeVerificationStatus: "VERIFIED",
+        displayPhoneNumber: "+354 853 7704",
+        id: "987654321012345",
+        isOnBizApp: true,
+        platformType: "CLOUD_API",
+        qualityRating: "GREEN",
+        status: "CONNECTED",
+        verifiedName: "Iceland road assistance",
+      }],
+      subscribedAppIds: [config.appId],
+      wabaId: "931911699982634",
+    });
+
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher.mock.calls[0][0]).toContain(
+      "/v25.0/931911699982634/phone_numbers?fields=",
+    );
+    expect(fetcher.mock.calls[1][0]).toBe(
+      "https://graph.facebook.com/v25.0/931911699982634/subscribed_apps",
+    );
+    expect(fetcher.mock.calls[0][1]).toMatchObject({
+      headers: { Authorization: "Bearer permanent-system-user-token" },
+      method: "GET",
     });
   });
 

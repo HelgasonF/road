@@ -30,6 +30,8 @@ These are separate assets and must not be confused:
 - Number: `+354 853 7704`
 - Display name: `Iceland road assistance`
 - Meta Business Settings currently labels the asset `WhatsApp Business App` and showed the number as `Offline` on 11 September.
+- The existing `Employee` System User now has full access to this WABA as well as the existing Meta app and sandbox WABA. It is a server identity, not a human employee account.
+- A staff-authorized Graph read verified Phone Number ID `1209825652224082`, `is_on_biz_app: true`, platform `ON_PREMISE`, state `DISCONNECTED`/`NOT_VERIFIED`, and no subscribed apps. The permanent token can access the asset, but Cloud API/coexistence onboarding is not complete.
 - This is the intended production sender.
 - Do not delete, deregister, migrate, or replace this number until the MCP audit confirms the supported connection path and its effect on the existing WhatsApp Business app.
 
@@ -61,10 +63,10 @@ OAuth completed before the original checkpoint. The restart was verified success
 Read the [Meta MCP audit](meta-mcp-audit-2026-09-11.md) for live observations, evidence limits, official coexistence guidance, and exact next checks.
 
 - The app is in development mode, has no reported compliance violations, and has one enabled `whatsapp_business_account` subscription for `messages`.
-- MCP masks the callback path and returns no WABA IDs in that subscription. It cannot establish production WABA ownership, phone registration, or the real WABA-to-app subscription.
+- MCP masks the callback path and returns no WABA IDs in that subscription. The later staff-only Graph inspection established the production phone record and confirmed that the real WABA currently has no app subscription.
 - Privacy/deletion URLs are missing; contact email is unverified; App Review reports no submission and a failed business-verification check. These are recorded facts, not proof that every own-business integration requires App Review.
 - Meta documents coexistence for retaining WhatsApp Business app use while adding Cloud API. Eligibility for this number/app still needs confirmation through the appropriate onboarding route; do not use migration or registration as a substitute.
-- No Meta assets, subscriptions, numbers, credentials, or Supabase settings were changed. Continue with the audit's WABA-level checks, not another restart.
+- The System User's real-WABA asset assignment is complete, and Supabase stores the production WABA ID separately for read-only inspection. No production subscription, message, number registration, migration, deregistration, or sender switch occurred. Continue with coexistence onboarding, not another restart or replacement app.
 
 ## Original audit sequence (retained for reference)
 

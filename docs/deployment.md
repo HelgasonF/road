@@ -100,7 +100,7 @@ The Meta sandbox outbound test passed on 11 September 2026. The callback challen
 
 The active sandbox sender is `+1 555-601-6830` (Phone Number ID `1251932438011191`) in test WABA `1799725827819599`. The intended production sender is the business number `+354 853 7704`. That Icelandic number is currently registered in the organization's WhatsApp app and has not yet been registered as the app's Cloud API sender. Complete Meta's supported onboarding or migration flow and verify continuity before changing the configured Phone Number ID. Existing `wa.me` customer and driver actions remain the operational path until the production number, templates, outbox, send-status processing, and physical-phone production test are complete.
 
-The following values are server-only Supabase secrets: `WHATSAPP_APP_SECRET`, `WHATSAPP_ACCESS_TOKEN`, and `WHATSAPP_WEBHOOK_VERIFY_TOKEN`. The app ID, WABA ID, Phone Number ID, and Graph API version are also configured there so one runtime owns the complete Meta configuration. Never place any of them in a browser bundle or commit their values.
+The following values are server-only Supabase secrets: `WHATSAPP_APP_SECRET`, `WHATSAPP_ACCESS_TOKEN`, and `WHATSAPP_WEBHOOK_VERIFY_TOKEN`. The app ID, sandbox WABA ID, production WABA ID, sandbox Phone Number ID, and Graph API version are also configured there so one runtime owns the complete Meta configuration. The production WABA ID is separate from the active sandbox sender and currently supports only the staff-authorized read-only inspection action. Never place any of these values in a browser bundle or commit their values.
 
 Create each additional staff user in Supabase Auth, then activate it explicitly:
 
