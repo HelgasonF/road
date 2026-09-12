@@ -3,6 +3,7 @@ import { KeyRound, MapPinned } from "lucide-react";
 
 import { DriverAccessForm } from "@/features/auth/driver-access-form";
 import type { DriverAccessTokenType } from "@/features/operators/driver-access";
+import { decodeDriverAccessButtonCode } from "@/features/whatsapp/messages";
 
 export const dynamic = "force-dynamic";
 
@@ -12,11 +13,14 @@ export const metadata: Metadata = {
 };
 
 interface DriverAccessPageProps {
-  searchParams: Promise<{ token_hash?: string; type?: string }>;
+  searchParams: Promise<{ code?: string; token_hash?: string; type?: string }>;
 }
 
 export default async function DriverAccessPage({ searchParams }: DriverAccessPageProps) {
-  const { token_hash: tokenHash, type } = await searchParams;
+  const params = await searchParams;
+  const buttonCode = decodeDriverAccessButtonCode(params.code);
+  const tokenHash = params.token_hash ?? buttonCode?.tokenHash;
+  const type = params.type ?? buttonCode?.type;
   const validType = type === "signup" || type === "magiclink"
     ? type satisfies DriverAccessTokenType
     : null;

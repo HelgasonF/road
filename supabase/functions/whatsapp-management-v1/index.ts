@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.112.3";
 
 import {
+  ensureOperationalMessageTemplates,
   ensureMessagesWebhookSubscription,
   inspectWhatsAppBusinessAccount,
   MetaConfigurationError,
@@ -37,6 +38,7 @@ function parseRequest(value: unknown) {
     || Object.keys(value).length !== 1
     || (
       value.action !== "ensure_messages_subscription"
+      && value.action !== "ensure_operational_templates"
       && value.action !== "inspect_production_account"
     )
   ) {
@@ -103,7 +105,13 @@ Deno.serve(async (request: Request) => {
         graphApiVersion: version,
         wabaId: numericId("WHATSAPP_PRODUCTION_BUSINESS_ACCOUNT_ID"),
       })
-      : await ensureMessagesWebhookSubscription({
+      : input.action === "ensure_operational_templates"
+        ? await ensureOperationalMessageTemplates({
+          accessToken,
+          graphApiVersion: version,
+          wabaId: numericId("WHATSAPP_BUSINESS_ACCOUNT_ID"),
+        })
+        : await ensureMessagesWebhookSubscription({
         accessToken,
         appId: numericId("WHATSAPP_APP_ID"),
         appSecret: requiredEnvironment("WHATSAPP_APP_SECRET"),

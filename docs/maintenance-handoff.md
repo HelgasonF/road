@@ -52,7 +52,7 @@ Then open `http://127.0.0.1:3000` in Chrome on the phone.
 - This checkpoint includes the map/address, customer WhatsApp, passwordless driver WhatsApp access, Android-origin, flowchart, hosted Supabase, deployment, and function-permission work completed after `2c3a1fd`.
 - Confirm the exact revision with `git log -1 --oneline` and verify `git status --short` is clean before starting another slice.
 - The local Supabase Docker stack preserves the current application data and imported Icelandic address register. Restart it with `npx supabase start` if needed.
-- No Android device is currently connected through ADB.
+- A Samsung SM-S918B was connected through ADB for the latest WhatsApp sandbox phone audit. Device connectivity is transient; confirm it again with `adb devices -l` after any restart.
 - Earlier temporary local and hosted browser-verification data was removed. The completed public-phone audit dataset and the accepted Alli live-demonstration dataset are intentionally retained for owner inspection. Their identifiers are stored outside Git in `~/.config/vegstod/active-phone-audit.json` and `~/.config/vegstod/alli-live-demo.json`; each dataset must be cleaned as a unit afterward.
 
 Do not reset or overwrite local database volumes during a normal restart. Review `git status --short` first.
@@ -154,16 +154,19 @@ Relevant files include:
 - A separate real WhatsApp demonstration for Alli completed customer submission with two private photos, assignment to **Alli Dráttarbíll**, passwordless driver activation, and driver acceptance. Alli reported that portrait thumbnails appeared zoomed because the gallery cropped them to a landscape frame; the gallery now shows the complete image. The job was reassigned to **Freyr símapróf 729124** and its fresh driver link was sent to the owner's WhatsApp self-chat for phone inspection. See [`docs/alli-live-demo-2026-09-07.md`](alli-live-demo-2026-09-07.md). Together with the retained physical-phone audit dataset, the hosted dashboard has seven providers and five active jobs.
 - Customer intake section 2 now uses a common vehicle-brand dropdown with an **Other** free-text fallback, an optional rental-company field, and a required count of people involved. The last two values have dedicated hosted job columns and appear on both the dispatcher and driver screens.
 - Customer-link expiry timestamps use an explicit Iceland UTC format shared by the dispatcher panel and public form. This prevents the server/browser locale mismatch found during the hosted form review.
+- The WhatsApp Cloud API backend is deployed on the sandbox sender. A physical-phone pass proved outbound acceptance, `sent`/`read` webhooks, **Laus**/**Ekki laus** classification, quoted-reply correlation, identical-request deduplication, and changed-payload conflict rejection. See [`docs/whatsapp-sandbox-phone-audit-2026-09-11.md`](whatsapp-sandbox-phone-audit-2026-09-11.md).
+- Three fixed `en_US` operational templates are submitted to the sandbox WABA and configured in Supabase: `vegstod_customer_intake_v1`, `vegstod_driver_availability_v1`, and `vegstod_driver_assignment_v1`. They were still pending Meta review at 00:23 on 12 September. The customer and assignment templates use dynamic secure-link buttons; availability uses quick replies.
+- The dispatcher interface now calls `whatsapp-send-v1` for phone-only customer intake, replacement customer links, driver availability requests, and assigned-driver access links. An unavailable local Edge runtime was verified to preserve the new job/link and show the existing manual WhatsApp fallback without browser-console errors; the disposable local job was removed.
 
 ## Last completed verification
 
-The current application code was fully checked on 8 September 2026:
+The current application code was fully checked on 12 September 2026:
 
 - `npm run build` passed.
 - `npm run typecheck` passed.
 - `npm run lint` passed.
-- `npm test` passed all 134 tests across 27 Vitest files.
-- `npx supabase test db` passed all 209 assertions across nine pgTAP files after a clean local database reset.
+- `npm test` passed all 162 tests across 32 Vitest files.
+- `npx supabase test db` passed all 253 assertions across eleven pgTAP files after a clean local database reset.
 - `npx supabase db lint --local --schema public` reported no application-schema errors.
 - `git diff --check` passed.
 
@@ -175,7 +178,7 @@ The local, hosted desktop, and public physical-phone workflows are verified, but
 
 1. Let the owner inspect the retained phone-audit and Alli demonstration jobs, then remove each dataset's Storage objects, job relationships, jobs, driver Auth users, and providers using its owner-only manifest.
 2. Replace the simplified administrator testing password with a unique production password before launch, and remove the linked WhatsApp Web device if it should not remain connected.
-3. Set up the dedicated Vegstoð number and Meta WhatsApp Business assets, then implement the planned Cloud API messaging, delivery webhooks, driver availability replies, failure handling, and manual fallback documented in `docs/implementation-status.md`.
+3. Wait for Meta to approve the three submitted operational templates, then complete the hosted customer/driver sandbox pass and add staff timeline/reply review plus opt-out handling as documented in `docs/implementation-status.md`.
 4. Complete the launch checklist and only then create a production deployment. Upgrade the same Supabase project later when operating requirements justify it.
 5. Select accounting, invoicing, payment, refund/credit-note, provider-payment, and reconciliation integrations after the accountant confirms the Icelandic requirements; customer payment links should use the Cloud API with the manual WhatsApp handoff as fallback.
 

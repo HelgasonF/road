@@ -24,7 +24,8 @@ interface JobEditorProps {
 
 interface QuickLinkResult {
   expiresAt: string;
-  openedAutomatically: boolean;
+  sentAutomatically: boolean;
+  sendError: string | null;
   whatsappHref: string;
 }
 
@@ -49,12 +50,10 @@ export function JobEditor({ capabilities, job, onClose, onQuickCreated, onSaved 
     setError(null);
     const form = new FormData(event.currentTarget);
     const customerPhone = String(form.get("customerPhone") ?? "");
-    const whatsappWindow = window.open("about:blank", "vegstod-customer-whatsapp");
 
     startTransition(async () => {
       const result = await createQuickCustomerIntakeJobAction({ customerPhone });
       if (!result.ok || !result.data) {
-        whatsappWindow?.close();
         setError(result.error ?? "Ekki tókst að búa til verkefnið.");
         return;
       }
@@ -65,7 +64,6 @@ export function JobEditor({ capabilities, job, onClose, onQuickCreated, onSaved 
         buildCustomerIntakeWhatsAppMessage("", customerUrl),
       );
       if (!whatsappHref) {
-        whatsappWindow?.close();
         setError("Verkefnið var búið til en símanúmerið virkar ekki fyrir WhatsApp.");
         onQuickCreated(result.data.jobId);
         return;
@@ -73,14 +71,11 @@ export function JobEditor({ capabilities, job, onClose, onQuickCreated, onSaved 
 
       setQuickLink({
         expiresAt: result.data.expiresAt,
-        openedAutomatically: Boolean(whatsappWindow),
+        sentAutomatically: Boolean(result.data.receipt),
+        sendError: result.data.sendError,
         whatsappHref,
       });
       onQuickCreated(result.data.jobId);
-      if (whatsappWindow) {
-        whatsappWindow.opener = null;
-        whatsappWindow.location.replace(whatsappHref);
-      }
     });
   }
 
@@ -130,14 +125,16 @@ export function JobEditor({ capabilities, job, onClose, onQuickCreated, onSaved 
           quickLink ? (
             <div className="quick-job-success">
               <span><CheckCircle2 size={28} /></span>
-              <h3>Verkefnið og tengillinn eru tilbúin</h3>
-              <p>{quickLink.openedAutomatically
-                ? <>WhatsApp var opnað með tilbúnum skilaboðum. Þar ýtir þú á <strong>Senda</strong>.</>
-                : <>Vafrinn lokaði á sjálfvirka opnun. Ýttu á hnappinn hér fyrir neðan og síðan á <strong>Senda</strong> í WhatsApp.</>}</p>
+              <h3>{quickLink.sentAutomatically ? "Tengillinn fór í WhatsApp" : "Verkefnið og tengillinn eru tilbúin"}</h3>
+              <p>{quickLink.sentAutomatically
+                ? "WhatsApp tók við sjálfvirku sendingunni. Staðan uppfærist þegar Meta sendir afhendingarkvittun."
+                : quickLink.sendError ?? "Sjálfvirk sending var ekki tiltæk. Opnaðu handvirku varaleiðina."}</p>
               <small>{formatCustomerLinkExpiry(quickLink.expiresAt, "is")}</small>
-              <a className="primary-button quick-whatsapp-button" href={quickLink.whatsappHref} target="_blank" rel="noreferrer">
-                <MessageCircle size={17} /> Opna WhatsApp aftur
-              </a>
+              {!quickLink.sentAutomatically ? (
+                <a className="primary-button quick-whatsapp-button" href={quickLink.whatsappHref} target="_blank" rel="noreferrer">
+                  <MessageCircle size={17} /> Opna WhatsApp handvirkt
+                </a>
+              ) : null}
               <button className="secondary-button" type="button" onClick={onClose}>Loka</button>
             </div>
           ) : (
@@ -155,7 +152,7 @@ export function JobEditor({ capabilities, job, onClose, onQuickCreated, onSaved 
               </label>
               {error ? <p className="form-error" role="alert">{error}</p> : null}
               <button className="primary-button quick-create-button" type="submit" disabled={pending}>
-                <MessageCircle size={17} /> {pending ? "Bý til verkefni…" : "Búa til og opna WhatsApp"}
+                <MessageCircle size={17} /> {pending ? "Bý til og sendi…" : "Búa til og senda WhatsApp"}
               </button>
               <button className="quick-job-switch" type="button" onClick={() => { setEntryMode("full"); setError(null); }}>
                 <PencilLine size={15} /> Ég vil skrá allar upplýsingar sjálf/ur

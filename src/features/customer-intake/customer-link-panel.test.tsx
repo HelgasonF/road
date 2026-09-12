@@ -25,6 +25,8 @@ beforeEach(() => {
       linkId: "50000000-0000-4000-8000-000000000001",
       path: "/customer/test-secure-token",
       expiresAt: "2026-08-26T12:00:00.000Z",
+      receipt: null,
+      sendError: "WhatsApp template unavailable.",
     },
   });
   vi.mocked(revokeCustomerIntakeLinkAction).mockResolvedValue({ ok: true });
@@ -46,7 +48,7 @@ describe("customer intake link handoff", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Búa til tengil" }));
+    fireEvent.click(screen.getByRole("button", { name: "Búa til og senda tengil" }));
 
     const whatsapp = await screen.findByRole("link", {
       name: "Senda öruggan tengil til Sophie Martin í WhatsApp",
@@ -57,5 +59,36 @@ describe("customer intake link handoff", () => {
     expect(url.searchParams.get("text")).toContain("Sophie Martin");
     expect(url.searchParams.get("text")).toContain("http://localhost:3000/customer/test-secure-token");
     expect(screen.queryByRole("button", { name: "Afrita" })).not.toBeInTheDocument();
+  });
+
+  it("shows provider acceptance without opening the manual fallback", async () => {
+    vi.mocked(createCustomerIntakeLinkAction).mockResolvedValue({
+      ok: true,
+      data: {
+        linkId: "50000000-0000-4000-8000-000000000001",
+        path: "/customer/test-secure-token",
+        expiresAt: "2026-08-26T12:00:00.000Z",
+        receipt: {
+          deduplicated: false,
+          messageId: "70000000-0000-4000-8000-000000000001",
+          metaMessageId: "wamid.test",
+          state: "accepted",
+        },
+        sendError: null,
+      },
+    });
+
+    render(
+      <CustomerLinkPanel
+        customerName="Sophie Martin"
+        customerPhone="+33 6 12 34 56 78"
+        jobId="30000000-0000-4000-8000-000000000001"
+        link={null}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Búa til og senda tengil" }));
+    expect(await screen.findByText(/WhatsApp tók við sjálfvirku sendingunni/)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Senda öruggan tengil/ })).not.toBeInTheDocument();
   });
 });

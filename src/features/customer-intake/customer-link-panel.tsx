@@ -24,10 +24,14 @@ export function CustomerLinkPanel({ customerName, customerPhone, jobId, link }: 
   const router = useRouter();
   const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [sentAutomatically, setSentAutomatically] = useState(false);
   const [pending, startTransition] = useTransition();
 
   function createLink() {
     setError(null);
+    setSendError(null);
+    setSentAutomatically(false);
     startTransition(async () => {
       const result = await createCustomerIntakeLinkAction({ jobId });
       if (!result.ok || !result.data) {
@@ -35,6 +39,8 @@ export function CustomerLinkPanel({ customerName, customerPhone, jobId, link }: 
         return;
       }
       setGeneratedUrl(new URL(result.data.path, window.location.origin).toString());
+      setSentAutomatically(Boolean(result.data.receipt));
+      setSendError(result.data.sendError);
       router.refresh();
     });
   }
@@ -49,6 +55,8 @@ export function CustomerLinkPanel({ customerName, customerPhone, jobId, link }: 
         return;
       }
       setGeneratedUrl(null);
+      setSentAutomatically(false);
+      setSendError(null);
       router.refresh();
     });
   }
@@ -71,9 +79,13 @@ export function CustomerLinkPanel({ customerName, customerPhone, jobId, link }: 
       {link && !active && !submitted ? <p className="customer-link-status">Tengill er útrunninn eða hefur verið afturkallaður.</p> : null}
 
       {generatedUrl ? (
-        customerWhatsAppHref ? (
+        sentAutomatically ? (
           <div className="customer-whatsapp-handoff">
-            <p>Tengillinn er tilbúinn. WhatsApp opnast með leiðbeiningum á ensku; þú ferð yfir þær og ýtir á Senda.</p>
+            <p>WhatsApp tók við sjálfvirku sendingunni. Afhendingarstaðan er skráð um leið og Meta staðfestir hana.</p>
+          </div>
+        ) : customerWhatsAppHref ? (
+          <div className="customer-whatsapp-handoff">
+            <p>{sendError ?? "Sjálfvirk sending var ekki tiltæk."} Opnaðu handvirku varaleiðina, farðu yfir skilaboðin og ýttu á Senda.</p>
             <a
               aria-label={`Senda öruggan tengil til ${customerName || "viðskiptavinar"} í WhatsApp`}
               className="customer-whatsapp-send"
@@ -81,7 +93,7 @@ export function CustomerLinkPanel({ customerName, customerPhone, jobId, link }: 
               rel="noreferrer"
               target="_blank"
             >
-              <MessageCircle size={16} /> Senda í WhatsApp
+              <MessageCircle size={16} /> Opna WhatsApp handvirkt
             </a>
           </div>
         ) : (
@@ -90,7 +102,7 @@ export function CustomerLinkPanel({ customerName, customerPhone, jobId, link }: 
       ) : active ? <p className="muted-copy">Vegna öryggis er hrái tengillinn aðeins tiltækur þegar hann er búinn til. Búðu til nýjan til að senda aftur í WhatsApp.</p> : null}
 
       <div className="customer-link-actions">
-        <button className="secondary-button" type="button" disabled={pending} onClick={createLink}>{active || submitted ? <RefreshCw size={15} /> : <Link2 size={15} />}{pending ? "Vinn…" : active ? "Nýr tengill" : submitted ? "Óska eftir leiðréttingu" : "Búa til tengil"}</button>
+        <button className="secondary-button" type="button" disabled={pending} onClick={createLink}>{active || submitted ? <RefreshCw size={15} /> : <Link2 size={15} />}{pending ? "Bý til og sendi…" : active ? "Nýr tengill og senda" : submitted ? "Óska eftir leiðréttingu" : "Búa til og senda tengil"}</button>
         {active ? <button className="text-danger-button" type="button" disabled={pending} onClick={revokeLink}><Unlink size={15} /> Afturkalla</button> : null}
       </div>
       {active && !generatedUrl ? <small>Nýr tengill afturkallar sjálfkrafa þann gamla.</small> : null}

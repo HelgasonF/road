@@ -2,7 +2,10 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { recordJobContactAction } from "@/features/job-timeline/actions";
-import { createDriverAccessLinkAction } from "@/features/operators/actions";
+import {
+  createAndSendDriverAssignmentWhatsAppAction,
+  sendDriverAvailabilityWhatsAppAction,
+} from "@/features/whatsapp/actions";
 
 import type { DriverJobContactSummary } from "./driver-contact";
 import {
@@ -14,10 +17,25 @@ vi.mock("@/features/job-timeline/actions", () => ({
   recordJobContactAction: vi.fn().mockResolvedValue({ ok: true }),
 }));
 
-vi.mock("@/features/operators/actions", () => ({
-  createDriverAccessLinkAction: vi.fn().mockResolvedValue({
+vi.mock("@/features/whatsapp/actions", () => ({
+  sendDriverAvailabilityWhatsAppAction: vi.fn().mockResolvedValue({
     ok: true,
-    data: { path: "/driver/access?token_hash=secure-token&type=magiclink" },
+    data: {
+      receipt: {
+        deduplicated: false,
+        messageId: "70000000-0000-4000-8000-000000000001",
+        metaMessageId: "wamid.availability",
+        state: "accepted",
+      },
+    },
+  }),
+  createAndSendDriverAssignmentWhatsAppAction: vi.fn().mockResolvedValue({
+    ok: true,
+    data: {
+      path: "/driver/access?token_hash=secure-token&type=magiclink",
+      receipt: null,
+      sendError: "Template pending.",
+    },
   }),
 }));
 
@@ -37,7 +55,7 @@ afterEach(() => {
 });
 
 describe("driver job contact actions", () => {
-  it("opens a prewritten availability request for a suggested driver", () => {
+  it("sends availability through the API and retains a manual fallback", async () => {
     render(
       <DriverAvailabilityContactActions
         distanceKm={42.6}
@@ -48,7 +66,11 @@ describe("driver job contact actions", () => {
       />,
     );
 
-    const link = screen.getByRole("link", { name: "Spyrja Bjarni Ólafsson um framboð í WhatsApp" });
+    fireEvent.click(screen.getByRole("button", { name: "Spyrja Bjarni Ólafsson um framboð í WhatsApp" }));
+    expect(sendDriverAvailabilityWhatsAppAction).toHaveBeenCalledWith({ jobId, operatorId });
+    expect(await screen.findByText("Sent í WhatsApp")).toBeInTheDocument();
+
+    const link = screen.getByRole("link", { name: "Opna handvirka WhatsApp-varaleið fyrir Bjarni Ólafsson" });
     const url = new URL(link.getAttribute("href")!);
     expect(url.pathname).toBe("/3545550104");
     expect(url.searchParams.get("text")).toContain("Svæði: Hella");
@@ -75,7 +97,7 @@ describe("driver job contact actions", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Búa til öruggan úthlutunartengil fyrir Bjarni Ólafsson" }));
 
-    expect(createDriverAccessLinkAction).toHaveBeenCalledWith({ operatorId });
+    expect(createAndSendDriverAssignmentWhatsAppAction).toHaveBeenCalledWith({ jobId, operatorId });
     const link = await screen.findByRole("link", { name: "Senda úthlutun til Bjarni Ólafsson í WhatsApp" });
 
     const href = link.getAttribute("href")!;
