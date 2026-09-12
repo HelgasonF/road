@@ -46,3 +46,7 @@ It does not yet verify:
 - direct registration or sending from the production number.
 
 The safe local manifest for this test is stored outside Git at `~/.config/vegstod/whatsapp-api-sandbox-test.json`. It contains identifiers and timestamps but no access token or customer content. Temporary phone screenshots were inspected locally and removed rather than committed.
+
+## Follow-up on 12 September
+
+The operational interface, dynamic secure-link buttons, candidate reply display, staff delivery/reply timeline, and signed STOP/START preference guard were subsequently implemented and deployed. Local and hosted fallback passes succeeded while the three operational templates remained pending Meta review. The disposable hosted failure and preference-check records were removed. The evidence boundary above remains the boundary of the 11 September physical-phone pass itself; the next phone pass starts when Meta approves the templates.

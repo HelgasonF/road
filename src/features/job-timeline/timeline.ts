@@ -61,6 +61,25 @@ function billingDescription(event: JobTimelineSources["billingEvents"][number]) 
   return parts.length > 0 ? parts.join(" · ") : null;
 }
 
+function whatsappCategory(purpose: JobTimelineSources["whatsappOutbound"][number]["purpose"]): JobTimelineEvent["category"] {
+  return purpose === "customer_intake" ? "customer" : "driver";
+}
+
+function whatsappPurposeCopy(event: JobTimelineSources["whatsappOutbound"][number]) {
+  if (event.purpose === "customer_intake") return "upplýsingatengill viðskiptavinar";
+  const operator = event.operatorName ?? "þjónustuaðila";
+  if (event.purpose === "driver_availability") return `framboðsfyrirspurn til ${operator}`;
+  if (event.purpose === "driver_assignment") return `úthlutun og ökumannstengill til ${operator}`;
+  return "prófskilaboð";
+}
+
+function whatsappDeliveryTitle(status: JobTimelineSources["whatsappDeliveries"][number]["status"]) {
+  if (status === "sent") return "WhatsApp sendi skilaboðin";
+  if (status === "delivered") return "WhatsApp afhenti skilaboðin í síma";
+  if (status === "read") return "Skilaboðin voru lesin í WhatsApp";
+  return "WhatsApp gat ekki afhent skilaboðin";
+}
+
 export function buildJobTimeline(sources: JobTimelineSources, now = new Date()): JobTimelineEvent[] {
   const events: JobTimelineEvent[] = [{
     id: `job-created-${sources.job.id}`,
@@ -197,6 +216,98 @@ export function buildJobTimeline(sources: JobTimelineSources, now = new Date()):
       actorName: contact.initiatedByName,
       occurredAt: contact.initiatedAt,
       tone: "neutral",
+    });
+  }
+
+  for (const outbound of sources.whatsappOutbound) {
+    const category = whatsappCategory(outbound.purpose);
+    const purpose = whatsappPurposeCopy(outbound);
+    events.push({
+      id: `whatsapp-requested-${outbound.id}`,
+      category,
+      title: `WhatsApp-sending útbúin: ${purpose}`,
+      description: null,
+      actorName: outbound.createdByName,
+      occurredAt: outbound.createdAt,
+      tone: "neutral",
+    });
+
+    if (outbound.acceptedAt) {
+      events.push({
+        id: `whatsapp-accepted-${outbound.id}`,
+        category,
+        title: "WhatsApp tók við skilaboðunum",
+        description: purpose,
+        actorName: null,
+        occurredAt: outbound.acceptedAt,
+        tone: "neutral",
+      });
+    }
+
+    const hasFailedDelivery = sources.whatsappDeliveries.some((delivery) => (
+      delivery.outboundMessageId === outbound.id && delivery.status === "failed"
+    ));
+    if (outbound.state === "failed" && !hasFailedDelivery) {
+      events.push({
+        id: `whatsapp-failed-${outbound.id}`,
+        category,
+        title: "Sjálfvirk WhatsApp-sending mistókst",
+        description: outbound.failureCode ? `Villukóði Meta: ${outbound.failureCode}` : purpose,
+        actorName: null,
+        occurredAt: outbound.updatedAt,
+        tone: "danger",
+      });
+    } else if (outbound.state === "delivery_unknown") {
+      events.push({
+        id: `whatsapp-unknown-${outbound.id}`,
+        category,
+        title: "Óvíst er hvort WhatsApp tók við sendingunni",
+        description: "Yfirfara þarf stöðuna áður en reynt er aftur.",
+        actorName: null,
+        occurredAt: outbound.updatedAt,
+        tone: "warning",
+      });
+    }
+  }
+
+  for (const delivery of sources.whatsappDeliveries) {
+    const outbound = sources.whatsappOutbound.find((item) => item.id === delivery.outboundMessageId);
+    if (!outbound) continue;
+    events.push({
+      id: `whatsapp-delivery-${delivery.id}`,
+      category: whatsappCategory(outbound.purpose),
+      title: whatsappDeliveryTitle(delivery.status),
+      description: delivery.errorCode ? `Villukóði Meta: ${delivery.errorCode}` : whatsappPurposeCopy(outbound),
+      actorName: null,
+      occurredAt: delivery.occurredAt,
+      tone: delivery.status === "failed"
+        ? "danger"
+        : delivery.status === "delivered" || delivery.status === "read"
+          ? "positive"
+          : "neutral",
+    });
+  }
+
+  for (const reply of sources.whatsappReplies) {
+    const title = reply.classification === "available"
+      ? `${reply.operatorName ?? "Þjónustuaðili"} svaraði: Laus`
+      : reply.classification === "unavailable"
+        ? `${reply.operatorName ?? "Þjónustuaðili"} svaraði: Ekki laus`
+        : reply.operatorName
+          ? `${reply.operatorName} svaraði í WhatsApp`
+          : "Svar barst í WhatsApp";
+    events.push({
+      id: `whatsapp-reply-${reply.id}`,
+      category: reply.operatorName ? "driver" : "customer",
+      title,
+      description: reply.textBody,
+      actorName: reply.operatorName,
+      occurredAt: reply.receivedAt,
+      tone: reply.classification === "available"
+        ? "positive"
+        : reply.classification === "unavailable"
+          ? "warning"
+          : "neutral",
     });
   }
 

@@ -14,26 +14,26 @@
 <!-- customer_contact&#45;&gt;create_job -->
 <g id="edge1" class="edge">
 <title>customer_contact&#45;&gt;create_job</title>
-<path fill="none" stroke="#657772" stroke-width="1.4" d="M272.3,-783C285.41,-783 298.53,-783 311.65,-783"/>
-<polygon fill="#657772" stroke="#657772" stroke-width="1.4" points="311.74,-785.52 318.94,-783 311.74,-780.48 311.74,-785.52"/>
+<path fill="none" stroke="#657772" stroke-width="1.4" d="M290.3,-783C303.41,-783 316.53,-783 329.65,-783"/>
+<polygon fill="#657772" stroke="#657772" stroke-width="1.4" points="329.74,-785.52 336.94,-783 329.74,-780.48 329.74,-785.52"/>
 </g>
 <!-- create_job&#45;&gt;create_link -->
 <g id="edge2" class="edge">
 <title>create_job&#45;&gt;create_link</title>
-<path fill="none" stroke="#657772" stroke-width="1.4" d="M488.3,-783C501.41,-783 514.53,-783 527.65,-783"/>
-<polygon fill="#657772" stroke="#657772" stroke-width="1.4" points="527.74,-785.52 534.94,-783 527.74,-780.48 527.74,-785.52"/>
+<path fill="none" stroke="#657772" stroke-width="1.4" d="M506.3,-783C519.41,-783 532.53,-783 545.65,-783"/>
+<polygon fill="#657772" stroke="#657772" stroke-width="1.4" points="545.74,-785.52 552.94,-783 545.74,-780.48 545.74,-785.52"/>
 </g>
 <!-- create_link&#45;&gt;wa_customer -->
 <g id="edge3" class="edge">
 <title>create_link&#45;&gt;wa_customer</title>
-<path fill="none" stroke="#657772" stroke-width="1.4" d="M704.23,-783C717.66,-783 731.09,-783 744.52,-783"/>
-<polygon fill="#657772" stroke="#657772" stroke-width="1.4" points="744.78,-785.52 751.98,-783 744.78,-780.48 744.78,-785.52"/>
+<path fill="none" stroke="#657772" stroke-width="1.4" d="M722.43,-783C735.78,-783 749.13,-783 762.48,-783"/>
+<polygon fill="#657772" stroke="#657772" stroke-width="1.4" points="762.69,-785.52 769.89,-783 762.69,-780.48 762.69,-785.52"/>
 </g>
 <!-- wa_customer&#45;&gt;customer_form -->
 <g id="edge4" class="edge">
 <title>wa_customer&#45;&gt;customer_form</title>
-<path fill="none" stroke="#657772" stroke-width="1.4" d="M951.19,-783C964.63,-783 978.08,-783 991.53,-783"/>
-<polygon fill="#657772" stroke="#657772" stroke-width="1.4" points="991.8,-785.52 999,-783 991.8,-780.48 991.8,-785.52"/>
+<path fill="none" stroke="#657772" stroke-width="1.4" d="M951.09,-783C964.55,-783 978,-783 991.46,-783"/>
+<polygon fill="#657772" stroke="#657772" stroke-width="1.4" points="991.74,-785.52 998.94,-783 991.74,-780.48 991.74,-785.52"/>
 </g>
 <!-- customer_form&#45;&gt;customer_submit -->
 <g id="edge5" class="edge">
@@ -177,34 +177,34 @@
 <!-- customer_contact -->
 <g id="node1" class="node">
 <title>customer_contact</title>
-<path fill="#eef5ff" stroke="#6b95c9" stroke-width="1.35" d="M260,-809C260,-809 115,-809 115,-809 109,-809 103,-803 103,-797 103,-797 103,-769 103,-769 103,-763 109,-757 115,-757 115,-757 260,-757 260,-757 266,-757 272,-763 272,-769 272,-769 272,-797 272,-797 272,-803 266,-809 260,-809"/>
-<text text-anchor="middle" x="187.5" y="-790.48" font-family="DejaVu Sans" font-size="9.40" fill="#18352f">1 · VIÐSKIPTAVINUR</text>
-<text text-anchor="middle" x="187.5" y="-780.48" font-family="DejaVu Sans" font-size="9.40" fill="#18352f">Hringir eða sendir WhatsApp</text>
-<text text-anchor="middle" x="187.5" y="-770.48" font-family="DejaVu Sans" font-size="9.40" fill="#18352f">til Vegstoðar</text>
+<path fill="#eef5ff" stroke="#6b95c9" stroke-width="1.35" d="M278,-809C278,-809 133,-809 133,-809 127,-809 121,-803 121,-797 121,-797 121,-769 121,-769 121,-763 127,-757 133,-757 133,-757 278,-757 278,-757 284,-757 290,-763 290,-769 290,-769 290,-797 290,-797 290,-803 284,-809 278,-809"/>
+<text text-anchor="middle" x="205.5" y="-790.48" font-family="DejaVu Sans" font-size="9.40" fill="#18352f">1 · VIÐSKIPTAVINUR</text>
+<text text-anchor="middle" x="205.5" y="-780.48" font-family="DejaVu Sans" font-size="9.40" fill="#18352f">Hringir eða sendir WhatsApp</text>
+<text text-anchor="middle" x="205.5" y="-770.48" font-family="DejaVu Sans" font-size="9.40" fill="#18352f">til Vegstoðar</text>
 </g>
 <!-- create_job -->
 <g id="node2" class="node">
 <title>create_job</title>
-<path fill="#ecf4f1" stroke="#4f8b7b" stroke-width="1.35" d="M476,-809C476,-809 331,-809 331,-809 325,-809 319,-803 319,-797 319,-797 319,-769 319,-769 319,-763 325,-757 331,-757 331,-757 476,-757 476,-757 482,-757 488,-763 488,-769 488,-769 488,-797 488,-797 488,-803 482,-809 476,-809"/>
-<text text-anchor="middle" x="403.5" y="-790.48" font-family="DejaVu Sans" font-size="9.40" fill="#18352f">2 · VEGSTOÐ / MÓTTAKA</text>
-<text text-anchor="middle" x="403.5" y="-780.48" font-family="DejaVu Sans" font-size="9.40" fill="#18352f">Býr til verkefni með síma</text>
-<text text-anchor="middle" x="403.5" y="-770.48" font-family="DejaVu Sans" font-size="9.40" fill="#18352f">og upphafsstað</text>
+<path fill="#ecf4f1" stroke="#4f8b7b" stroke-width="1.35" d="M494,-809C494,-809 349,-809 349,-809 343,-809 337,-803 337,-797 337,-797 337,-769 337,-769 337,-763 343,-757 349,-757 349,-757 494,-757 494,-757 500,-757 506,-763 506,-769 506,-769 506,-797 506,-797 506,-803 500,-809 494,-809"/>
+<text text-anchor="middle" x="421.5" y="-790.48" font-family="DejaVu Sans" font-size="9.40" fill="#18352f">2 · VEGSTOÐ / MÓTTAKA</text>
+<text text-anchor="middle" x="421.5" y="-780.48" font-family="DejaVu Sans" font-size="9.40" fill="#18352f">Býr til verkefni með síma</text>
+<text text-anchor="middle" x="421.5" y="-770.48" font-family="DejaVu Sans" font-size="9.40" fill="#18352f">og upphafsstað</text>
 </g>
 <!-- create_link -->
 <g id="node3" class="node">
 <title>create_link</title>
-<path fill="#ecf4f1" stroke="#4f8b7b" stroke-width="1.35" d="M692,-809C692,-809 547,-809 547,-809 541,-809 535,-803 535,-797 535,-797 535,-769 535,-769 535,-763 541,-757 547,-757 547,-757 692,-757 692,-757 698,-757 704,-763 704,-769 704,-769 704,-797 704,-797 704,-803 698,-809 692,-809"/>
-<text text-anchor="middle" x="619.5" y="-790.48" font-family="DejaVu Sans" font-size="9.40" fill="#18352f">3 · VEGSTOÐ / MÓTTAKA</text>
-<text text-anchor="middle" x="619.5" y="-780.48" font-family="DejaVu Sans" font-size="9.40" fill="#18352f">Býr til öruggan 24 klst.</text>
-<text text-anchor="middle" x="619.5" y="-770.48" font-family="DejaVu Sans" font-size="9.40" fill="#18352f">viðskiptavinatengil</text>
+<path fill="#ecf4f1" stroke="#4f8b7b" stroke-width="1.35" d="M710,-809C710,-809 565,-809 565,-809 559,-809 553,-803 553,-797 553,-797 553,-769 553,-769 553,-763 559,-757 565,-757 565,-757 710,-757 710,-757 716,-757 722,-763 722,-769 722,-769 722,-797 722,-797 722,-803 716,-809 710,-809"/>
+<text text-anchor="middle" x="637.5" y="-790.48" font-family="DejaVu Sans" font-size="9.40" fill="#18352f">3 · VEGSTOÐ / MÓTTAKA</text>
+<text text-anchor="middle" x="637.5" y="-780.48" font-family="DejaVu Sans" font-size="9.40" fill="#18352f">Býr til öruggan 24 klst.</text>
+<text text-anchor="middle" x="637.5" y="-770.48" font-family="DejaVu Sans" font-size="9.40" fill="#18352f">viðskiptavinatengil</text>
 </g>
 <!-- wa_customer -->
 <g id="node4" class="node">
 <title>wa_customer</title>
-<path fill="#e8f7ee" stroke="#25a85e" stroke-width="1.35" d="M939,-809C939,-809 764,-809 764,-809 758,-809 752,-803 752,-797 752,-797 752,-769 752,-769 752,-763 758,-757 764,-757 764,-757 939,-757 939,-757 945,-757 951,-763 951,-769 951,-769 951,-797 951,-797 951,-803 945,-809 939,-809"/>
-<text text-anchor="middle" x="851.5" y="-790.48" font-family="DejaVu Sans" font-size="9.40" fill="#087543">4 · WHATSAPP</text>
-<text text-anchor="middle" x="851.5" y="-780.48" font-family="DejaVu Sans" font-size="9.40" fill="#087543">Senda í WhatsApp opnar skráð númer</text>
-<text text-anchor="middle" x="851.5" y="-770.48" font-family="DejaVu Sans" font-size="9.40" fill="#087543">með enskum texta + tengli</text>
+<path fill="#e8f7ee" stroke="#25a85e" stroke-width="1.35" d="M939,-809C939,-809 782,-809 782,-809 776,-809 770,-803 770,-797 770,-797 770,-769 770,-769 770,-763 776,-757 782,-757 782,-757 939,-757 939,-757 945,-757 951,-763 951,-769 951,-769 951,-797 951,-797 951,-803 945,-809 939,-809"/>
+<text text-anchor="middle" x="860.5" y="-790.48" font-family="DejaVu Sans" font-size="9.40" fill="#087543">4 · WHATSAPP CLOUD API</text>
+<text text-anchor="middle" x="860.5" y="-780.48" font-family="DejaVu Sans" font-size="9.40" fill="#087543">Samþykkt sniðmát sendir öruggan</text>
+<text text-anchor="middle" x="860.5" y="-770.48" font-family="DejaVu Sans" font-size="9.40" fill="#087543">tengil á skráð númer</text>
 </g>
 <!-- customer_form -->
 <g id="node5" class="node">
@@ -369,10 +369,10 @@
 <polyline fill="none" stroke="#25a85e" stroke-width="1.35" points="257,-62 257,-56 "/>
 <polyline fill="none" stroke="#25a85e" stroke-width="1.35" points="263,-56 257,-56 "/>
 <text text-anchor="middle" x="131.5" y="-48.96" font-family="DejaVu Sans" font-size="8.80" fill="#087543">WHATSAPP ER AÐEINS SAMSKIPTALEIÐ</text>
-<text text-anchor="middle" x="131.5" y="-38.96" font-family="DejaVu Sans" font-size="8.80" fill="#087543">• Móttaka yfirfer texta og ýtir sjálf á Senda</text>
+<text text-anchor="middle" x="131.5" y="-38.96" font-family="DejaVu Sans" font-size="8.80" fill="#087543">• Cloud API sendir samþykkt sniðmát og örugga tengla</text>
 <text text-anchor="middle" x="131.5" y="-28.96" font-family="DejaVu Sans" font-size="8.80" fill="#087543">• Eyðublað, staðsetning og myndir fara inn í Vegstoð</text>
 <text text-anchor="middle" x="131.5" y="-18.96" font-family="DejaVu Sans" font-size="8.80" fill="#087543">• Ökumaður sér gögnin í Vegstoð eftir úthlutun</text>
-<text text-anchor="middle" x="131.5" y="-8.96" font-family="DejaVu Sans" font-size="8.80" fill="#087543">• Ekkert greitt WhatsApp Business API er nauðsynlegt</text>
+<text text-anchor="middle" x="131.5" y="-8.96" font-family="DejaVu Sans" font-size="8.80" fill="#087543">• Handvirk sending og símtal eru áfram varaleiðir</text>
 </g>
 </g>
 </svg>

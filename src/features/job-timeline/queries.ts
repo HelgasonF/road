@@ -75,6 +75,35 @@ type BillingRow = {
   profiles: ProfileName;
 };
 
+type WhatsAppOutboundRow = {
+  id: string;
+  purpose: JobTimelineSources["whatsappOutbound"][number]["purpose"];
+  state: JobTimelineSources["whatsappOutbound"][number]["state"];
+  meta_message_id: string | null;
+  failure_code: string | null;
+  created_at: string;
+  accepted_at: string | null;
+  updated_at: string;
+  operators: { name: string } | null;
+  profiles: ProfileName;
+};
+
+type WhatsAppDeliveryRow = {
+  id: number;
+  outbound_message_id: string | null;
+  status: JobTimelineSources["whatsappDeliveries"][number]["status"];
+  error_code: string | null;
+  occurred_at: string;
+};
+
+type WhatsAppReplyRow = {
+  id: string;
+  reply_classification: JobTimelineSources["whatsappReplies"][number]["classification"];
+  text_body: string | null;
+  received_at: string;
+  operators: { name: string } | null;
+};
+
 export async function getJobTimelinePageData(jobId: string): Promise<JobTimelinePageData | null> {
   const supabase = await createClient();
   const { data: jobData, error: jobError } = await supabase
@@ -96,7 +125,16 @@ export async function getJobTimelinePageData(jobId: string): Promise<JobTimeline
   if (jobError) throw new Error(`Unable to load timeline job: ${jobError.message}`);
   if (!jobData) return null;
 
-  const [statusResult, linksResult, photosResult, assignmentsResult, contactsResult, billingResult] = await Promise.all([
+  const [
+    statusResult,
+    linksResult,
+    photosResult,
+    assignmentsResult,
+    contactsResult,
+    billingResult,
+    whatsappOutboundResult,
+    whatsappRepliesResult,
+  ] = await Promise.all([
     supabase
       .from("job_status_history")
       .select("id, from_status, to_status, changed_at, notes, profiles!job_status_history_changed_by_fkey(display_name)")
@@ -133,11 +171,51 @@ export async function getJobTimelinePageData(jobId: string): Promise<JobTimeline
       .from("job_billing_events")
       .select("id, action, reference, due_at, notes, changed_at, profiles!job_billing_events_changed_by_fkey(display_name)")
       .eq("job_id", jobId),
+    supabase
+      .from("whatsapp_outbound_messages")
+      .select(`
+        id,
+        purpose,
+        state,
+        meta_message_id,
+        failure_code,
+        created_at,
+        accepted_at,
+        updated_at,
+        operators(name),
+        profiles!whatsapp_outbound_messages_created_by_fkey(display_name)
+      `)
+      .eq("job_id", jobId),
+    supabase
+      .from("whatsapp_inbound_messages")
+      .select("id, reply_classification, text_body, received_at, operators(name)")
+      .eq("job_id", jobId),
   ]);
 
-  const failed = [statusResult, linksResult, photosResult, assignmentsResult, contactsResult, billingResult]
+  const failed = [
+    statusResult,
+    linksResult,
+    photosResult,
+    assignmentsResult,
+    contactsResult,
+    billingResult,
+    whatsappOutboundResult,
+    whatsappRepliesResult,
+  ]
     .find((result) => result.error);
   if (failed?.error) throw new Error(`Unable to load job timeline: ${failed.error.message}`);
+
+  const whatsappOutboundRows = whatsappOutboundResult.data as unknown as WhatsAppOutboundRow[];
+  const outboundIds = whatsappOutboundRows.map((row) => row.id);
+  const whatsappDeliveryResult = outboundIds.length > 0
+    ? await supabase
+      .from("whatsapp_delivery_events")
+      .select("id, outbound_message_id, status, error_code, occurred_at")
+      .in("outbound_message_id", outboundIds)
+    : { data: [], error: null };
+  if (whatsappDeliveryResult.error) {
+    throw new Error(`Unable to load WhatsApp timeline: ${whatsappDeliveryResult.error.message}`);
+  }
 
   const job = jobData as unknown as JobRow;
   const statusRows = statusResult.data as unknown as StatusRow[];
@@ -146,6 +224,8 @@ export async function getJobTimelinePageData(jobId: string): Promise<JobTimeline
   const assignmentRows = assignmentsResult.data as unknown as AssignmentRow[];
   const contactRows = contactsResult.data as unknown as ContactRow[];
   const billingRows = billingResult.data as unknown as BillingRow[];
+  const whatsappDeliveryRows = whatsappDeliveryResult.data as unknown as WhatsAppDeliveryRow[];
+  const whatsappReplyRows = whatsappRepliesResult.data as unknown as WhatsAppReplyRow[];
 
   const sources: JobTimelineSources = {
     job: {
@@ -203,6 +283,32 @@ export async function getJobTimelinePageData(jobId: string): Promise<JobTimeline
       reference: row.reference,
       dueAt: row.due_at,
       notes: row.notes,
+    })),
+    whatsappOutbound: whatsappOutboundRows.map((row) => ({
+      id: row.id,
+      purpose: row.purpose,
+      operatorName: row.operators?.name ?? null,
+      state: row.state,
+      metaMessageId: row.meta_message_id,
+      failureCode: row.failure_code,
+      createdByName: row.profiles?.display_name ?? "Óþekktur notandi",
+      createdAt: row.created_at,
+      acceptedAt: row.accepted_at,
+      updatedAt: row.updated_at,
+    })),
+    whatsappDeliveries: whatsappDeliveryRows.flatMap((row) => row.outbound_message_id ? [{
+      id: row.id,
+      outboundMessageId: row.outbound_message_id,
+      status: row.status,
+      errorCode: row.error_code,
+      occurredAt: row.occurred_at,
+    }] : []),
+    whatsappReplies: whatsappReplyRows.map((row) => ({
+      id: row.id,
+      operatorName: row.operators?.name ?? null,
+      classification: row.reply_classification,
+      textBody: row.text_body,
+      receivedAt: row.received_at,
     })),
   };
 

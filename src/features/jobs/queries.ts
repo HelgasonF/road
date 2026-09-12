@@ -17,6 +17,15 @@ export interface JobOperatorMatch {
   withinServiceArea: boolean;
 }
 
+export interface JobWhatsAppReply {
+  id: string;
+  jobId: string;
+  operatorId: string;
+  classification: "available" | "unavailable" | "unknown";
+  textBody: string | null;
+  receivedAt: string;
+}
+
 type JobQueryRow = {
   id: string;
   customer_name: string;
@@ -180,4 +189,28 @@ export async function getJobOperatorMatches(): Promise<JobOperatorMatch[]> {
     hasRequiredCapabilities: match.has_required_capabilities,
     withinServiceArea: match.within_service_area,
   }));
+}
+
+export async function getJobWhatsAppReplies(): Promise<JobWhatsAppReply[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("whatsapp_inbound_messages")
+    .select("id, job_id, operator_id, reply_classification, text_body, received_at")
+    .not("job_id", "is", null)
+    .not("operator_id", "is", null)
+    .order("received_at", { ascending: false });
+
+  if (error) throw new Error(`Unable to load WhatsApp replies: ${error.message}`);
+  return data.flatMap((reply) => (
+    reply.job_id && reply.operator_id
+      ? [{
+        id: reply.id,
+        jobId: reply.job_id,
+        operatorId: reply.operator_id,
+        classification: reply.reply_classification,
+        textBody: reply.text_body,
+        receivedAt: reply.received_at,
+      }]
+      : []
+  ));
 }

@@ -55,7 +55,7 @@ afterEach(() => {
 });
 
 describe("driver job contact actions", () => {
-  it("sends availability through the API and retains a manual fallback", async () => {
+  it("sends availability through the API and hides the fallback after provider acceptance", async () => {
     render(
       <DriverAvailabilityContactActions
         distanceKm={42.6}
@@ -70,6 +70,20 @@ describe("driver job contact actions", () => {
     expect(sendDriverAvailabilityWhatsAppAction).toHaveBeenCalledWith({ jobId, operatorId });
     expect(await screen.findByText("Sent í WhatsApp")).toBeInTheDocument();
 
+    expect(screen.queryByRole("link", { name: "Opna handvirka WhatsApp-varaleið fyrir Bjarni Ólafsson" })).not.toBeInTheDocument();
+  });
+
+  it("records use of the manual availability fallback without calling the API", () => {
+    render(
+      <DriverAvailabilityContactActions
+        distanceKm={42.6}
+        jobId={jobId}
+        operatorId={operatorId}
+        phone="555-0104"
+        summary={summary}
+      />,
+    );
+
     const link = screen.getByRole("link", { name: "Opna handvirka WhatsApp-varaleið fyrir Bjarni Ólafsson" });
     const url = new URL(link.getAttribute("href")!);
     expect(url.pathname).toBe("/3545550104");
@@ -82,6 +96,7 @@ describe("driver job contact actions", () => {
       channel: "whatsapp",
       purpose: "availability",
     });
+    expect(sendDriverAvailabilityWhatsAppAction).not.toHaveBeenCalled();
   });
 
   it("generates a private driver link before offering the post-assignment WhatsApp message", async () => {

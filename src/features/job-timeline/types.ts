@@ -74,6 +74,32 @@ export interface JobTimelineSources {
     dueAt: string | null;
     notes: string | null;
   }>;
+  whatsappOutbound: Array<{
+    id: string;
+    purpose: "customer_intake" | "driver_availability" | "driver_assignment" | "test";
+    operatorName: string | null;
+    state: "queued" | "sending" | "accepted" | "sent" | "delivered" | "read" | "failed" | "delivery_unknown" | "cancelled";
+    metaMessageId: string | null;
+    failureCode: string | null;
+    createdByName: string;
+    createdAt: string;
+    acceptedAt: string | null;
+    updatedAt: string;
+  }>;
+  whatsappDeliveries: Array<{
+    id: number;
+    outboundMessageId: string;
+    status: "sent" | "delivered" | "read" | "failed";
+    errorCode: string | null;
+    occurredAt: string;
+  }>;
+  whatsappReplies: Array<{
+    id: string;
+    operatorName: string | null;
+    classification: "available" | "unavailable" | "unknown";
+    textBody: string | null;
+    receivedAt: string;
+  }>;
 }
 
 export interface JobTimelinePageData {

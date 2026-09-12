@@ -80,6 +80,9 @@ const sources: JobTimelineSources = {
       notes: null,
     },
   ],
+  whatsappOutbound: [],
+  whatsappDeliveries: [],
+  whatsappReplies: [],
 };
 
 describe("job timeline", () => {
@@ -166,6 +169,83 @@ describe("job timeline", () => {
     expect(timeline.find((event) => event.occurredAt.startsWith("2026-08-20T09:31:00"))).toMatchObject({
       title: "Bjarni Driver hafnaði verkefninu",
       description: "Búnaður ekki tiltækur",
+    });
+  });
+
+  it("shows verified WhatsApp delivery and classified driver replies", () => {
+    const timeline = buildJobTimeline({
+      ...sources,
+      whatsappOutbound: [{
+        id: "70000000-0000-4000-8000-000000000001",
+        purpose: "driver_availability",
+        operatorName: "Bjarni Driver",
+        state: "read",
+        metaMessageId: "wamid.test",
+        failureCode: null,
+        createdByName: "Anna Dispatcher",
+        createdAt: "2026-08-20T09:14:00.000Z",
+        acceptedAt: "2026-08-20T09:14:01.000Z",
+        updatedAt: "2026-08-20T09:16:00.000Z",
+      }],
+      whatsappDeliveries: [
+        {
+          id: 10,
+          outboundMessageId: "70000000-0000-4000-8000-000000000001",
+          status: "delivered",
+          errorCode: null,
+          occurredAt: "2026-08-20T09:15:00.000Z",
+        },
+        {
+          id: 11,
+          outboundMessageId: "70000000-0000-4000-8000-000000000001",
+          status: "read",
+          errorCode: null,
+          occurredAt: "2026-08-20T09:16:00.000Z",
+        },
+      ],
+      whatsappReplies: [{
+        id: "80000000-0000-4000-8000-000000000001",
+        operatorName: "Bjarni Driver",
+        classification: "available",
+        textBody: "Available",
+        receivedAt: "2026-08-20T09:17:00.000Z",
+      }],
+    }, new Date("2026-08-20T12:00:00.000Z"));
+
+    expect(timeline.find((event) => event.id === "whatsapp-delivery-11")).toMatchObject({
+      category: "driver",
+      title: "Skilaboðin voru lesin í WhatsApp",
+      tone: "positive",
+    });
+    expect(timeline.find((event) => event.id.startsWith("whatsapp-reply-"))).toMatchObject({
+      title: "Bjarni Driver svaraði: Laus",
+      description: "Available",
+      tone: "positive",
+    });
+  });
+
+  it("shows a provider rejection once when no delivery webhook exists", () => {
+    const timeline = buildJobTimeline({
+      ...sources,
+      whatsappOutbound: [{
+        id: "70000000-0000-4000-8000-000000000002",
+        purpose: "customer_intake",
+        operatorName: null,
+        state: "failed",
+        metaMessageId: null,
+        failureCode: "132001",
+        createdByName: "Anna Dispatcher",
+        createdAt: "2026-08-20T09:14:00.000Z",
+        acceptedAt: null,
+        updatedAt: "2026-08-20T09:14:01.000Z",
+      }],
+    }, new Date("2026-08-20T12:00:00.000Z"));
+
+    expect(timeline.find((event) => event.id.startsWith("whatsapp-failed-"))).toMatchObject({
+      category: "customer",
+      title: "Sjálfvirk WhatsApp-sending mistókst",
+      description: "Villukóði Meta: 132001",
+      tone: "danger",
     });
   });
 });

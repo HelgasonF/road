@@ -92,7 +92,7 @@ export function DriverAvailabilityContactActions({
   }
 
   return (
-    <div>
+    <div className="match-contact-block">
       <div className="driver-job-contact-actions" aria-label={`Hafa samband við ${summary.driverName}`}>
         <DriverCallLink driverName={summary.driverName} jobId={jobId} operatorId={operatorId} phone={phone} purpose="availability" />
         {whatsappHref ? (
@@ -106,7 +106,7 @@ export function DriverAvailabilityContactActions({
             <MessageCircle size={14} /> {pending ? "Sendi…" : sent ? "Sent í WhatsApp" : "Spyrja um framboð"}
           </button>
         ) : null}
-        {whatsappHref ? (
+        {whatsappHref && !sent ? (
           <a
             className="driver-job-contact"
             href={whatsappHref}

@@ -14,13 +14,13 @@ WhatsApp er samskiptaleiðin utan um Vegstoð, en ekki geymslustaður verkefnisi
 
 Viðskiptavinurinn setur staðsetningu, bílgögn, lýsingu og myndir **inn í Vegstoð**. Myndirnar eru í einkageymslu Supabase og fara ekki í gegnum WhatsApp. Úthlutaður ökumaður opnar WhatsApp-tengilinn, staðfestir að hann vilji opna ökumannsskjáinn og fær þar nákvæman kortapinna, upplýsingar um viðskiptavin, bílgögn og heimilaðar myndir. Ökumaður gefur ekki upp netfang og býr ekki til lykilorð.
 
-Móttaka yfirfer alltaf tilbúin WhatsApp-skilaboð og ýtir sjálf á **Senda**. Vegstoð notar því ekki greitt WhatsApp Business API og getur ekki fullyrt að ytri skilaboð hafi verið send, lesin eða þeim svarað.
+Vegstoð sendir samþykkt WhatsApp-sniðmát í gegnum Cloud API og skráir staðfesta stöðu frá Meta. Handvirk `wa.me` sending og símtal eru áfram varaleiðir ef sjálfvirk sending er ekki tiltæk. Framboðssvar birtist hjá þjónustuaðilanum og í ferli verkefnisins, en móttaka ákveður alltaf úthlutunina.
 
 ## Staða miðað við núverandi byggingu
 
-- Viðskiptavinaflæðið byrjar á **+**: móttaka slær aðeins inn símanúmer og velur **Búa til og opna WhatsApp**. Þá verður til verkefni sem bíður upplýsinga og skráð númer opnast með einföldum leiðbeiningum á ensku og öruggum tengli. Viðskiptavinurinn velur aðstoð, skrifar lýsingu og skráir staðsetningu og bílgögn; fyrst þá opnast röðun og úthlutun. Móttaka getur líka valið að fylla allt verkefnið út sjálf.
-- Ökumannsflæðið er einnig tengt beint við WhatsApp: framboðsfyrirspurn og úthlutunar-/innskráningartengill opnast með tilbúnum texta. Innskráningartengillinn er aðeins nothæfur einu sinni; nýr tengill er búinn til þegar þarf.
-- Í öllum tilvikum fer móttaka yfir textann og ýtir sjálf á **Senda** í WhatsApp. Gögn og myndir eru áfram inni í Vegstoð.
+- Viðskiptavinaflæðið byrjar á **+**: móttaka slær aðeins inn símanúmer og velur **Búa til og senda WhatsApp**. Þá verður til verkefni sem bíður upplýsinga og samþykkt sniðmát ber öruggan tengil til viðskiptavinarins. Viðskiptavinurinn velur aðstoð, skrifar lýsingu og skráir staðsetningu og bílgögn; fyrst þá opnast röðun og úthlutun. Móttaka getur líka valið að fylla allt verkefnið út sjálf.
+- Ökumannsflæðið er tengt beint við Cloud API: framboðsfyrirspurn býður **Available**/**Unavailable**, og úthlutunarsniðmátið ber einnota innskráningartengil. Nýr tengill er búinn til þegar þarf.
+- Afhendingar- og lesstaða ásamt svörum birtist í ferli verkefnisins. Gögn og myndir eru áfram inni í Vegstoð, og handvirk WhatsApp-sending er tiltæk sem varaleið.
 
 ## Greiðsluflæðið
 

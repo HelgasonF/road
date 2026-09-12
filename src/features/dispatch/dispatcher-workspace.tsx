@@ -20,7 +20,7 @@ import { logoutAction } from "@/features/auth/actions";
 import type { CustomerIntakeLinkSummary } from "@/features/customer-intake/queries";
 import { JobEditor } from "@/features/jobs/editor";
 import { JobDetail } from "@/features/jobs/job-detail";
-import type { JobOperatorMatch } from "@/features/jobs/queries";
+import type { JobOperatorMatch, JobWhatsAppReply } from "@/features/jobs/queries";
 import { OperatorEditor, VehicleEditor } from "@/features/operators/editors";
 import { OperatorDetail } from "@/features/operators/operator-detail";
 import type {
@@ -43,6 +43,7 @@ interface DispatcherWorkspaceProps {
   jobMatches: JobOperatorMatch[];
   jobs: Job[];
   operators: Operator[];
+  whatsappReplies: JobWhatsAppReply[];
 }
 
 type StatusFilter = "all" | AvailabilityStatus;
@@ -58,6 +59,7 @@ export function DispatcherWorkspace({
   jobMatches,
   jobs,
   operators,
+  whatsappReplies,
 }: DispatcherWorkspaceProps) {
   const router = useRouter();
   const initialJob = jobs.find((job) => job.id === initialJobId) ?? null;
@@ -223,6 +225,7 @@ export function DispatcherWorkspace({
             customerLink={selectedCustomerLink}
             matches={jobMatches}
             operators={operators}
+            whatsappReplies={whatsappReplies}
             onEdit={() => setJobEditor(selectedJob)}
             onChanged={() => router.refresh()}
           />

@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, CheckCircle2, Clock3, History, MapPin, Pencil, ReceiptText, Route, Truck, UserRound, UsersRound } from "lucide-react";
+import { Building2, CheckCircle2, Clock3, History, MapPin, MessageCircle, Pencil, ReceiptText, Route, Truck, UserRound, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 
@@ -17,7 +17,7 @@ import {
   jobPriorityLabels,
   jobStatusLabels,
 } from "@/lib/i18n/is";
-import type { JobOperatorMatch } from "./queries";
+import type { JobOperatorMatch, JobWhatsAppReply } from "./queries";
 import { assignJobAction, updateJobStatusAction } from "./actions";
 import {
   DriverAssignmentContactActions,
@@ -32,6 +32,7 @@ interface JobDetailProps {
   customerLink: CustomerIntakeLinkSummary | null;
   matches: JobOperatorMatch[];
   operators: Operator[];
+  whatsappReplies: JobWhatsAppReply[];
   onChanged: () => void;
   onEdit: () => void;
 }
@@ -45,7 +46,7 @@ function driverContactSummary(job: Job, driverName: string): DriverJobContactSum
   };
 }
 
-export function JobDetail({ customerLink, demoMode, job, matches, operators, onChanged, onEdit }: JobDetailProps) {
+export function JobDetail({ customerLink, demoMode, job, matches, operators, onChanged, onEdit, whatsappReplies }: JobDetailProps) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [selectedOperatorId, setSelectedOperatorId] = useState(job?.assignment?.operatorId ?? "");
@@ -214,7 +215,7 @@ export function JobDetail({ customerLink, demoMode, job, matches, operators, onC
             <div><h3>Röðun þjónustuaðila</h3><span>{suitableCount === 1 ? "1 hentugur" : `${suitableCount} hentugir`} af {candidates.length}</span></div>
             <label><input type="checkbox" checked={suitableOnly} onChange={(event) => setSuitableOnly(event.target.checked)} /> Aðeins hentugir</label>
           </div>
-          <p className="matching-contact-note">Spurðu um framboð án upplýsinga um viðskiptavin. WhatsApp opnast með tilbúnum texta en þú ýtir sjálf/ur á Senda.</p>
+          <p className="matching-contact-note">Vegstoð sendir framboðsfyrirspurnina án upplýsinga um viðskiptavin. Handvirk WhatsApp-varaleið er tiltæk ef sjálfvirk sending tekst ekki.</p>
           <div className="match-list">
             {visibleCandidates.map(({ operator, match, hasRequiredCapabilities, isSuitable, withinServiceArea }, index) => (
               <article className={`match-card ${selectedOperatorId === operator.id ? "match-card-selected" : ""}`} key={operator.id}>
@@ -226,6 +227,16 @@ export function JobDetail({ customerLink, demoMode, job, matches, operators, onC
                     <i className={hasRequiredCapabilities ? "match-ok" : "match-missing"}>{hasRequiredCapabilities ? "Hæfur" : "Vantar getu"}</i>
                   </span>
                 </button>
+                {(() => {
+                  const reply = whatsappReplies.find((item) => item.jobId === job.id && item.operatorId === operator.id);
+                  if (!reply) return null;
+                  const replyText = reply.classification === "available"
+                    ? "Svaraði laus"
+                    : reply.classification === "unavailable"
+                      ? "Svaraði: Ekki laus"
+                      : `Svar í WhatsApp${reply.textBody ? `: ${reply.textBody.slice(0, 120)}` : ""}`;
+                  return <p className={`match-whatsapp-reply match-whatsapp-reply-${reply.classification}`}><MessageCircle size={13} /> {replyText}</p>;
+                })()}
                 <DriverAvailabilityContactActions
                   distanceKm={match?.distanceKm ?? null}
                   jobId={job.id}

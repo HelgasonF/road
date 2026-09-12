@@ -4,7 +4,7 @@ import { getAuthenticatedLandingPath } from "@/features/auth/routing";
 import { getCustomerIntakeLinkSummaries } from "@/features/customer-intake/queries";
 import { DispatcherWorkspace } from "@/features/dispatch/dispatcher-workspace";
 import { demoJobMatches, demoJobs } from "@/features/jobs/demo-data";
-import { getJobOperatorMatches, getJobs } from "@/features/jobs/queries";
+import { getJobOperatorMatches, getJobs, getJobWhatsAppReplies } from "@/features/jobs/queries";
 import { demoCapabilities, demoOperators } from "@/features/operators/demo-data";
 import { getCapabilities, getOperators } from "@/features/operators/queries";
 import { getVerifiedSession } from "@/lib/auth/session";
@@ -38,14 +38,15 @@ export default async function Home({
   if (identity.role === "driver") redirect(getAuthenticatedLandingPath(identity) ?? "/login");
   if (identity.role !== "dispatcher" && identity.role !== "admin") redirect("/login");
 
-  const [operators, capabilities, jobs, jobMatches, customerLinks] = demoMode
-    ? [demoOperators, demoCapabilities, demoJobs, demoJobMatches, []]
+  const [operators, capabilities, jobs, jobMatches, customerLinks, whatsappReplies] = demoMode
+    ? [demoOperators, demoCapabilities, demoJobs, demoJobMatches, [], []]
     : await Promise.all([
       getOperators(),
       getCapabilities(),
       getJobs(),
       getJobOperatorMatches(),
       getCustomerIntakeLinkSummaries(),
+      getJobWhatsAppReplies(),
     ]);
   const params = await searchParams;
 
@@ -59,6 +60,7 @@ export default async function Home({
       jobMatches={jobMatches}
       jobs={jobs}
       operators={operators}
+      whatsappReplies={whatsappReplies}
     />
   );
 }

@@ -108,8 +108,14 @@ async function reserveMessage(
   }).single();
 
   if (error || !data) {
-    const code = error?.code === "23505" ? "idempotency_conflict" : "message_reservation_failed";
-    throw new FunctionFailure(error?.code === "23505" ? 409 : 400, code);
+    const optedOut = error?.code === "P0001"
+      && error.message === "Recipient has opted out of WhatsApp messages";
+    const code = error?.code === "23505"
+      ? "idempotency_conflict"
+      : optedOut
+        ? "recipient_opted_out"
+        : "message_reservation_failed";
+    throw new FunctionFailure(error?.code === "23505" || optedOut ? 409 : 400, code);
   }
   return data as ReservedMessage;
 }

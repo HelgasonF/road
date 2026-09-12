@@ -50,8 +50,9 @@ These are separate assets and must not be confused:
 - This is the WABA currently configured in the Supabase WhatsApp secrets.
 - The deployed `whatsapp-send-v1` function delivered a fresh `hello_world` template to a physical phone and the hosted webhook advanced it through `sent` and `read`.
 - Plain **Laus** was stored as `available`; quoted **Ekki laus** was stored as `unavailable` and correlated to the exact outbound request. An identical retry was deduplicated without a second send, and a changed payload under the same key was rejected with HTTP 409. See [`docs/whatsapp-sandbox-phone-audit-2026-09-11.md`](whatsapp-sandbox-phone-audit-2026-09-11.md).
-- The staff-only management function submitted `vegstod_customer_intake_v1`, `vegstod_driver_availability_v1`, and `vegstod_driver_assignment_v1` in `en_US`; their Meta IDs and current states are recorded in `docs/implementation-status.md`. All three remained pending at 00:23 on 12 September.
+- The staff-only management function submitted `vegstod_customer_intake_v1`, `vegstod_driver_availability_v1`, and `vegstod_driver_assignment_v1` in `en_US`; their Meta IDs and current states are recorded in `docs/implementation-status.md`. A fresh API inspection still reported all three as pending at 00:54 on 12 September.
 - The dispatcher UI is wired to send those templates through `whatsapp-send-v1` while keeping its manual `wa.me` fallback. The customer and assignment buttons carry only the expiring Vegstoð token suffix; exact locations, customer details, and photos remain inside Vegstoð.
+- The main matching list and staff timeline now surface correlated replies and Meta-confirmed delivery state without changing assignments. Signed STOP/START equivalents maintain the current contact preference, and the database rejects opted-out sends before Meta delivery.
 - Keep this working sandbox intact until the real account passes its complete phone test.
 
 ## Meta MCP connection
@@ -100,7 +101,7 @@ Meta may still require verification of the tow-truck company's own business port
 1. Keep the original app, real WABA, and working sandbox; stop the replacement app's Tech Provider flow.
 2. Keep the deployed idempotent outbound ledger, normalized webhook status/reply processor, and manual `wa.me` actions intact.
 3. Wait for Meta to approve the three submitted operational templates; their names and `en_US` language are already configured as Supabase secrets.
-4. Deploy the completed operational interface actions and run their full sandbox paths. The generic physical-phone send/read/reply/idempotency path and local fallback pass already succeed; provider rejection, ambiguous-delivery UI, opt-out, and hosted fallback behavior still need operational verification.
+4. Run the approved templates through their full sandbox phone paths. The generic physical-phone send/read/reply/idempotency path, local and hosted fallback, provider rejection, delivery/reply timeline, and opt-out guard already pass.
 5. Immediately before cutover, export any WhatsApp Business phone-app chats the owner needs to retain.
 6. Release `+354 853 7704` from the WhatsApp Business phone app and register that same number directly in Cloud API with Meta's SMS/voice code.
 7. Subscribe production WABA `931911699982634` to the existing signed webhook, switch the active Phone Number ID only after verification, and run the full physical-phone customer and driver workflow.

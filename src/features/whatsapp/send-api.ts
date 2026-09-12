@@ -37,6 +37,7 @@ const whatsappErrors: Record<string, string> = {
   authentication_required: "Innskráning rann út. Skráðu þig inn aftur.",
   configuration_error: "WhatsApp-sniðmátið er ekki tilbúið. Notaðu handvirka sendingu.",
   delivery_unknown: "Óvíst er hvort WhatsApp tók við skilaboðunum. Athugaðu stöðuna áður en þú reynir aftur.",
+  recipient_opted_out: "Viðtakandinn hefur afþakkað WhatsApp-skilaboð. Notaðu símtal eða aðra samþykkta leið.",
   staff_access_required: "Aðeins starfsfólk getur sent WhatsApp-skilaboð.",
   whatsapp_provider_rejected: "WhatsApp hafnaði sjálfvirku sendingunni. Notaðu handvirka sendingu.",
 };

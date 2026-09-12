@@ -40,7 +40,7 @@ digraph vegstod_system {
   customer_contact [label="1 · VIÐSKIPTAVINUR\nHringir eða sendir WhatsApp\ntil Vegstoðar", fillcolor="#EEF5FF", color="#6B95C9"];
   create_job [label="2 · VEGSTOÐ / MÓTTAKA\nBýr til verkefni með síma\nog upphafsstað", fillcolor="#ECF4F1", color="#4F8B7B"];
   create_link [label="3 · VEGSTOÐ / MÓTTAKA\nBýr til öruggan 24 klst.\nviðskiptavinatengil", fillcolor="#ECF4F1", color="#4F8B7B"];
-  wa_customer [label="4 · WHATSAPP\nSenda í WhatsApp opnar skráð númer\nmeð enskum texta + tengli", fillcolor="#E8F7EE", color="#25A85E", fontcolor="#087543"];
+  wa_customer [label="4 · WHATSAPP CLOUD API\nSamþykkt sniðmát sendir öruggan\ntengil á skráð númer", fillcolor="#E8F7EE", color="#25A85E", fontcolor="#087543"];
   customer_form [label="5 · VIÐSKIPTAVINUR\nOpnar tengilinn\nEngin innskráning", fillcolor="#EEF5FF", color="#6B95C9"];
 
   customer_submit [label="6 · VIÐSKIPTAVINUR\nStaðfestir GPS/kortapinna\n+ bíl + vandamál + myndir", fillcolor="#EEF5FF", color="#6B95C9"];
@@ -88,7 +88,7 @@ digraph vegstod_system {
   provider_paid -> settled [label=" þjónustuaðili greiddur"];
 
   whatsapp_note [
-    label="WHATSAPP ER AÐEINS SAMSKIPTALEIÐ\n• Móttaka yfirfer texta og ýtir sjálf á Senda\n• Eyðublað, staðsetning og myndir fara inn í Vegstoð\n• Ökumaður sér gögnin í Vegstoð eftir úthlutun\n• Ekkert greitt WhatsApp Business API er nauðsynlegt",
+    label="WHATSAPP ER AÐEINS SAMSKIPTALEIÐ\n• Cloud API sendir samþykkt sniðmát og örugga tengla\n• Eyðublað, staðsetning og myndir fara inn í Vegstoð\n• Ökumaður sér gögnin í Vegstoð eftir úthlutun\n• Handvirk sending og símtal eru áfram varaleiðir",
     shape=note,
     width=3.65,
     fillcolor="#FFFFFF",

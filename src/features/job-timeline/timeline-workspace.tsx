@@ -41,6 +41,7 @@ function EventIcon({ event }: { event: JobTimelineEvent }) {
   if (event.id.startsWith("photo-")) return <Camera size={17} />;
   if (event.id.startsWith("customer-link-")) return <Link2 size={17} />;
   if (event.id.startsWith("contact-")) return <MessageCircle size={17} />;
+  if (event.id.startsWith("whatsapp-")) return <MessageCircle size={17} />;
   if (event.id.startsWith("assignment-")) return <Truck size={17} />;
   if (event.category === "billing") return <ReceiptText size={17} />;
   if (event.category === "customer") return <UserRound size={17} />;
@@ -102,7 +103,7 @@ export function TimelineWorkspace({ data, identity }: TimelineWorkspaceProps) {
           <ShieldCheck size={19} />
           <div>
             <strong>Raunverulegur kerfisferill</strong>
-            <p>Hér birtast skráðar aðgerðir úr verkefni, viðskiptavinatengli, úthlutun og uppgjöri. WhatsApp- og símaatburðir sýna að drög eða símatengill voru opnuð; ytri þjónustan staðfestir ekki sendingu eða samtal.</p>
+            <p>Hér birtast skráðar aðgerðir úr verkefni, viðskiptavinatengli, úthlutun og uppgjöri. API-sendingar sýna staðfestingar frá WhatsApp; handvirkir WhatsApp- og símaatburðir sýna aðeins að tengill var opnaður.</p>
           </div>
         </section>
 

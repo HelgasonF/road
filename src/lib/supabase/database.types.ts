@@ -157,6 +157,21 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      whatsapp_contact_preferences: {
+        Row: {
+          recipient_phone: string;
+          status: "allowed" | "opted_out";
+          opted_out_at: string | null;
+          opted_in_at: string | null;
+          source_inbound_message_id: string;
+          effective_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       whatsapp_webhook_events: {
         Row: {
           id: string;

@@ -33,6 +33,9 @@ export function buildDemoJobTimelinePageData(job: Job): JobTimelinePageData {
     }] : [],
     contactEvents: [],
     billingEvents: [],
+    whatsappOutbound: [],
+    whatsappDeliveries: [],
+    whatsappReplies: [],
   };
 
   return {
