@@ -1,10 +1,10 @@
 # Road / Vegstoð maintenance handoff
 
-Updated: 11 September 2026 (Atlantic/Reykjavik)
+Updated: 12 September 2026 (Atlantic/Reykjavik)
 
 This is the current resume point for local work and the hosted preview.
 
-The active Meta WhatsApp/MCP setup has a dedicated restart-safe checkpoint in [`docs/meta-mcp-resume-2026-09-11.md`](meta-mcp-resume-2026-09-11.md). Read it before changing a Meta app, WABA, phone number, System User, webhook, or Supabase WhatsApp secret.
+The active WhatsApp production setup has a dated, restart-safe checkpoint in [`docs/whatsapp-production-handoff-2026-09-12.md`](whatsapp-production-handoff-2026-09-12.md). It records the exact manual templates, code parameter order, Meta assets, Step 2/Step 3 state, direct Cloud API decision, and remaining cutover work. Read it before changing a Meta app, template, WABA, phone number, payment setting, webhook, or Supabase WhatsApp secret. The earlier [`docs/meta-mcp-resume-2026-09-11.md`](meta-mcp-resume-2026-09-11.md) remains supporting history.
 
 ## Resume from the correct repository
 
@@ -155,7 +155,9 @@ Relevant files include:
 - Customer intake section 2 now uses a common vehicle-brand dropdown with an **Other** free-text fallback, an optional rental-company field, and a required count of people involved. The last two values have dedicated hosted job columns and appear on both the dispatcher and driver screens.
 - Customer-link expiry timestamps use an explicit Iceland UTC format shared by the dispatcher panel and public form. This prevents the server/browser locale mismatch found during the hosted form review.
 - The WhatsApp Cloud API backend is deployed on the sandbox sender. A physical-phone pass proved outbound acceptance, `sent`/`read` webhooks, **Laus**/**Ekki laus** classification, quoted-reply correlation, identical-request deduplication, and changed-payload conflict rejection. See [`docs/whatsapp-sandbox-phone-audit-2026-09-11.md`](whatsapp-sandbox-phone-audit-2026-09-11.md).
-- Three fixed `en_US` operational templates are submitted to the sandbox WABA and configured in Supabase: `vegstod_customer_intake_v1`, `vegstod_driver_availability_v1`, and `vegstod_driver_assignment_v1`. A fresh API inspection at 00:54 on 12 September still reported all three as pending Meta review. The customer and assignment templates use dynamic secure-link buttons; availability uses quick replies.
+- The three earlier API-created `vegstod_*` templates were wrong and were deleted in Meta. Their creation action was removed from `whatsapp-management-v1`, and the revised function was redeployed so they cannot be recreated through that endpoint. The replacement manual `en_US` names configured in Supabase are `iceland_road_assistance_customer_intake_v1`, `iceland_road_assistance_driver_availability_v1`, and `iceland_road_assistance_driver_assignment_v1`. The exact reviewed content, samples, buttons, runtime parameter order, and last confirmed submission state are in the dated WhatsApp production handoff.
+- Driver template prose remains English because Meta exposes English as `en_US`, while Vegstoð now supplies Icelandic assistance and priority values such as `Dráttur` and `Venjulegur`; a missing distance is `Ekki reiknað`.
+- Meta for Developers Step 2 showed webhooks, number registration for the current setup, and the generic message test complete; only the payment item was unchecked. Business verification remains a separate Step 3. Embedded Signup Builder is not used for this direct, single-company Cloud API integration.
 - The dispatcher interface now calls `whatsapp-send-v1` for phone-only customer intake, replacement customer links, driver availability requests, and assigned-driver access links. The matching list shows the latest correlated availability reply, while the staff timeline shows API acceptance, delivery, read/failure state, and inbound replies separately from manual contact-link events.
 - Local function unavailability and a hosted Meta `132001` pending-template rejection both preserved the new job/link and showed the manual WhatsApp fallback without application-console errors. The disposable local and hosted jobs plus the hosted failed ledger row were removed.
 - Signed `STOP`/`HÆTTA` and `START`/`BYRJA` messages maintain one source-linked preference per normalized phone. A database trigger blocks opted-out sends before Meta delivery and ignores delayed older preference webhooks. The two additive migrations, function error mapping, 273 pgTAP assertions, and disposable hosted STOP/START/order checks all passed; their test rows were removed.
@@ -167,7 +169,7 @@ The current application code was fully checked on 12 September 2026:
 - `npm run build` passed.
 - `npm run typecheck` passed.
 - `npm run lint` passed.
-- `npm test` passed all 165 tests across 32 Vitest files.
+- `npm test` passed all 164 tests across 32 Vitest files after the obsolete API-template-creation test was removed.
 - `npx supabase test db` passed all 273 assertions across twelve pgTAP files after a clean local database reset.
 - `npx supabase db lint --local --schema public` reported no application-schema errors.
 - `git diff --check` passed.
@@ -180,8 +182,9 @@ The local, hosted desktop, and public physical-phone workflows are verified, but
 
 1. Let the owner inspect the retained phone-audit and Alli demonstration jobs, then remove each dataset's Storage objects, job relationships, jobs, driver Auth users, and providers using its owner-only manifest.
 2. Replace the simplified administrator testing password with a unique production password before launch, and remove the linked WhatsApp Web device if it should not remain connected.
-3. Wait for Meta to approve the three submitted operational templates, then complete the hosted customer, availability-reply, and assignment/access sandbox phone pass documented in `docs/implementation-status.md`.
-4. Complete the launch checklist and only then create a production deployment. Upgrade the same Supabase project later when operating requirements justify it.
-5. Select accounting, invoicing, payment, refund/credit-note, provider-payment, and reconciliation integrations after the accountant confirms the Icelandic requirements; customer payment links should use the Cloud API with the manual WhatsApp handoff as fallback.
+3. Follow [`docs/whatsapp-production-handoff-2026-09-12.md`](whatsapp-production-handoff-2026-09-12.md): verify the manual template records, have the company owner add the correct WABA payment method and complete business verification, then test the approved templates on the sandbox phone.
+4. Back up any required WhatsApp Business phone-app chats, directly register `+354 853 7704` for Cloud API, connect the real WABA to the existing app/webhook, switch the active server-side identifiers, and complete the physical-phone production test. Embedded Signup Builder is not part of this route.
+5. Complete the launch checklist and only then create a production deployment. Upgrade the same Supabase project later when operating requirements justify it.
+6. Select accounting, invoicing, payment, refund/credit-note, provider-payment, and reconciliation integrations after the accountant confirms the Icelandic requirements; customer payment links should use the Cloud API with the manual WhatsApp handoff as fallback.
 
 Do not treat the preview as a production release or the current billing ledger as a legal invoice issuer or payment processor.

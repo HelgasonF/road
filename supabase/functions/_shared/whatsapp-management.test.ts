@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
-  ensureOperationalMessageTemplates,
   ensureMessagesWebhookSubscription,
   inspectWhatsAppBusinessAccount,
 } from "./whatsapp-management";
@@ -24,69 +23,6 @@ function response(body: unknown, status = 200) {
 }
 
 describe("WhatsApp webhook management", () => {
-  it("creates only missing fixed operational templates", async () => {
-    const fetcher = vi.fn()
-      .mockResolvedValueOnce(response({ data: [] }))
-      .mockResolvedValueOnce(response({ id: "template-customer", status: "PENDING", category: "UTILITY" }))
-      .mockResolvedValueOnce(response({
-        data: [{
-          id: "template-availability",
-          name: "vegstod_driver_availability_v1",
-          language: "en_US",
-          status: "APPROVED",
-          category: "UTILITY",
-        }],
-      }))
-      .mockResolvedValueOnce(response({ data: [] }))
-      .mockResolvedValueOnce(response({ id: "template-assignment", status: "PENDING", category: "UTILITY" }));
-
-    await expect(ensureOperationalMessageTemplates(config, fetcher)).resolves.toEqual({
-      templates: [
-        {
-          id: "template-customer",
-          name: "vegstod_customer_intake_v1",
-          language: "en_US",
-          status: "PENDING",
-          category: "UTILITY",
-          created: true,
-        },
-        {
-          id: "template-availability",
-          name: "vegstod_driver_availability_v1",
-          language: "en_US",
-          status: "APPROVED",
-          category: "UTILITY",
-          created: false,
-        },
-        {
-          id: "template-assignment",
-          name: "vegstod_driver_assignment_v1",
-          language: "en_US",
-          status: "PENDING",
-          category: "UTILITY",
-          created: true,
-        },
-      ],
-    });
-
-    expect(fetcher).toHaveBeenCalledTimes(5);
-    const customerCreate = JSON.parse(String(fetcher.mock.calls[1][1].body));
-    expect(customerCreate).toMatchObject({
-      name: "vegstod_customer_intake_v1",
-      category: "UTILITY",
-      language: "en_US",
-    });
-    expect(customerCreate.components[2].buttons[0]).toEqual({
-      type: "URL",
-      text: "Open secure request",
-      url: "https://vegstod.vercel.app/customer/{{1}}",
-      example: ["example-token"],
-    });
-    const availabilityQuery = new URL(String(fetcher.mock.calls[2][0]));
-    expect(availabilityQuery.searchParams.get("name")).toBe("vegstod_driver_availability_v1");
-    expect(fetcher.mock.calls[2][1]).toMatchObject({ method: "GET" });
-  });
-
   it("subscribes the messages field and the app to the WABA", async () => {
     const fetcher = vi.fn()
       .mockResolvedValueOnce(response({ success: true }))

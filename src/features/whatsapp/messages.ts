@@ -1,26 +1,6 @@
 import { toDriverContactArea } from "@/features/jobs/driver-contact";
 import type { CapabilityCode, JobPriority } from "@/lib/domain/types";
-
-const capabilityLabelsEn: Record<CapabilityCode, string> = {
-  towing: "Towing",
-  flatbed: "Flatbed transport",
-  jump_start: "Jump start",
-  tire_assistance: "Tire assistance",
-  fuel_delivery: "Fuel delivery",
-  lockout: "Vehicle lockout",
-  four_by_four_recovery: "4x4 recovery",
-  ev_assistance: "Electric vehicle assistance",
-  accident_recovery: "Accident recovery",
-  heavy_vehicle: "Heavy vehicle assistance",
-  other: "Other assistance",
-};
-
-const priorityLabelsEn: Record<JobPriority, string> = {
-  low: "Low",
-  normal: "Normal",
-  high: "High",
-  urgent: "Urgent",
-};
+import { capabilityLabels, jobPriorityLabels } from "@/lib/i18n/is";
 
 export interface DriverTemplateSummary {
   driverName: string;
@@ -33,14 +13,14 @@ export function buildDriverTemplateBodyParameters(summary: DriverTemplateSummary
   return [
     summary.driverName.replace(/\s+/g, " ").trim(),
     toDriverContactArea(summary.locationLabel),
-    summary.requiredCapabilities.map((code) => capabilityLabelsEn[code]).join(", "),
-    priorityLabelsEn[summary.priority],
+    summary.requiredCapabilities.map((code) => capabilityLabels[code]).join(", "),
+    jobPriorityLabels[summary.priority],
   ];
 }
 
 export function formatDriverTemplateDistance(distanceKm: number | null) {
   if (distanceKm === null || !Number.isFinite(distanceKm) || distanceKm < 0) {
-    return "Not calculated";
+    return "Ekki reiknað";
   }
   return `${Math.round(distanceKm * 10) / 10} km`;
 }

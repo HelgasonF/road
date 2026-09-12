@@ -45,7 +45,7 @@ describe("WhatsApp send Edge Function client", () => {
       operatorId: "10000000-0000-4000-8000-000000000001",
       purpose: "driver_availability" as const,
       recipientPhone: "5550104",
-      bodyParameters: ["Jon", "Hella", "Towing", "Normal", "12 km"],
+      bodyParameters: ["Jón", "Hella", "Dráttur", "Venjulegur", "12 km"],
     };
 
     await expect(invokeWhatsAppSendFunction(request)).resolves.toEqual({

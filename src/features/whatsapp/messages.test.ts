@@ -8,7 +8,7 @@ import {
 } from "./messages";
 
 describe("WhatsApp operational template values", () => {
-  it("builds English driver parameters without exposing a house number", () => {
+  it("builds Icelandic driver parameters without exposing a house number", () => {
     expect(buildDriverTemplateBodyParameters({
       driverName: "  Jón   Einarsson ",
       locationLabel: "Suðurlandsvegur 12, Hvolsvöllur, Ísland",
@@ -17,14 +17,14 @@ describe("WhatsApp operational template values", () => {
     })).toEqual([
       "Jón Einarsson",
       "Suðurlandsvegur, Hvolsvöllur, Ísland",
-      "Towing, Tire assistance",
-      "Urgent",
+      "Dráttur, Dekkjaskipti",
+      "Brýnt",
     ]);
   });
 
   it("formats the distance parameter", () => {
     expect(formatDriverTemplateDistance(12.26)).toBe("12.3 km");
-    expect(formatDriverTemplateDistance(null)).toBe("Not calculated");
+    expect(formatDriverTemplateDistance(null)).toBe("Ekki reiknað");
   });
 
   it("round trips the private driver token through a URL-safe button code", () => {
