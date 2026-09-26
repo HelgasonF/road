@@ -27,9 +27,14 @@ export function buildContactLinks(phone: string): ContactLinks {
     whatsappDigits = digits.slice(2);
   } else if (digits.length === ICELAND_LOCAL_NUMBER_LENGTH) {
     whatsappDigits = `${ICELAND_COUNTRY_CODE}${digits}`;
-  } else if (digits.length >= 8) {
+  } else if (
+    digits.length === ICELAND_COUNTRY_CODE.length + ICELAND_LOCAL_NUMBER_LENGTH
+    && digits.startsWith(ICELAND_COUNTRY_CODE)
+  ) {
     whatsappDigits = digits;
   }
+  // Any other number needs an explicit + or 00 prefix; guessing its country
+  // code would address the WhatsApp draft to the wrong person.
 
   if (!whatsappDigits || whatsappDigits.length > E164_MAX_DIGITS) {
     whatsappDigits = null;

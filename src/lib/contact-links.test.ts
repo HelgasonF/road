@@ -18,6 +18,20 @@ describe("buildContactLinks", () => {
     expect(buildContactLinks(phone)).toEqual({ callHref, whatsappHref });
   });
 
+  it("accepts an Icelandic number written with the country code but without +", () => {
+    expect(buildContactLinks("354 659 7003")).toEqual({
+      callHref: "tel:3546597003",
+      whatsappHref: "https://wa.me/3546597003",
+    });
+  });
+
+  it.each(["91234567", "4915112345678", "06597003"])(
+    "does not guess a country code for a non-Icelandic number without + or 00: %s",
+    (phone) => {
+      expect(buildContactLinks(phone).whatsappHref).toBeNull();
+    },
+  );
+
   it("keeps calling available when a short number cannot form a WhatsApp address", () => {
     expect(buildContactLinks("112")).toEqual({
       callHref: "tel:112",

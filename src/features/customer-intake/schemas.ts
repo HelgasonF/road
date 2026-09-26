@@ -32,7 +32,7 @@ export const customerIntakeSchema = z.object({
 export const quickCustomerIntakeJobSchema = z.object({
   customerPhone: phoneSchema.refine(
     (value) => buildContactLinks(value).whatsappHref !== null,
-    "Enter a telephone number that WhatsApp can open.",
+    "Sláðu inn 7 stafa íslenskt númer eða erlent númer með + og landsnúmeri.",
   ),
 });
 
