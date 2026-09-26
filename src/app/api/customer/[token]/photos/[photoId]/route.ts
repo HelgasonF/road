@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getActiveCustomerLinkByToken } from "@/features/customer-intake/queries";
+import { customerLinkRequestAllowed } from "@/features/customer-intake/rate-limit";
 import { hasSupabaseAdminConfig } from "@/lib/config";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -12,6 +13,10 @@ export async function GET(
   const { token, photoId } = await params;
   if (!z.uuid().safeParse(photoId).success || !hasSupabaseAdminConfig()) {
     return new NextResponse("Not found", { status: 404 });
+  }
+
+  if (!(await customerLinkRequestAllowed())) {
+    return new NextResponse("Too many requests", { status: 429, headers: { "Retry-After": "600" } });
   }
 
   const link = await getActiveCustomerLinkByToken(token);

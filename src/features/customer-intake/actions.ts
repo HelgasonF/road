@@ -18,6 +18,7 @@ import {
   quickCustomerIntakeJobSchema,
 } from "./schemas";
 import { getActiveCustomerLinkByToken } from "./queries";
+import { customerLinkRequestAllowed, customerRateLimitError } from "./rate-limit";
 import { createCustomerIntakeToken, hashCustomerIntakeToken } from "./tokens";
 
 const PHOTO_BUCKET = "job-photos";
@@ -122,6 +123,7 @@ export async function revokeCustomerIntakeLinkAction(input: unknown): Promise<Ac
 }
 
 export async function submitCustomerIntakeAction(input: unknown): Promise<ActionResult> {
+  if (!(await customerLinkRequestAllowed())) return { ok: false, error: customerRateLimitError };
   const parsed = customerIntakeSchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -161,6 +163,7 @@ export async function submitCustomerIntakeAction(input: unknown): Promise<Action
 export async function prepareCustomerPhotoUploadAction(
   input: unknown,
 ): Promise<ActionResult<{ photoId: string; path: string; uploadToken: string }>> {
+  if (!(await customerLinkRequestAllowed())) return { ok: false, error: customerRateLimitError };
   const parsed = customerPhotoPreparationSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Unsupported photo or file larger than 10 MB." };
 
@@ -205,6 +208,7 @@ export async function prepareCustomerPhotoUploadAction(
 }
 
 export async function finalizeCustomerPhotoUploadAction(input: unknown): Promise<ActionResult> {
+  if (!(await customerLinkRequestAllowed())) return { ok: false, error: customerRateLimitError };
   const parsed = customerPhotoMutationSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Invalid photo." };
 
@@ -241,6 +245,7 @@ export async function finalizeCustomerPhotoUploadAction(input: unknown): Promise
 }
 
 export async function removeCustomerPhotoAction(input: unknown): Promise<ActionResult> {
+  if (!(await customerLinkRequestAllowed())) return { ok: false, error: customerRateLimitError };
   const parsed = customerPhotoMutationSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Invalid photo." };
 

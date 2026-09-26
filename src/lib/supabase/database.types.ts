@@ -730,6 +730,10 @@ export type Database = {
         Args: { p_link_id: string };
         Returns: undefined;
       };
+      consume_rate_limit: {
+        Args: { p_bucket: string; p_limit: number; p_window_seconds: number };
+        Returns: boolean;
+      };
       submit_customer_intake: {
         Args: {
           p_token_hash: string;

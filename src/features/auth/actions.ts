@@ -4,11 +4,15 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { hasSupabaseConfig, isDemoMode } from "@/lib/config";
+import { consumeRateLimit, requestAddress } from "@/lib/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { driverAccessTokenSchema } from "./driver-access";
 
 export type LoginState = { error?: string };
 export type DriverAccessState = { error?: string };
+
+const LOGIN_ATTEMPT_LIMIT = 10;
+const LOGIN_WINDOW_SECONDS = 15 * 60;
 
 const loginSchema = z.object({
   email: z.email().trim(),
@@ -29,6 +33,15 @@ export async function loginAction(
 
   if (!parsed.success) {
     return { error: "Sláðu inn gilt netfang og lykilorð." };
+  }
+
+  const address = await requestAddress();
+  const withinLimits = await Promise.all([
+    consumeRateLimit(`login:ip:${address}`, LOGIN_ATTEMPT_LIMIT, LOGIN_WINDOW_SECONDS),
+    consumeRateLimit(`login:email:${parsed.data.email.toLowerCase()}`, LOGIN_ATTEMPT_LIMIT, LOGIN_WINDOW_SECONDS),
+  ]);
+  if (withinLimits.includes(false)) {
+    return { error: "Of margar innskráningartilraunir. Reyndu aftur eftir nokkrar mínútur." };
   }
 
   const supabase = await createClient();
