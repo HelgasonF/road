@@ -126,7 +126,7 @@ describe("job timeline", () => {
     expect(contact).toMatchObject({
       category: "driver",
       title: "WhatsApp-drög opnuð fyrir Bjarni Driver",
-      description: "Fyrirspurn um framboð. Vegstoð getur ekki staðfest hvort skilaboðin voru send.",
+      description: "Fyrirspurn um framboð. Iceland Road Assistance getur ekki staðfest hvort skilaboðin voru send.",
     });
   });
 

@@ -84,7 +84,7 @@ export function BillingWorkspace({ billingCases, demoMode, events, identity, ini
   return (
     <main className="billing-app">
       <header className="topbar billing-topbar">
-        <div className="brand-lockup"><span className="brand-mark"><MapPinned size={22} /></span><span><strong>Vegstoð</strong><small>Uppgjör og reikningar</small></span></div>
+        <div className="brand-lockup"><span className="brand-mark"><MapPinned size={22} /></span><span><strong>Iceland Road Assistance</strong><small>Uppgjör og reikningar</small></span></div>
         <nav className="billing-nav" aria-label="Aðalvalmynd">
           <Link href="/"><BriefcaseBusiness size={16} /> Aðgerðastjórn</Link>
           <Link className="billing-nav-active" href="/billing"><ReceiptText size={16} /> Uppgjör</Link>
@@ -97,7 +97,7 @@ export function BillingWorkspace({ billingCases, demoMode, events, identity, ini
       </header>
 
       <section className="billing-overview">
-        <div className="billing-overview-heading"><p className="eyebrow">Fjármálaflæði</p><h1>Uppgjör verkefna</h1><p>Greiðandi greiðir Vegstoð. Vegstoð gerir síðan upp við þjónustuaðila.</p></div>
+        <div className="billing-overview-heading"><p className="eyebrow">Fjármálaflæði</p><h1>Uppgjör verkefna</h1><p>Greiðandi greiðir Iceland Road Assistance. Iceland Road Assistance gerir síðan upp við þjónustuaðila.</p></div>
         <div className="billing-metrics">
           <article><span className="billing-metric-icon metric-warning"><ShieldAlert size={19} /></span><div><small>Vantar upplýsingar</small><strong>{missingCount}</strong></div></article>
           <article><span className="billing-metric-icon metric-ready"><FileClock size={19} /></span><div><small>Til reiknings</small><strong>{readyCount}</strong></div></article>

@@ -7,7 +7,7 @@ import type {
 } from "@/lib/domain/types";
 
 export const is = {
-  appName: "Vegstoð",
+  appName: "Iceland Road Assistance",
   appTagline: "Aðgerðastjórn um allt Ísland",
   operators: "Þjónustuaðilar",
   operator: "Þjónustuaðili",
@@ -73,7 +73,7 @@ export const is = {
   email: "Netfang",
   password: "Lykilorð",
   loginTitle: "Aðgerðastjórn",
-  loginIntro: "Skráðu þig inn til að stýra þjónustuneti Vegstoðar.",
+  loginIntro: "Skráðu þig inn til að stýra þjónustuneti Iceland Road Assistance.",
   demoMode: "Sýnishamur — breytingar eru óvirkar",
   configurationNeeded: "Tengingu við Supabase vantar",
   configurationHelp: "Afritaðu .env.example í .env.local og fylltu inn verkefnisgildin.",

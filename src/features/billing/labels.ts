@@ -18,7 +18,7 @@ export const receivableStatusLabels: Record<BillingReceivableStatus, string> = {
   draft: "Drög",
   ready_to_invoice: "Tilbúið til reiknings",
   invoiced: "Reikningur útgefinn",
-  paid: "Greitt til Vegstoðar",
+  paid: "Greitt til Iceland Road Assistance",
   overdue: "Komið fram yfir gjalddaga",
   disputed: "Ágreiningur",
   refunded: "Endurgreitt",

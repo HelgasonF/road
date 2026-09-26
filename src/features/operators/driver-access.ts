@@ -12,7 +12,7 @@ export function buildDriverAccessWhatsAppMessage(driverName: string, accessUrl: 
   return [
     `Hæ ${oneLine(driverName)}.`,
     "",
-    "Hér er öruggur aðgangstengill þinn að ökumannsskjá Vegstoðar:",
+    "Hér er öruggur aðgangstengill þinn að ökumannsskjá Iceland Road Assistance:",
     accessUrl.trim(),
     "",
     "Opnaðu tengilinn og ýttu á „Opna ökumannsskjá“. Tengillinn rennur út. Ekki framsenda tengilinn.",

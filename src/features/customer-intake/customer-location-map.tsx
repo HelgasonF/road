@@ -24,6 +24,11 @@ export function CustomerLocationMap({ latitude, longitude, onPick }: CustomerLoc
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: createIcelandMapStyle(),
+      // OSM requires a Referer. Identify the site without sending the private
+      // customer URL; other requests keep the page's no-referrer policy.
+      transformRequest: (url, resourceType) => resourceType === "Tile"
+        ? { url, referrerPolicy: "strict-origin" }
+        : { url },
       center: [longitude, latitude],
       zoom: 10,
       minZoom: 4.4,

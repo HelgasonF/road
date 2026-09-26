@@ -12,7 +12,7 @@ export function buildCustomerIntakeWhatsAppMessage(customerName: string, custome
   return [
     greeting,
     "",
-    "Vegstoð has created a secure link for your roadside-assistance request.",
+    "Iceland Road Assistance has created a secure link for your roadside-assistance request.",
     "",
     instructions,
     "",

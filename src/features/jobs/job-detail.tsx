@@ -215,7 +215,7 @@ export function JobDetail({ customerLink, demoMode, job, matches, operators, onC
             <div><h3>Röðun þjónustuaðila</h3><span>{suitableCount === 1 ? "1 hentugur" : `${suitableCount} hentugir`} af {candidates.length}</span></div>
             <label><input type="checkbox" checked={suitableOnly} onChange={(event) => setSuitableOnly(event.target.checked)} /> Aðeins hentugir</label>
           </div>
-          <p className="matching-contact-note">Vegstoð sendir framboðsfyrirspurnina án upplýsinga um viðskiptavin. Handvirk WhatsApp-varaleið er tiltæk ef sjálfvirk sending tekst ekki.</p>
+          <p className="matching-contact-note">Iceland Road Assistance sendir framboðsfyrirspurnina án upplýsinga um viðskiptavin. Handvirk WhatsApp-varaleið er tiltæk ef sjálfvirk sending tekst ekki.</p>
           <div className="match-list">
             {visibleCandidates.map(({ operator, match, hasRequiredCapabilities, isSuitable, withinServiceArea }, index) => (
               <article className={`match-card ${selectedOperatorId === operator.id ? "match-card-selected" : ""}`} key={operator.id}>

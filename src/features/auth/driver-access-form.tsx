@@ -12,7 +12,7 @@ export function DriverAccessForm({ tokenHash, type }: { tokenHash: string; type:
     <form action={action} className="login-form">
       <input name="tokenHash" type="hidden" value={tokenHash} />
       <input name="type" type="hidden" value={type} />
-      <p className="login-intro">Ýttu á hnappinn til að opna öruggan ökumannsskjá Vegstoðar.</p>
+      <p className="login-intro">Ýttu á hnappinn til að opna öruggan ökumannsskjá Iceland Road Assistance.</p>
       {state.error ? <p className="form-error" role="alert">{state.error}</p> : null}
       <button className="primary-button login-button" type="submit" disabled={pending}>
         {pending ? "Opna…" : "Opna ökumannsskjá"}

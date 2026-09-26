@@ -42,13 +42,13 @@ function contactCopy(
   if (channel === "whatsapp") {
     return {
       title: `WhatsApp-drög opnuð fyrir ${operatorName}`,
-      description: `${purposeCopy}. Vegstoð getur ekki staðfest hvort skilaboðin voru send.`,
+      description: `${purposeCopy}. Iceland Road Assistance getur ekki staðfest hvort skilaboðin voru send.`,
     };
   }
 
   return {
     title: `Símatengill opnaður fyrir ${operatorName}`,
-    description: `${purposeCopy}. Vegstoð getur ekki staðfest hvort símtalið tengdist.`,
+    description: `${purposeCopy}. Iceland Road Assistance getur ekki staðfest hvort símtalið tengdist.`,
   };
 }
 

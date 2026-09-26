@@ -36,7 +36,7 @@ const copy = {
   en: {
     eyebrow: "Secure roadside assistance link",
     title: "Confirm your details",
-    intro: "Share the exact location, vehicle information, assistance needed and photos with Vegstoð dispatch.",
+    intro: "Share the exact location, vehicle information, assistance needed and photos with Iceland Road Assistance dispatch.",
     contact: "Your contact information",
     name: "Full name",
     phone: "Telephone number including country code",
@@ -69,12 +69,12 @@ const copy = {
     uploading: "Uploading securely…",
     submit: "Send details securely",
     sending: "Sending…",
-    privacy: "Photos are private and available only to Vegstoð staff and the assigned driver.",
+    privacy: "Photos are private and available only to Iceland Road Assistance staff and the assigned driver.",
   },
   is: {
     eyebrow: "Öruggur tengill fyrir vegaaðstoð",
     title: "Staðfestu upplýsingarnar",
-    intro: "Sendu nákvæma staðsetningu, upplýsingar um ökutækið, aðstoðina sem þarf og myndir til aðgerðastjórnar Vegstoðar.",
+    intro: "Sendu nákvæma staðsetningu, upplýsingar um ökutækið, aðstoðina sem þarf og myndir til aðgerðastjórnar Iceland Road Assistance.",
     contact: "Samskiptaupplýsingar",
     name: "Fullt nafn",
     phone: "Símanúmer með landskóða",
@@ -107,7 +107,7 @@ const copy = {
     uploading: "Hleð upp á öruggan hátt…",
     submit: "Senda upplýsingar örugglega",
     sending: "Sendi…",
-    privacy: "Myndir eru einkagögn og aðeins sýnilegar starfsfólki Vegstoðar og úthlutuðum ökumanni.",
+    privacy: "Myndir eru einkagögn og aðeins sýnilegar starfsfólki Iceland Road Assistance og úthlutuðum ökumanni.",
   },
 } as const;
 
@@ -293,7 +293,7 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token }: Cus
   return (
     <main className="customer-intake-page">
       <header className="customer-intake-header">
-        <div className="customer-intake-brand"><span>V</span><strong>Vegstoð</strong></div>
+        <div className="customer-intake-brand"><span aria-hidden="true">IR</span><strong>Iceland Road Assistance</strong></div>
         <div className="language-switch" aria-label="Language">
           <button className={language === "en" ? "active" : ""} type="button" onClick={() => setLanguage("en")}>English</button>
           <button className={language === "is" ? "active" : ""} type="button" onClick={() => setLanguage("is")}>Íslenska</button>

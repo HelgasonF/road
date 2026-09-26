@@ -1,6 +1,10 @@
 # WhatsApp production handoff — 12 September 2026
 
-Updated: 12 September 2026, 10:20 Atlantic/Reykjavik.
+Updated: 26 September 2026, Atlantic/Reykjavik. Original handoff: 12 September 2026.
+
+Latest result, 14 September: the [hosted end-to-end audit](whatsapp-e2e-audit-2026-09-14.md) **passed** after template approval. The corrected customer button, phone form with GPS/photo, availability reply, assignment/access, driver statuses through completion, internal billing, and timeline all worked. The three templates reached `read` with `en` and no send errors. The dispatcher still needs refresh for changes from another device. No templates or sender settings were changed in this test; the permanent sender is still undecided.
+
+Correction history, 13 September: the [sandbox audit](whatsapp-sandbox-phone-audit-2026-09-13.md) records the user's Step 2 completion, the reopened choice of permanent business number, and successful delivery of all three operational templates after changing their language settings from `en_US` to `en`. The new physical phone also passed both availability replies and driver sign-in/job acceptance. The customer template's malformed URL was corrected in place and was **In review** at 12:02 UTC; that blocker was closed by the 14 September test above. The Website URL instructions below have also been corrected.
 
 This is the authoritative restart point for the current WhatsApp work. Read it before changing a Meta template, WhatsApp Business Account, phone number, payment setting, webhook, or Supabase WhatsApp secret.
 
@@ -61,7 +65,9 @@ The owner can open the intended WABA in Meta Business Settings and use **Payment
 
 ## Manual operational templates
 
-Meta's plain **English** selection is stored as `en_US`. All three templates use category **Utility → Default**, numbered variables, no media header, and the standard 10-minute message validity period.
+Meta's plain **English** selection is stored as `en`; **English (US)** is `en_US`. The original handoff confused these languages and caused Meta error `132001`. All three manually created templates use `en` and were shown as **Active – Quality pending**, then delivered successfully on 13 September. The generic `hello_world` test remains `en_US`. [Meta language codes](https://developers.facebook.com/documentation/business-messaging/whatsapp/templates/supported-languages/)
+
+All three templates use category **Utility → Default**, numbered variables, no media header, and the standard 10-minute message validity period.
 
 The first API-created versions were wrong. They used the `vegstod_*` names, incorrect branding and incorrect button/sample configuration. The owner deleted them in Meta. They must not be recreated or referenced as active templates:
 
@@ -73,9 +79,11 @@ The replacement templates are created manually in WhatsApp Manager so every fiel
 
 ### 1. Customer intake
 
+Brand decision, 26 September: the public app name is **Iceland Road Assistance**, matching the approved Meta template. The earlier 13 September proposal for **Icelandic Road Assistance** was superseded. The body/footer below describe the approved name; no Meta branding edit is needed. Preserve the corrected Dynamic URL base and `en` language. [Meta template management](https://developers.facebook.com/documentation/business-messaging/whatsapp/templates/template-management)
+
 ```text
 Name: iceland_road_assistance_customer_intake_v1
-Language: English (en_US)
+Language: English (en)
 Category: Utility / Default
 Header: None
 
@@ -88,19 +96,19 @@ Iceland Road Assistance
 Button type: Visit website
 Button text: Open secure request
 URL type: Dynamic
-Website URL: https://vegstod.vercel.app/customer/{{1}}
+Website URL: https://vegstod.vercel.app/customer/
 Sample URL: https://vegstod.vercel.app/customer/example-token
 ```
 
-This template has no body variables. Vegstoð sends the raw customer token only as the dynamic URL-button suffix. Only the token hash is retained in PostgreSQL.
+In WhatsApp Manager's **Dynamic** URL editor, enter only the base URL above. Meta displays and appends `{{1}}` beside the input automatically. Do not type `{{1}}` into that input: this encoded it as the literal `%7B%7B1%7D%7D` before the actual token and broke the customer button. This template has no body variables. Vegstoð sends the raw customer token only as the dynamic URL-button suffix. Only the token hash is retained in PostgreSQL.
 
-The manual form was completed and visually checked. Recheck its review status in WhatsApp Manager after restart instead of relying on the status of the deleted API-created version.
+The existing customer template, ID `1005863479172773`, was corrected and resubmitted on 13 September. It was **In review** at 12:02 UTC that day. After the user reported approval on 14 September, a freshly delivered button opened the correct customer form and the complete phone submission passed. Already delivered messages from before the correction retain their old URLs.
 
 ### 2. Driver availability
 
 ```text
 Name: iceland_road_assistance_driver_availability_v1
-Language: English (en_US)
+Language: English (en)
 Category: Utility / Default
 Header: None
 
@@ -130,7 +138,7 @@ The manual form was completed and visually checked. Recheck its review status in
 
 ```text
 Name: iceland_road_assistance_driver_assignment_v1
-Language: English (en_US)
+Language: English (en)
 Category: Utility / Default
 Header: None
 
@@ -143,7 +151,7 @@ Iceland Road Assistance
 Button type: Visit website
 Button text: Open assigned job
 URL type: Dynamic
-Website URL: https://vegstod.vercel.app/driver/access?code={{1}}
+Website URL: https://vegstod.vercel.app/driver/access?code=
 Sample URL: https://vegstod.vercel.app/driver/access?code=example-token
 ```
 
@@ -156,9 +164,9 @@ Body samples and live parameter order:
 | `{{3}}` | `Dráttur` | Icelandic assistance label or comma-separated labels |
 | `{{4}}` | `Venjulegur` | Icelandic priority label |
 
-The URL button's `{{1}}` is scoped to the button and is separate from body variable `{{1}}`. Vegstoð sends a URL-safe `signup.<token>` or `magiclink.<token>` suffix created from the one-time Supabase Auth link.
+Meta's Dynamic URL editor appends the URL button's `{{1}}` automatically; enter only the base URL above. This variable is scoped to the button and is separate from body variable `{{1}}`. Vegstoð sends a URL-safe `signup.<token>` or `magiclink.<token>` suffix created from the one-time Supabase Auth link.
 
-The last captured assignment-template screen had `Akureyri` accidentally entered as the `{{3}}` sample and had an empty footer. Before submission, set `{{3}}` to `Dráttur`, enter the footer `Iceland Road Assistance`, and visually confirm every field above. The final submission/review status was not rechecked before this handoff, so do not claim it is approved or pending until WhatsApp Manager confirms it.
+The 13 September inspection confirmed that assignment template ID `2115788352358661` already has the correct `Dráttur` sample, `Iceland Road Assistance` footer, and base URL. It remained **Active – Quality pending** and required no edit. A fresh message on the new phone opened driver access, signed in the temporary driver, displayed its assigned job, and successfully saved acceptance at 12:00:47 UTC.
 
 ## Supabase configuration changed today
 
@@ -170,12 +178,12 @@ WHATSAPP_TEMPLATE_DRIVER_AVAILABILITY=iceland_road_assistance_driver_availabilit
 WHATSAPP_TEMPLATE_DRIVER_ASSIGNMENT=iceland_road_assistance_driver_assignment_v1
 ```
 
-All three corresponding language secrets are `en_US`:
+All three corresponding language secrets were corrected to `en` on 13 September. They were incorrectly set to `en_US` at the original checkpoint:
 
 ```text
-WHATSAPP_TEMPLATE_CUSTOMER_INTAKE_LANGUAGE=en_US
-WHATSAPP_TEMPLATE_DRIVER_AVAILABILITY_LANGUAGE=en_US
-WHATSAPP_TEMPLATE_DRIVER_ASSIGNMENT_LANGUAGE=en_US
+WHATSAPP_TEMPLATE_CUSTOMER_INTAKE_LANGUAGE=en
+WHATSAPP_TEMPLATE_DRIVER_AVAILABILITY_LANGUAGE=en
+WHATSAPP_TEMPLATE_DRIVER_ASSIGNMENT_LANGUAGE=en
 ```
 
 No secret token, app secret, Supabase key, or credential belongs in Git or this handoff.
@@ -192,22 +200,19 @@ No secret token, app secret, Supabase key, or credential belongs in Git or this 
 
 These changes were prepared on top of commit `10a61d8` and saved in the checkpoint commit titled `fix: align WhatsApp templates with manual setup`. Check `git log -1 --oneline` after restart for its exact hash.
 
-## Remaining order after restart
+## Remaining production cutover work
 
-1. Open WhatsApp Manager and confirm the three manual template records. Correct and submit the assignment template if its footer or `{{3}}` sample is still wrong. Record each actual Meta status and ID.
-2. Have the company owner add the payment method to the WABA that will own the production Cloud API number. Confirm the WABA shown on the payment screen.
-3. Have the owner complete Step 3 business verification with the company's real details and documents.
-4. Wait for Meta to approve all three manual templates, then run the customer-intake, availability/reply, and assignment/access flows on the sandbox phone.
-5. Immediately before production cutover, export any WhatsApp Business phone-app chats the owner wants to retain.
-6. Release `+354 853 7704` from the phone app and complete direct Cloud API registration using Meta's SMS or voice code. Do not use Embedded Signup Builder.
-7. Connect/subscribe the real WABA to the existing app and signed webhook, update the active WABA/Phone Number ID secrets, and run a physical-phone production test through Vegstoð.
-8. Keep the manual `wa.me` fallback until the owner accepts the complete production test.
+1. Preserve the three approved `en` templates and corrected URL-button bases; all three passed the 14 September sandbox-phone flow.
+2. Have the company owner add the payment method to the WABA that will own the production Cloud API number, and complete Step 3 business verification with the company's real details and documents.
+3. Select and verify the permanent company-owned sender. The earlier `+354 853 7704` candidate is not confirmed as the final choice. If reusing a WhatsApp Business phone-app number, export any chats the owner wants to retain before cutover.
+4. Register the selected number directly with Cloud API. Connect/subscribe its WABA to the existing app and signed webhook, update the active WABA/Phone Number ID secrets, and run a physical-phone production test through Iceland Road Assistance. Do not use Embedded Signup Builder.
+5. Keep the manual `wa.me` fallback until the owner accepts the complete production test.
 
 ## Evidence boundary
 
 The generic sandbox Cloud API flow already passed outbound delivery, `sent`/`read` webhook updates, Icelandic availability reply classification, reply correlation, idempotency, and duplicate prevention. The dispatcher UI and fallback paths are deployed at `https://vegstod.vercel.app`.
 
-Production is not complete until payment and business verification are accepted, the manual templates are approved and tested, and `+354 853 7704` is confirmed as the active Cloud API sender. The green Step 2 phone-number item, the sandbox test, and the existing `ON_PREMISE` real-number record are not substitutes for that final evidence.
+Production is not complete until payment and business verification are accepted and the selected company-owned number passes the real-sender Cloud API test. The templates and sandbox flow are verified, but the green Step 2 phone-number item and an existing `ON_PREMISE` number record are not substitutes for the final sender evidence.
 
 ## Checkpoint verification and deployment
 

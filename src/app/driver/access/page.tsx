@@ -8,7 +8,7 @@ import { decodeDriverAccessButtonCode } from "@/features/whatsapp/messages";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Ökumannsaðgangur | Vegstoð",
+  title: "Ökumannsaðgangur | Iceland Road Assistance",
   robots: { index: false, follow: false },
 };
 
@@ -31,7 +31,7 @@ export default async function DriverAccessPage({ searchParams }: DriverAccessPag
         <div className="brand-mark brand-mark-large" aria-hidden="true">
           <MapPinned size={30} />
         </div>
-        <p className="eyebrow">Vegstoð</p>
+        <p className="eyebrow">Iceland Road Assistance</p>
         <h1>Ökumannsaðgangur</h1>
         {tokenHash && validType ? (
           <DriverAccessForm tokenHash={tokenHash} type={validType} />

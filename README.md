@@ -1,6 +1,6 @@
-# Vegstoð dispatch
+# Iceland Road Assistance dispatch
 
-Map-centric operations software for an Icelandic roadside-assistance network. Internal identifiers are English; the dispatcher UI is Icelandic.
+Map-centric operations software for an Icelandic roadside-assistance network. The public name is Iceland Road Assistance; Vegstoð remains the internal project name and part of existing technical identifiers. Internal identifiers are English; the dispatcher UI is Icelandic.
 
 ## Local setup
 
@@ -48,7 +48,7 @@ Driver access is managed from the selected service provider in the dispatcher in
 
 1. Create the service provider, vehicles, and capabilities normally.
 2. Assign a job to the provider and press **Búa til og senda** in the assignment panel.
-3. Vegstoð creates a private one-time access link and sends it through the configured WhatsApp Cloud API template. If the API is unavailable, the same link is offered through the manual WhatsApp fallback.
+3. Iceland Road Assistance creates a private one-time access link and sends it through the configured WhatsApp Cloud API template. If the API is unavailable, the same link is offered through the manual WhatsApp fallback.
 4. The driver opens the link, confirms **Opna ökumannsskjá**, and lands on `/driver` without an email account or password.
 5. Dispatch can generate another short-lived link when needed, disable access immediately, or re-enable the same account without deleting operational data.
 
@@ -59,7 +59,7 @@ The hosted `whatsapp-webhook-v1` Supabase Edge Function verifies Meta's callback
 Customer intake starts from the **+** button in the job list:
 
 1. Enter only the caller's phone number and press **Búa til og senda WhatsApp**. Staff can switch to the full form when they want to enter every field themselves; its vehicle section uses the same registration, brand dropdown/free-text fallback, rental-company, and people-count fields as the customer form.
-2. Vegstoð atomically creates a pending job and 24-hour link, then sends the approved customer template with a secure URL button. If automatic delivery is rejected or unavailable, Vegstoð offers a prepared manual WhatsApp message using the same fresh link. The raw token is available only at creation time and only its SHA-256 hash is stored.
+2. Iceland Road Assistance atomically creates a pending job and 24-hour link, then sends the approved customer template with a secure URL button. If automatic delivery is rejected or unavailable, the app offers a prepared manual WhatsApp message using the same fresh link. The raw token is available only at creation time and only its SHA-256 hash is stored.
 3. The pending job remains visible in the list, but is omitted from the map and driver matching and cannot be assigned.
 4. The customer uses the bilingual, account-free form to enter their name, confirm GPS/map location, choose the required assistance, describe the problem, add vehicle/rental/people details, and optionally upload up to six 10 MiB photos.
 5. Submission is one-time and unlocks matching and assignment immediately. Private photos become visible to the assigned driver only after assignment.
@@ -67,12 +67,12 @@ Customer intake starts from the **+** button in the job list:
 Billing and provider settlement are handled in the separate staff-only **Uppgjör** workspace at `/billing`:
 
 1. Every job receives one billing record automatically and appears in the financial queues without adding fields to the map-centric dispatcher workspace.
-2. Staff records whether the payer is the customer, a rental company, an insurer/assistance company, or a business account. The payer always owes Vegstoð; the assigned provider never invoices the payer through this workflow.
-3. When an assigned job is completed, a complete payer draft becomes ready for a Vegstoð invoice and the provider side begins waiting for the provider's invoice.
-4. Staff records the Vegstoð invoice and incoming payment independently from the provider invoice approval and outgoing payment. A case is fully settled only after both money legs are paid.
+2. Staff records whether the payer is the customer, a rental company, an insurer/assistance company, or a business account. The payer always owes Iceland Road Assistance; the assigned provider never invoices the payer through this workflow.
+3. When an assigned job is completed, a complete payer draft becomes ready for an Iceland Road Assistance invoice and the provider side begins waiting for the provider's invoice.
+4. Staff records the Iceland Road Assistance invoice and incoming payment independently from the provider invoice approval and outgoing payment. A case is fully settled only after both money legs are paid.
 5. Invoice references, due dates, payments, disputes, refunds, voids, and detail changes create an immutable staff audit trail. Refunds and voids require explicit confirmation and remain visible in separate queues. Payer values lock after invoice issuance and the provider total locks after approval.
 
-Every job also has a staff-only **Ferill verkefnis** page at `/jobs/[jobId]/history`. It combines the job creation and status history, customer-link creation/first opening/submission, uploaded-photo metadata, driver contact attempts, assignment/acceptance/decline/reassignment, and billing audit into one newest-first view with category filters. Drivers cannot open this page or read its staff communication/financial event sources. Because normal WhatsApp and phone links leave Vegstoð, the timeline records only that the draft or phone link was opened; it never claims an external message was sent or a call connected.
+Every job also has a staff-only **Ferill verkefnis** page at `/jobs/[jobId]/history`. It combines the job creation and status history, customer-link creation/first opening/submission, uploaded-photo metadata, driver contact attempts, assignment/acceptance/decline/reassignment, and billing audit into one newest-first view with category filters. Drivers cannot open this page or read its staff communication/financial event sources. Because normal WhatsApp and phone links leave the app, the timeline records only that the draft or phone link was opened; it never claims an external message was sent or a call connected.
 
 The current billing slice is a validated ledger and workflow, not a payment processor or accounting-system integration. Recording an invoice or payment does not itself issue a legal invoice, charge a card, initiate a bank transfer, or file VAT. Those actions remain manual until a production accounting/payment integration is selected and verified.
 

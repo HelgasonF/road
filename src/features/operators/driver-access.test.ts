@@ -17,7 +17,7 @@ describe("driver WhatsApp access", () => {
       .toBe("/driver/access?token_hash=hashed%2Btoken%2Fvalue&type=magiclink");
   });
 
-  it("builds the onboarding message around WhatsApp and the private Vegstoð link", () => {
+  it("builds the onboarding message around WhatsApp and the private Iceland Road Assistance link", () => {
     const message = buildDriverAccessWhatsAppMessage(
       " Bjarni   Ólafsson ",
       "https://vegstod.is/driver/access?token_hash=secret",

@@ -202,7 +202,7 @@ function BillingDetailsForm({ billingCase, demoMode, onChanged }: Omit<BillingDe
   return (
     <form className="billing-details-form" onSubmit={submit}>
       <div className="billing-section-heading">
-        <div><p className="eyebrow">Greiðandi → Vegstoð</p><h3>Greiðandaupplýsingar</h3></div>
+        <div><p className="eyebrow">Greiðandi → Iceland Road Assistance</p><h3>Greiðandaupplýsingar</h3></div>
         <BanknoteArrowDown size={21} />
       </div>
 
@@ -224,14 +224,14 @@ function BillingDetailsForm({ billingCase, demoMode, onChanged }: Omit<BillingDe
       ) : null}
 
       <div className="billing-section-heading billing-provider-heading">
-        <div><p className="eyebrow">Vegstoð → þjónustuaðili</p><h3>Uppgjör þjónustuaðila</h3></div>
+        <div><p className="eyebrow">Iceland Road Assistance → þjónustuaðili</p><h3>Uppgjör þjónustuaðila</h3></div>
         <BanknoteArrowUp size={21} />
       </div>
       <p className="billing-provider-name"><UserRound size={16} /> {billingCase.operatorName ?? "Enginn þjónustuaðili skráður"}</p>
 
       <div className="billing-amount-grid">
-        <label className="field"><span>Greiðandi greiðir Vegstoð</span><div className="amount-input"><input name="payerAmountIsk" defaultValue={billingCase.payerAmountIsk ?? ""} disabled={demoMode || payerLocked} inputMode="numeric" min={0} step={1} type="number" /><b>kr.</b></div></label>
-        <label className="field"><span>Vegstoð greiðir þjónustuaðila</span><div className="amount-input"><input name="providerAmountIsk" defaultValue={billingCase.providerAmountIsk ?? ""} disabled={demoMode || providerLocked} inputMode="numeric" min={0} step={1} type="number" /><b>kr.</b></div></label>
+        <label className="field"><span>Greiðandi greiðir Iceland Road Assistance</span><div className="amount-input"><input name="payerAmountIsk" defaultValue={billingCase.payerAmountIsk ?? ""} disabled={demoMode || payerLocked} inputMode="numeric" min={0} step={1} type="number" /><b>kr.</b></div></label>
+        <label className="field"><span>Iceland Road Assistance greiðir þjónustuaðila</span><div className="amount-input"><input name="providerAmountIsk" defaultValue={billingCase.providerAmountIsk ?? ""} disabled={demoMode || providerLocked} inputMode="numeric" min={0} step={1} type="number" /><b>kr.</b></div></label>
         <div className="billing-margin-preview"><span>Brúttómunur</span><strong>{billingCase.payerAmountIsk !== null && billingCase.providerAmountIsk !== null ? formatIsk(billingCase.payerAmountIsk - billingCase.providerAmountIsk) : "—"}</strong><small>Ekki bókhaldslegur hagnaður; upphæðir geta innihaldið VSK.</small></div>
       </div>
 
@@ -252,7 +252,7 @@ function MoneyLegs({ billingCase, demoMode, onChanged }: Omit<BillingDetailProps
   return (
     <section className="billing-money-legs">
       <article className="billing-leg-card billing-leg-receivable">
-        <header><span><BanknoteArrowDown size={19} /></span><div><small>Greiðandi → Vegstoð</small><strong>{receivableStatusLabels[billingCase.receivableStatus]}</strong></div></header>
+        <header><span><BanknoteArrowDown size={19} /></span><div><small>Greiðandi → Iceland Road Assistance</small><strong>{receivableStatusLabels[billingCase.receivableStatus]}</strong></div></header>
         <div className="billing-leg-amount">{formatIsk(billingCase.payerAmountIsk)}</div>
         {billingCase.payerInvoiceNumber ? <dl><div><dt>Reikningur</dt><dd>{billingCase.payerInvoiceNumber}</dd></div><div><dt>Gjalddagi</dt><dd className={payerPastDue ? "billing-overdue" : ""}>{formatBillingDate(billingCase.payerDueAt)}</dd></div></dl> : null}
         {billingCase.receivableStatus === "ready_to_invoice" ? <TransitionForm action="issue_payer_invoice" billingCase={billingCase} buttonLabel="Skrá útgefinn reikning" demoMode={demoMode} onChanged={onChanged} requireInvoice /> : null}
@@ -274,7 +274,7 @@ function MoneyLegs({ billingCase, demoMode, onChanged }: Omit<BillingDetailProps
       </article>
 
       <article className="billing-leg-card billing-leg-payable">
-        <header><span><BanknoteArrowUp size={19} /></span><div><small>Vegstoð → þjónustuaðili</small><strong>{payableStatusLabels[billingCase.payableStatus]}</strong></div></header>
+        <header><span><BanknoteArrowUp size={19} /></span><div><small>Iceland Road Assistance → þjónustuaðili</small><strong>{payableStatusLabels[billingCase.payableStatus]}</strong></div></header>
         <div className="billing-leg-amount">{formatIsk(billingCase.providerAmountIsk)}</div>
         <p className="billing-leg-provider">{billingCase.operatorName ?? "Enginn aðili skráður"}</p>
         {billingCase.providerInvoiceNumber ? <dl><div><dt>Reikningur</dt><dd>{billingCase.providerInvoiceNumber}</dd></div><div><dt>Gjalddagi</dt><dd className={providerPastDue ? "billing-overdue" : ""}>{formatBillingDate(billingCase.providerDueAt)}</dd></div></dl> : null}
@@ -317,7 +317,7 @@ export function BillingDetail({ billingCase, demoMode, events, onChanged }: Bill
       </header>
 
       {!closed ? <div className="billing-operational-note"><Clock3 size={19} /><span><strong>Verkefnið er enn í vinnslu</strong><p>Skrá má greiðanda núna. Reikningsútgáfa og uppgjör þjónustuaðila opnast sjálfkrafa þegar verkefninu lýkur.</p></span></div> : null}
-      {billingCase.receivableStatus === "missing_information" ? <div className="billing-warning"><AlertTriangle size={18} /><span><strong>Vantar greiðandaupplýsingar</strong><p>Skráðu hver greiðir Vegstoð og væntanlega heildarupphæð.</p></span></div> : null}
+      {billingCase.receivableStatus === "missing_information" ? <div className="billing-warning"><AlertTriangle size={18} /><span><strong>Vantar greiðandaupplýsingar</strong><p>Skráðu hver greiðir Iceland Road Assistance og væntanlega heildarupphæð.</p></span></div> : null}
 
       {billingCase.jobStatus === "cancelled" && (billingCase.receivableStatus !== "void" || billingCase.payableStatus !== "void") ? (
         <div className="billing-void-panel"><AlertTriangle size={18} /><span><strong>Hætt var við verkefnið</strong><p>Ógiltu uppgjörið ef hvorki greiðandi né þjónustuaðili á að fá reikning vegna þess.</p></span><QuickTransitionButton action="void_billing" billingCase={billingCase} demoMode={demoMode} onChanged={onChanged} tone="danger">Ógilda uppgjör</QuickTransitionButton></div>

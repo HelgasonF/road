@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Vegstoð — Aðgerðastjórn",
+  title: "Iceland Road Assistance — Aðgerðastjórn",
   description: "Aðgerðastjórn fyrir íslenska vegaaðstoð.",
 };
 

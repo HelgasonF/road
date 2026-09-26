@@ -50,7 +50,7 @@ export function buildDriverAvailabilityMessage(
     : null;
 
   return [
-    `Hæ ${oneLine(summary.driverName)}. Ertu laus í verkefni fyrir Vegstoð?`,
+    `Hæ ${oneLine(summary.driverName)}. Ertu laus í verkefni fyrir Iceland Road Assistance?`,
     "",
     ...operationalLines(summary),
     distanceLine,
@@ -64,7 +64,7 @@ export function buildDriverAssignmentMessage(
   driverUrl: string,
 ) {
   return [
-    `Hæ ${oneLine(summary.driverName)}. Verkefninu hefur verið úthlutað til þín í Vegstoð.`,
+    `Hæ ${oneLine(summary.driverName)}. Verkefninu hefur verið úthlutað til þín í Iceland Road Assistance.`,
     "",
     ...operationalLines(summary),
     "",

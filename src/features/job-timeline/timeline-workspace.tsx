@@ -71,7 +71,7 @@ export function TimelineWorkspace({ data, identity }: TimelineWorkspaceProps) {
   return (
     <main className="timeline-app">
       <header className="topbar timeline-topbar">
-        <div className="brand-lockup"><span className="brand-mark"><MapPin size={22} /></span><span><strong>Vegstoð</strong><small>Ferill verkefnis</small></span></div>
+        <div className="brand-lockup"><span className="brand-mark"><MapPin size={22} /></span><span><strong>Iceland Road Assistance</strong><small>Ferill verkefnis</small></span></div>
         <nav className="timeline-nav" aria-label="Aðalleiðsögn">
           <Link href={`/?job=${data.job.id}`}><BriefcaseBusiness size={16} /> Aðgerðastjórn</Link>
           <Link href={`/billing?job=${data.job.id}`}><ReceiptText size={16} /> Uppgjör</Link>

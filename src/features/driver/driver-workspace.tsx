@@ -124,7 +124,7 @@ export function DriverWorkspace({ demoMode, jobs, operator }: DriverWorkspacePro
       <header className="driver-topbar">
         <div className="brand-lockup">
           <span className="brand-mark"><MapPinned size={22} /></span>
-          <span><strong>Vegstoð</strong><small>Ökumannsskjár</small></span>
+          <span><strong>Iceland Road Assistance</strong><small>Ökumannsskjár</small></span>
         </div>
         <div className="driver-topbar-actions">
           {demoMode ? <span className="demo-badge">Sýnishamur</span> : null}

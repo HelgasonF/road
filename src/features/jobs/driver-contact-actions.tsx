@@ -189,7 +189,7 @@ export function DriverAssignmentContactActions({
       ) : assignmentWhatsAppHref ? (
         <p>Öruggi tengillinn er tilbúinn. Opnaðu handvirku varaleiðina og ýttu á Senda.</p>
       ) : (
-        <p>Býr til einkatengil sem skráir ökumanninn inn í Vegstoð eftir staðfestingu.</p>
+        <p>Býr til einkatengil sem skráir ökumanninn inn í Iceland Road Assistance eftir staðfestingu.</p>
       )}
       {error ? <p className="compact-error" role="alert">{error}</p> : null}
     </div>

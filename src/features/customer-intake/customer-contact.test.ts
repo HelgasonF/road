@@ -10,6 +10,7 @@ describe("customer intake WhatsApp message", () => {
     );
 
     expect(message).toContain("Sophie Martin");
+    expect(message).toContain("Iceland Road Assistance has created a secure link");
     expect(message).toContain("https://dispatch.vegstod.is/customer/secure-token");
     expect(message).toContain("confirm your name, location");
     expect(message).toContain("the assistance you need");
