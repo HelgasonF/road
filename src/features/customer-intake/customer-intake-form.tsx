@@ -28,6 +28,12 @@ import {
 import { CustomerLocationMap } from "./customer-location-map";
 import { formatCustomerLinkExpiry } from "./format";
 import type { ActiveCustomerIntake, CustomerIntakePhoto } from "./queries";
+import {
+  type GpsFailureReason,
+  GpsLocationError,
+  gpsFailureMessages,
+  requestCustomerPosition,
+} from "./geolocation";
 import { CUSTOMER_PHOTO_LIMIT } from "./schemas";
 
 type Language = "en" | "is";
@@ -70,6 +76,10 @@ const copy = {
     submit: "Send details securely",
     sending: "Sending…",
     privacy: "Photos are private and available only to Iceland Road Assistance staff and the assigned driver.",
+    expires: "Link valid until",
+    confirmFirst: "Please confirm the location before sending.",
+    photoLimit: `You can upload up to ${CUSTOMER_PHOTO_LIMIT} photos.`,
+    photosFailed: "These photos could not be uploaded. Please try them again:",
   },
   is: {
     eyebrow: "Öruggur tengill fyrir vegaaðstoð",
@@ -108,6 +118,10 @@ const copy = {
     submit: "Senda upplýsingar örugglega",
     sending: "Sendi…",
     privacy: "Myndir eru einkagögn og aðeins sýnilegar starfsfólki Iceland Road Assistance og úthlutuðum ökumanni.",
+    expires: "Tengill gildir til",
+    confirmFirst: "Staðfestu staðsetninguna áður en þú sendir.",
+    photoLimit: `Þú getur hlaðið upp allt að ${CUSTOMER_PHOTO_LIMIT} myndum.`,
+    photosFailed: "Ekki tókst að hlaða upp þessum myndum. Reyndu aftur:",
   },
 } as const;
 
@@ -148,98 +162,93 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token }: Cus
   const [locationSource, setLocationSource] = useState<Extract<LocationSource, "gps" | "map_pin">>("map_pin");
   const [locationConfirmed, setLocationConfirmed] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [gpsFailure, setGpsFailure] = useState<GpsFailureReason | null>(null);
+  // Once the customer describes the spot in their own words, moving the pin
+  // must not replace that description with coordinates.
+  const [labelEdited, setLabelEdited] = useState(false);
   const [photos, setPhotos] = useState(initialPhotos);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const t = copy[language];
 
-  function chooseMapLocation(nextLatitude: number, nextLongitude: number) {
+  function applyLocation(source: "gps" | "map_pin", nextLatitude: number, nextLongitude: number) {
     setLatitude(nextLatitude);
     setLongitude(nextLongitude);
-    setLocationSource("map_pin");
-    setLocationLabel(`Map pin · ${nextLatitude.toFixed(5)}, ${nextLongitude.toFixed(5)}`);
+    setLocationSource(source);
+    if (!labelEdited) {
+      const prefix = source === "gps" ? "GPS" : "Map pin";
+      setLocationLabel(`${prefix} · ${nextLatitude.toFixed(5)}, ${nextLongitude.toFixed(5)}`);
+    }
     setLocationConfirmed(true);
+    setGpsFailure(null);
     setError(null);
   }
 
-  function useGpsLocation() {
-    if (!("geolocation" in navigator)) {
-      setError("This browser cannot provide a GPS location. Please choose the position on the map.");
-      return;
-    }
+  function chooseMapLocation(nextLatitude: number, nextLongitude: number) {
+    applyLocation("map_pin", nextLatitude, nextLongitude);
+  }
+
+  async function locateWithGps() {
     setLocating(true);
-    setError(null);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const nextLatitude = position.coords.latitude;
-        const nextLongitude = position.coords.longitude;
-        if (nextLatitude < 62.5 || nextLatitude > 67.5 || nextLongitude < -25.5 || nextLongitude > -12) {
-          setError("The GPS position appears to be outside Iceland. Please choose the correct location on the map.");
-          setLocating(false);
-          return;
-        }
-        setLatitude(nextLatitude);
-        setLongitude(nextLongitude);
-        setLocationSource("gps");
-        setLocationLabel(`GPS · ${nextLatitude.toFixed(5)}, ${nextLongitude.toFixed(5)}`);
-        setLocationConfirmed(true);
-        setLocating(false);
-      },
-      () => {
-        setError("Location permission was not granted. Please choose the position on the map.");
-        setLocating(false);
-      },
-      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 30_000 },
-    );
+    setGpsFailure(null);
+    try {
+      const position = await requestCustomerPosition(
+        "geolocation" in navigator ? navigator.geolocation : undefined,
+      );
+      applyLocation("gps", position.latitude, position.longitude);
+    } catch (caught) {
+      if (!(caught instanceof GpsLocationError)) throw caught;
+      setGpsFailure(caught.reason);
+    } finally {
+      setLocating(false);
+    }
+  }
+
+  async function uploadPhoto(supabase: ReturnType<typeof createClient>, file: File) {
+    const prepared = await prepareCustomerPhotoUploadAction({
+      token,
+      fileName: file.name,
+      contentType: file.type,
+      sizeBytes: file.size,
+    });
+    if (!prepared.ok || !prepared.data) return false;
+
+    const { photoId, path, uploadToken } = prepared.data;
+    const { error: uploadError } = await supabase.storage
+      .from("job-photos")
+      .uploadToSignedUrl(path, uploadToken, file, { contentType: file.type });
+    const finalized = uploadError ? null : await finalizeCustomerPhotoUploadAction({ token, photoId });
+    if (!finalized?.ok) {
+      await removeCustomerPhotoAction({ token, photoId });
+      return false;
+    }
+
+    setPhotos((current) => [...current, {
+      id: photoId,
+      originalFilename: file.name,
+      contentType: file.type,
+      sizeBytes: file.size,
+    }]);
+    return true;
   }
 
   async function uploadPhotos(files: File[]) {
     if (photos.length + files.length > CUSTOMER_PHOTO_LIMIT) {
-      setError(`You can upload up to ${CUSTOMER_PHOTO_LIMIT} photos.`);
+      setError(t.photoLimit);
       return;
     }
 
     setUploading(true);
     setError(null);
     const supabase = createClient();
+    const failedNames: string[] = [];
 
+    // One failed photo on a flaky connection must not silently drop the rest.
     for (const file of files) {
-      const prepared = await prepareCustomerPhotoUploadAction({
-        token,
-        fileName: file.name,
-        contentType: file.type,
-        sizeBytes: file.size,
-      });
-      if (!prepared.ok || !prepared.data) {
-        setError(prepared.error ?? "Photo upload could not be prepared.");
-        break;
-      }
-
-      const { photoId, path, uploadToken } = prepared.data;
-      const { error: uploadError } = await supabase.storage
-        .from("job-photos")
-        .uploadToSignedUrl(path, uploadToken, file, { contentType: file.type });
-      if (uploadError) {
-        await removeCustomerPhotoAction({ token, photoId });
-        setError("A photo could not be uploaded. Please try it again.");
-        break;
-      }
-
-      const finalized = await finalizeCustomerPhotoUploadAction({ token, photoId });
-      if (!finalized.ok) {
-        await removeCustomerPhotoAction({ token, photoId });
-        setError(finalized.error ?? "A photo could not be saved.");
-        break;
-      }
-
-      setPhotos((current) => [...current, {
-        id: photoId,
-        originalFilename: file.name,
-        contentType: file.type,
-        sizeBytes: file.size,
-      }]);
+      if (!(await uploadPhoto(supabase, file))) failedNames.push(file.name);
     }
+    if (failedNames.length > 0) setError(`${t.photosFailed} ${failedNames.join(", ")}`);
     setUploading(false);
   }
 
@@ -258,7 +267,7 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token }: Cus
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!locationConfirmed) {
-      setError("Please confirm the location before sending.");
+      setError(t.confirmFirst);
       return;
     }
     const form = new FormData(event.currentTarget);
@@ -303,7 +312,7 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token }: Cus
       <form className="customer-intake-form" onSubmit={submit}>
         <section className="customer-intake-intro">
           <div><p className="eyebrow"><LockKeyhole size={14} /> {t.eyebrow}</p><h1>{t.title}</h1><p>{t.intro}</p></div>
-          <span><ShieldCheck size={20} /> {formatCustomerLinkExpiry(expiresAt, language)}</span>
+          <span><ShieldCheck size={20} /> {t.expires} {formatCustomerLinkExpiry(expiresAt, language)}</span>
         </section>
 
         <section className="customer-form-card">
@@ -337,13 +346,14 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token }: Cus
         <section className="customer-form-card customer-location-card">
           <div className="customer-card-heading"><span>3</span><div><h2>{t.location}</h2><p>{t.mapHelp}</p></div></div>
           <div className="customer-location-actions">
-            <button type="button" className="customer-gps-button" disabled={locating} onClick={useGpsLocation}>
+            <button type="button" className="customer-gps-button" disabled={locating} onClick={() => void locateWithGps()}>
               {locating ? <LoaderCircle className="spin" size={18} /> : <Crosshair size={18} />} {locating ? t.confirming : t.gps}
             </button>
             <span>{latitude.toFixed(5)}, {longitude.toFixed(5)}</span>
           </div>
+          {gpsFailure ? <p className="customer-form-error customer-location-error" role="alert">{gpsFailureMessages[language][gpsFailure]}</p> : null}
           <CustomerLocationMap latitude={latitude} longitude={longitude} onPick={chooseMapLocation} />
-          <label className="customer-location-label"><span>{t.locationLabel}</span><input value={locationLabel} onChange={(event) => setLocationLabel(event.target.value)} maxLength={300} required /></label>
+          <label className="customer-location-label"><span>{t.locationLabel}</span><input value={locationLabel} onChange={(event) => { setLocationLabel(event.target.value); setLabelEdited(true); }} maxLength={300} required /></label>
           <button
             className={`customer-confirm-location ${locationConfirmed ? "confirmed" : ""}`}
             type="button"

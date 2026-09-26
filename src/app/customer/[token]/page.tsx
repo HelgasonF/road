@@ -27,8 +27,9 @@ export default async function CustomerIntakePage({
         <section>
           <span className="customer-state-icon customer-state-success">✓</span>
           <h1>Thank you — details received</h1>
-          <p>Takk — upplýsingarnar hafa verið mótteknar.</p>
+          <p lang="is">Takk — upplýsingarnar hafa verið mótteknar.</p>
           <small>Iceland Road Assistance dispatch now has the location, vehicle information and photos you submitted.</small>
+          <small lang="is">Aðgerðastjórn Iceland Road Assistance hefur nú fengið staðsetninguna, upplýsingar um ökutækið og myndirnar sem þú sendir.</small>
         </section>
       </main>
     );
@@ -41,8 +42,9 @@ export default async function CustomerIntakePage({
         <section>
           <span className="customer-state-icon">!</span>
           <h1>This link is no longer available</h1>
-          <p>Þessi tengill er ekki lengur virkur.</p>
+          <p lang="is">Þessi tengill er ekki lengur virkur.</p>
           <small>Please call Iceland Road Assistance and ask dispatch for a new secure link.</small>
+          <small lang="is">Hringdu í Iceland Road Assistance og biddu aðgerðastjórn um nýjan öruggan tengil.</small>
         </section>
       </main>
     );
