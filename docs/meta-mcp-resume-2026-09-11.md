@@ -1,5 +1,7 @@
 # Meta MCP / WhatsApp resume checkpoint
 
+**Current decision, later 26 September:** Cloud API sending is paused. Staff copy prepared messages from Iceland Road Assistance into the owner's WhatsApp Business app. See the [manual handoff](manual-whatsapp-handoff-2026-09-26.md); all API onboarding notes below are historical.
+
 Updated: 12 September 2026 (Atlantic/Reykjavik)
 
 **Superseded product decision, 26 September:** the owners need WhatsApp Business phone-app calls and API messages in the same chat from the same number. Keep that number registered in the phone app; the direct-registration and release steps in this historical checkpoint no longer apply. Supported Business app coexistence is required. The owners prefer no outside provider, but Meta's public guide requires a Solution Partner or Tech Provider; a first-party own-WABA Tech Provider route has not been verified. See the current decision at the top of [`whatsapp-production-handoff-2026-09-12.md`](whatsapp-production-handoff-2026-09-12.md). The Meta MCP can inspect the developer app but does not provide phone-number onboarding or a fresh WABA status read.

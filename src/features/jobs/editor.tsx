@@ -6,8 +6,8 @@ import { FormEvent, useState, useTransition } from "react";
 import { createQuickCustomerIntakeJobAction } from "@/features/customer-intake/actions";
 import { buildCustomerIntakeWhatsAppMessage } from "@/features/customer-intake/customer-contact";
 import { formatCustomerLinkExpiry } from "@/features/customer-intake/format";
+import { ManualWhatsAppMessage } from "@/features/whatsapp/manual-message";
 import { AddressSearchField } from "@/features/location/address-search-field";
-import { buildWhatsAppHref } from "@/lib/contact-links";
 import type { Capability, CapabilityCode, Job } from "@/lib/domain/types";
 import { jobPriorities } from "@/lib/domain/types";
 import { OTHER_VEHICLE_MAKE, vehicleMakes } from "@/lib/domain/vehicle-makes";
@@ -24,9 +24,8 @@ interface JobEditorProps {
 
 interface QuickLinkResult {
   expiresAt: string;
-  sentAutomatically: boolean;
-  sendError: string | null;
-  whatsappHref: string;
+  message: string;
+  phone: string;
 }
 
 export function JobEditor({ capabilities, job, onClose, onQuickCreated, onSaved }: JobEditorProps) {
@@ -59,21 +58,10 @@ export function JobEditor({ capabilities, job, onClose, onQuickCreated, onSaved 
       }
 
       const customerUrl = new URL(result.data.path, window.location.origin).toString();
-      const whatsappHref = buildWhatsAppHref(
-        customerPhone,
-        buildCustomerIntakeWhatsAppMessage("", customerUrl),
-      );
-      if (!whatsappHref) {
-        setError("Verkefnið var búið til en símanúmerið virkar ekki fyrir WhatsApp.");
-        onQuickCreated(result.data.jobId);
-        return;
-      }
-
       setQuickLink({
         expiresAt: result.data.expiresAt,
-        sentAutomatically: Boolean(result.data.receipt),
-        sendError: result.data.sendError,
-        whatsappHref,
+        message: buildCustomerIntakeWhatsAppMessage("", customerUrl),
+        phone: customerPhone,
       });
       onQuickCreated(result.data.jobId);
     });
@@ -125,16 +113,10 @@ export function JobEditor({ capabilities, job, onClose, onQuickCreated, onSaved 
           quickLink ? (
             <div className="quick-job-success">
               <span><CheckCircle2 size={28} /></span>
-              <h3>{quickLink.sentAutomatically ? "Tengillinn fór í WhatsApp" : "Verkefnið og tengillinn eru tilbúin"}</h3>
-              <p>{quickLink.sentAutomatically
-                ? "WhatsApp tók við sjálfvirku sendingunni. Staðan uppfærist þegar Meta sendir afhendingarkvittun."
-                : quickLink.sendError ?? "Sjálfvirk sending var ekki tiltæk. Opnaðu handvirku varaleiðina."}</p>
+              <h3>Verkefnið og tengillinn eru tilbúin</h3>
+              <p>Afritaðu skilaboðin og sendu þau úr WhatsApp Business.</p>
               <small>{formatCustomerLinkExpiry(quickLink.expiresAt, "is")}</small>
-              {!quickLink.sentAutomatically ? (
-                <a className="primary-button quick-whatsapp-button" href={quickLink.whatsappHref} target="_blank" rel="noreferrer">
-                  <MessageCircle size={17} /> Opna WhatsApp handvirkt
-                </a>
-              ) : null}
+              <ManualWhatsAppMessage key={quickLink.message} message={quickLink.message} phone={quickLink.phone} recipientName={quickLink.phone} />
               <button className="secondary-button" type="button" onClick={onClose}>Loka</button>
             </div>
           ) : (
@@ -152,7 +134,7 @@ export function JobEditor({ capabilities, job, onClose, onQuickCreated, onSaved 
               </label>
               {error ? <p className="form-error" role="alert">{error}</p> : null}
               <button className="primary-button quick-create-button" type="submit" disabled={pending}>
-                <MessageCircle size={17} /> {pending ? "Bý til og sendi…" : "Búa til og senda WhatsApp"}
+                <MessageCircle size={17} /> {pending ? "Bý til…" : "Búa til WhatsApp-tengil"}
               </button>
               <button className="quick-job-switch" type="button" onClick={() => { setEntryMode("full"); setError(null); }}>
                 <PencilLine size={15} /> Ég vil skrá allar upplýsingar sjálf/ur

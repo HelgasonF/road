@@ -9,11 +9,6 @@ import type { ActionResult } from "@/lib/domain/types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
-  getWhatsAppSendError,
-  invokeWhatsAppSendFunction,
-  type WhatsAppSendReceipt,
-} from "@/features/whatsapp/send-api";
-import {
   CUSTOMER_PHOTO_LIMIT,
   customerIntakeSchema,
   customerLinkCreationSchema,
@@ -30,48 +25,12 @@ const LINK_LIFETIME_MS = 24 * 60 * 60 * 1000;
 const demoError = "Ekki er hægt að búa til viðskiptavinatengil í sýnisham.";
 const unavailableError = "Tengillinn er útrunninn, hefur verið afturkallaður eða þegar notaður.";
 
-interface CustomerLinkDelivery {
-  receipt: WhatsAppSendReceipt | null;
-  sendError: string | null;
-}
-
-async function sendCustomerLink(
-  jobId: string,
-  linkId: string | null,
-  customerPhone: string,
-  rawToken: string,
-): Promise<CustomerLinkDelivery> {
-  if (!linkId) {
-    return {
-      receipt: null,
-      sendError: "Verkefnið var búið til en sjálfvirk WhatsApp-sending var ekki tiltæk.",
-    };
-  }
-
-  const result = await invokeWhatsAppSendFunction({
-    action: "send_template",
-    buttonUrlSuffix: rawToken,
-    customerIntakeLinkId: linkId,
-    idempotencyKey: randomUUID(),
-    jobId,
-    purpose: "customer_intake",
-    recipientPhone: customerPhone,
-  });
-
-  return {
-    receipt: result.ok ? result.data : null,
-    sendError: result.ok ? null : getWhatsAppSendError(result.errorCode),
-  };
-}
-
 export async function createQuickCustomerIntakeJobAction(
   input: unknown,
 ): Promise<ActionResult<{
   jobId: string;
   path: string;
   expiresAt: string;
-  receipt: WhatsAppSendReceipt | null;
-  sendError: string | null;
 }>> {
   if (isDemoMode()) return { ok: false, error: demoError };
   if (!(await getVerifiedStaffSession())) return { ok: false, error: "Innskráning rann út." };
@@ -96,18 +55,11 @@ export async function createQuickCustomerIntakeJobAction(
   });
 
   if (error || !jobId) return { ok: false, error: "Ekki tókst að búa til verkefni og tengil." };
-  const { data: link } = await supabase
-    .from("customer_intake_links")
-    .select("id")
-    .eq("job_id", jobId)
-    .eq("token_hash", tokenHash)
-    .maybeSingle();
-  const delivery = await sendCustomerLink(jobId, link?.id ?? null, parsed.data.customerPhone, rawToken);
   revalidatePath("/");
   revalidatePath(`/jobs/${jobId}/history`);
   return {
     ok: true,
-    data: { jobId, path: `/customer/${rawToken}`, expiresAt, ...delivery },
+    data: { jobId, path: `/customer/${rawToken}`, expiresAt },
   };
 }
 
@@ -125,8 +77,6 @@ export async function createCustomerIntakeLinkAction(
   linkId: string;
   path: string;
   expiresAt: string;
-  receipt: WhatsAppSendReceipt | null;
-  sendError: string | null;
 }>> {
   if (isDemoMode()) return { ok: false, error: demoError };
   if (!(await getVerifiedStaffSession())) return { ok: false, error: "Innskráning rann út." };
@@ -145,22 +95,11 @@ export async function createCustomerIntakeLinkAction(
   });
 
   if (error || !data) return { ok: false, error: "Ekki tókst að búa til öruggan tengil." };
-  const { data: job } = await supabase
-    .from("jobs")
-    .select("customer_phone")
-    .eq("id", parsed.data.jobId)
-    .maybeSingle();
-  const delivery = await sendCustomerLink(
-    parsed.data.jobId,
-    data,
-    job?.customer_phone ?? "",
-    rawToken,
-  );
   revalidatePath("/");
   revalidatePath(`/jobs/${parsed.data.jobId}/history`);
   return {
     ok: true,
-    data: { linkId: data, path: `/customer/${rawToken}`, expiresAt, ...delivery },
+    data: { linkId: data, path: `/customer/${rawToken}`, expiresAt },
   };
 }
 

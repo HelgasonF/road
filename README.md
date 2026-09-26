@@ -47,19 +47,19 @@ New Auth users receive the non-operational `pending` role by default, so acciden
 Driver access is managed from the selected service provider in the dispatcher interface:
 
 1. Create the service provider, vehicles, and capabilities normally.
-2. Assign a job to the provider and press **Búa til og senda** in the assignment panel.
-3. Iceland Road Assistance creates a private one-time access link and sends it through the configured WhatsApp Cloud API template. If the API is unavailable, the same link is offered through the manual WhatsApp fallback.
+2. Assign a job to the provider and press **Búa til tengil** in the assignment panel.
+3. Iceland Road Assistance creates a private one-time access link and prepares a complete WhatsApp message. Copy it into the driver's chat in the company's WhatsApp Business app and press Send.
 4. The driver opens the link, confirms **Opna ökumannsskjá**, and lands on `/driver` without an email account or password.
 5. Dispatch can generate another short-lived link when needed, disable access immediately, or re-enable the same account without deleting operational data.
 
-Driver contact uses the official WhatsApp Cloud API. Each ranked driver receives an approved availability template containing only the operational area, assistance, priority, and estimated distance. **Available** and **Unavailable** replies are correlated to that job and shown beside the candidate and in the staff timeline; they never assign a driver automatically. After assignment, a second template carries the private one-time Supabase Auth link. Calling and prepared `wa.me` messages remain available as fallbacks.
+Driver contact is manual in the current workflow. The dashboard prepares an availability message containing only the operational area, assistance, priority, and estimated distance. Staff copy it into WhatsApp Business, read replies there, and make the assignment in Iceland Road Assistance. After assignment, staff create and copy a private one-time Supabase Auth link for that driver. The app can open a prefilled `wa.me` draft, but opening or copying it does not prove it was sent.
 
-The hosted `whatsapp-webhook-v1` Supabase Edge Function verifies Meta's callback token, checks every delivery against the app-secret HMAC signature, limits request size, and stores each signed request once in a staff-only webhook inbox. `whatsapp-send-v1` provides the staff-only idempotent outbox; the dispatcher interface uses it for customer links, availability requests, and assignment links. Signed `STOP`/`HÆTTA` and `START`/`BYRJA` replies maintain the recipient's latest explicit preference and block later automatic sends after opt-out. Operational templates are reviewed manually in WhatsApp Manager; the sandbox path remains active while their replacement records are verified and approved. The production number is unchanged.
+The earlier Meta Cloud API functions, webhook, templates, and sandbox test evidence remain in the project for possible future use. The current dashboard does not call the API sender, and its server-side send client is paused by default. No API phone-number onboarding is needed for manual WhatsApp Business messages. See the [manual WhatsApp handoff](docs/manual-whatsapp-handoff-2026-09-26.md).
 
 Customer intake starts from the **+** button in the job list:
 
-1. Enter only the caller's phone number and press **Búa til og senda WhatsApp**. Staff can switch to the full form when they want to enter every field themselves; its vehicle section uses the same registration, brand dropdown/free-text fallback, rental-company, and people-count fields as the customer form.
-2. Iceland Road Assistance atomically creates a pending job and 24-hour link, then sends the approved customer template with a secure URL button. If automatic delivery is rejected or unavailable, the app offers a prepared manual WhatsApp message using the same fresh link. The raw token is available only at creation time and only its SHA-256 hash is stored.
+1. Enter only the caller's phone number and press **Búa til WhatsApp-tengil**. Staff can switch to the full form when they want to enter every field themselves; its vehicle section uses the same registration, brand dropdown/free-text fallback, rental-company, and people-count fields as the customer form.
+2. Iceland Road Assistance atomically creates a pending job and 24-hour link, then shows a complete message to copy into the customer's WhatsApp Business chat. Staff press Send in WhatsApp. The raw token is available only at creation time and only its SHA-256 hash is stored.
 3. The pending job remains visible in the list, but is omitted from the map and driver matching and cannot be assigned.
 4. The customer uses the bilingual, account-free form to enter their name, confirm GPS/map location, choose the required assistance, describe the problem, add vehicle/rental/people details, and optionally upload up to six 10 MiB photos.
 5. Submission is one-time and unlocks matching and assignment immediately. Private photos become visible to the assigned driver only after assignment.

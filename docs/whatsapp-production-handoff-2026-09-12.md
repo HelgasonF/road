@@ -2,7 +2,9 @@
 
 Updated: 26 September 2026, Atlantic/Reykjavik. Original handoff: 12 September 2026.
 
-**Confirmed requirement, 26 September:** the owners want WhatsApp calls in the Business phone app and Vegstoð's API messages in the **same customer chat and from the same number**. A separate sender would open another chat and is no longer the intended route. Keep the phone-app account registered; Meta's standard Add Phone Number flow rejected it with `#2655122` because it is already registered. The route is [Business app coexistence](https://developers.facebook.com/documentation/business-messaging/whatsapp/embedded-signup/onboarding-business-app-users). The owners prefer to avoid an outside provider. Meta's current coexistence guide requires the onboarding app to belong to an existing Solution Partner or Tech Provider; its ordinary direct Cloud API guide does not provide a self-service coexistence path for a business using only its own app. [Meta's Tech Provider guide](https://developers.facebook.com/documentation/business-messaging/whatsapp/solution-providers/get-started-for-tech-providers) allows onboarding without an outside Solution Partner, but describes serving client businesses and does not establish whether this company may onboard its **own** WABA. Verify that eligibility with Meta before building Embedded Signup or altering the number. The actual number has not been reconfirmed, and no production asset or Supabase sender secret has changed. Staff enter caller numbers manually; Vegstoð does not import WhatsApp call events.
+**Current decision, later on 26 September:** Cloud API sending is on hold. The owner keeps `+354 853 7704` in the WhatsApp Business app. Iceland Road Assistance now prepares customer and driver messages for staff to copy and send manually from that account. Do not register a second API number or change the current phone-app account for this workflow. The dated coexistence and API cutover material below is preserved as history and is paused. See the current [manual handoff](manual-whatsapp-handoff-2026-09-26.md).
+
+**Historical API requirement, earlier 26 September:** the owners want WhatsApp calls in the Business phone app and Vegstoð's API messages in the **same customer chat and from the same number**. A separate sender would open another chat and is no longer the intended route. Keep the phone-app account registered; Meta's standard Add Phone Number flow rejected it with `#2655122` because it is already registered. The route is [Business app coexistence](https://developers.facebook.com/documentation/business-messaging/whatsapp/embedded-signup/onboarding-business-app-users). The owners prefer to avoid an outside provider. Meta's current coexistence guide requires the onboarding app to belong to an existing Solution Partner or Tech Provider; its ordinary direct Cloud API guide does not provide a self-service coexistence path for a business using only its own app. [Meta's Tech Provider guide](https://developers.facebook.com/documentation/business-messaging/whatsapp/solution-providers/get-started-for-tech-providers) allows onboarding without an outside Solution Partner, but describes serving client businesses and does not establish whether this company may onboard its **own** WABA. Verify that eligibility with Meta before building Embedded Signup or altering the number. The actual number has not been reconfirmed, and no production asset or Supabase sender secret has changed. Staff enter caller numbers manually; Vegstoð does not import WhatsApp call events.
 
 Latest result, 14 September: the [hosted end-to-end audit](whatsapp-e2e-audit-2026-09-14.md) **passed** after template approval. The corrected customer button, phone form with GPS/photo, availability reply, assignment/access, driver statuses through completion, internal billing, and timeline all worked. The three templates reached `read` with `en` and no send errors. The dispatcher still needs refresh for changes from another device. No templates or sender settings were changed in this test; the permanent sender is still undecided.
 
@@ -27,9 +29,8 @@ Meta MCP OAuth may ask to authenticate again after Codex restarts. Use the exist
 
 ## Confirmed flow and onboarding boundary
 
-- Vegstoð is integrating WhatsApp Cloud API for one towing company. Customers should call and receive API messages from the same business number and in the same WhatsApp chat.
-- Keep that number in the WhatsApp Business phone app. Dispatch enters the caller's number into Vegstoð, which sends the secure customer link; driver links go to drivers' registered numbers.
-- Do not run the standard direct Add Phone Number flow or delete the phone-app account. Coexistence requires a supported onboarding route, which has not yet been established for this company's own first-party integration.
+- The current workflow uses manual WhatsApp Business messages from the owner's existing number. Dispatch enters the caller's number, creates a secure link, copies the prepared message, and sends it in the correct chat. Driver contact uses the same manual process.
+- Keep that number in the WhatsApp Business phone app. Do not run the standard Add Phone Number flow or delete the phone-app account. Coexistence work is paused.
 - The **landline** option in standard Add Phone Number only allows verification by voice call and ordinary telephone calling. It does not enable Business phone-app coexistence or bypass `#2655122`. Meta also offers a [Cloud API Calling API](https://developers.facebook.com/documentation/business-messaging/whatsapp/calling/) for WhatsApp calls on a Cloud API-only number, but that requires separate call-handling infrastructure and does not ring the WhatsApp Business phone app. See [Meta's phone-number requirements](https://developers.facebook.com/documentation/business-messaging/whatsapp/business-phone-numbers/phone-numbers).
 - The earlier `+354 853 7704` number was a candidate. Confirm the actual phone-app number before onboarding.
 - The company owner can add the WhatsApp payment method and complete business verification from Meta Business Settings without developer-app access. Developer access remains necessary for the app, webhooks, templates, and API configuration.
@@ -46,7 +47,7 @@ Meta MCP OAuth may ask to authenticate again after Codex restarts. Use the exist
 | Real company WABA | `931911699982634` | WABA containing the intended company number |
 | Earlier company number candidate | `+354 853 7704` | Current call-number role needs owner confirmation; do not register directly if retained in the phone app |
 | Earlier company Phone Number ID | `1209825652224082` | Last read as `ON_PREMISE`, `DISCONNECTED`, and `NOT_VERIFIED`; not the selected API sender |
-| Production API sender | To be confirmed | Must be the same number retained in the WhatsApp Business phone app through supported coexistence |
+| Production API sender | Paused | No API sender is needed for the current manual workflow |
 
 The green **Register your WhatsApp phone number** item in the developer-app Step 2 screen proves that the current setup has a registered number. It does not by itself prove that `+354 853 7704` is the active Cloud API sender.
 
@@ -204,7 +205,9 @@ No secret token, app secret, Supabase key, or credential belongs in Git or this 
 
 These changes were prepared on top of commit `10a61d8` and saved in the checkpoint commit titled `fix: align WhatsApp templates with manual setup`. Check `git log -1 --oneline` after restart for its exact hash.
 
-## Remaining production cutover work
+## Paused Cloud API production cutover checklist
+
+The following is historical API work. Do not perform these steps while manual WhatsApp is the product workflow. The active phone check is in [the manual handoff](manual-whatsapp-handoff-2026-09-26.md).
 
 1. Preserve the three approved `en` templates and corrected URL-button bases; all three passed the 14 September sandbox-phone flow.
 2. Have the company owner add the payment method to the WABA that will own the production Cloud API number, and complete Step 3 business verification with the company's real details and documents.

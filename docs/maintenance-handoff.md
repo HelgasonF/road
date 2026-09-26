@@ -1,5 +1,7 @@
 # Road / Iceland Road Assistance maintenance handoff
 
+**Current WhatsApp decision, 26 September:** manual copy/paste from the owner's `+354 853 7704` WhatsApp Business app is now the default; Cloud API sending and number onboarding are paused. The older API workflow and readiness checklist below are historical. Follow the [manual WhatsApp handoff](manual-whatsapp-handoff-2026-09-26.md) for the current phone check.
+
 Updated: 26 September 2026 (Atlantic/Reykjavik)
 
 Branding alignment, 26 September: the current app source uses **Iceland Road Assistance** on customer, staff, driver, billing, and timeline screens, matching the approved WhatsApp template name. The earlier **Icelandic Road Assistance** customer copy below records the 13 September preview state. The new wording was verified locally; this record does not establish that the stable test alias serves it. Existing URLs and internal identifiers remain unchanged.

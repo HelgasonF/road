@@ -2,10 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { recordJobContactAction } from "@/features/job-timeline/actions";
-import {
-  createAndSendDriverAssignmentWhatsAppAction,
-  sendDriverAvailabilityWhatsAppAction,
-} from "@/features/whatsapp/actions";
+import { createDriverAccessLinkAction } from "@/features/operators/actions";
 
 import type { DriverJobContactSummary } from "./driver-contact";
 import {
@@ -17,25 +14,10 @@ vi.mock("@/features/job-timeline/actions", () => ({
   recordJobContactAction: vi.fn().mockResolvedValue({ ok: true }),
 }));
 
-vi.mock("@/features/whatsapp/actions", () => ({
-  sendDriverAvailabilityWhatsAppAction: vi.fn().mockResolvedValue({
+vi.mock("@/features/operators/actions", () => ({
+  createDriverAccessLinkAction: vi.fn().mockResolvedValue({
     ok: true,
-    data: {
-      receipt: {
-        deduplicated: false,
-        messageId: "70000000-0000-4000-8000-000000000001",
-        metaMessageId: "wamid.availability",
-        state: "accepted",
-      },
-    },
-  }),
-  createAndSendDriverAssignmentWhatsAppAction: vi.fn().mockResolvedValue({
-    ok: true,
-    data: {
-      path: "/driver/access?token_hash=secure-token&type=magiclink",
-      receipt: null,
-      sendError: "Template pending.",
-    },
+    data: { path: "/driver/access?token_hash=secure-token&type=magiclink" },
   }),
 }));
 
@@ -55,7 +37,7 @@ afterEach(() => {
 });
 
 describe("driver job contact actions", () => {
-  it("sends availability through the API and hides the fallback after provider acceptance", async () => {
+  it("prepares driver availability in WhatsApp without claiming it was sent", () => {
     render(
       <DriverAvailabilityContactActions
         distanceKm={42.6}
@@ -66,25 +48,7 @@ describe("driver job contact actions", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Spyrja Bjarni Ólafsson um framboð í WhatsApp" }));
-    expect(sendDriverAvailabilityWhatsAppAction).toHaveBeenCalledWith({ jobId, operatorId });
-    expect(await screen.findByText("Sent í WhatsApp")).toBeInTheDocument();
-
-    expect(screen.queryByRole("link", { name: "Opna handvirka WhatsApp-varaleið fyrir Bjarni Ólafsson" })).not.toBeInTheDocument();
-  });
-
-  it("records use of the manual availability fallback without calling the API", () => {
-    render(
-      <DriverAvailabilityContactActions
-        distanceKm={42.6}
-        jobId={jobId}
-        operatorId={operatorId}
-        phone="555-0104"
-        summary={summary}
-      />,
-    );
-
-    const link = screen.getByRole("link", { name: "Opna handvirka WhatsApp-varaleið fyrir Bjarni Ólafsson" });
+    const link = screen.getByRole("link", { name: "Opna WhatsApp fyrir Bjarni Ólafsson" });
     const url = new URL(link.getAttribute("href")!);
     expect(url.pathname).toBe("/3545550104");
     expect(url.searchParams.get("text")).toContain("Svæði: Hella");
@@ -96,7 +60,8 @@ describe("driver job contact actions", () => {
       channel: "whatsapp",
       purpose: "availability",
     });
-    expect(sendDriverAvailabilityWhatsAppAction).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Afrita skilaboð til Bjarni Ólafsson" })).toBeInTheDocument();
+    expect(screen.queryByText("Sent í WhatsApp")).not.toBeInTheDocument();
   });
 
   it("generates a private driver link before offering the post-assignment WhatsApp message", async () => {
@@ -112,8 +77,8 @@ describe("driver job contact actions", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Búa til öruggan úthlutunartengil fyrir Bjarni Ólafsson" }));
 
-    expect(createAndSendDriverAssignmentWhatsAppAction).toHaveBeenCalledWith({ jobId, operatorId });
-    const link = await screen.findByRole("link", { name: "Senda úthlutun til Bjarni Ólafsson í WhatsApp" });
+    expect(createDriverAccessLinkAction).toHaveBeenCalledWith({ operatorId });
+    const link = await screen.findByRole("link", { name: "Opna WhatsApp fyrir Bjarni Ólafsson" });
 
     const href = link.getAttribute("href")!;
     const message = new URL(href).searchParams.get("text");

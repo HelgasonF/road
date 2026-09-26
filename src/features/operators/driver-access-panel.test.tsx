@@ -39,11 +39,12 @@ describe("driver access panel", () => {
     fireEvent.click(screen.getByRole("button", { name: "Búa til aðgangstengil" }));
 
     expect(createDriverAccessLinkAction).toHaveBeenCalledWith({ operatorId: operator.id });
-    const link = await screen.findByRole("link", { name: `Senda ökumannsaðgang til ${operator.name} í WhatsApp` });
+    const link = await screen.findByRole("link", { name: `Opna WhatsApp fyrir ${operator.name}` });
     const message = new URL(link.getAttribute("href")!).searchParams.get("text");
     expect(message).toContain("http://localhost:3000/driver/access?token_hash=secure-token&type=magiclink");
     expect(message).toContain("öruggur aðgangstengill");
     expect(message).not.toContain("netfang");
+    expect(screen.getByRole("button", { name: `Afrita skilaboð til ${operator.name}` })).toBeInTheDocument();
     expect(refresh).toHaveBeenCalled();
   });
 

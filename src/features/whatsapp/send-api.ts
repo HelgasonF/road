@@ -34,6 +34,7 @@ export type WhatsAppSendResult =
   | { ok: false; errorCode: string };
 
 const whatsappErrors: Record<string, string> = {
+  api_paused: "Sjálfvirk WhatsApp-sending er í bið. Afritaðu skilaboðin og sendu þau úr WhatsApp Business.",
   authentication_required: "Innskráning rann út. Skráðu þig inn aftur.",
   configuration_error: "WhatsApp-sniðmátið er ekki tilbúið. Notaðu handvirka sendingu.",
   delivery_unknown: "Óvíst er hvort WhatsApp tók við skilaboðunum. Athugaðu stöðuna áður en þú reynir aftur.",
@@ -72,6 +73,10 @@ async function readFunctionErrorCode(error: unknown) {
 export async function invokeWhatsAppSendFunction(
   input: WhatsAppTemplateRequest,
 ): Promise<WhatsAppSendResult> {
+  if (process.env.WHATSAPP_API_ENABLED !== "true") {
+    return { ok: false, errorCode: "api_paused" };
+  }
+
   const supabase = await createClient();
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
   const accessToken = sessionData.session?.access_token;

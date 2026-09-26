@@ -1,0 +1,13 @@
+# Manual WhatsApp handoff — 26 September 2026
+
+The owner keeps `+354 853 7704` in the WhatsApp Business phone app for ordinary and WhatsApp calls. Staff enter the caller's number in Iceland Road Assistance. The app creates a private link and prepares a complete message; staff copy it into the correct WhatsApp Business chat and press Send. **The app does not send the message or verify its delivery.** The optional `wa.me` button opens a prefilled chat, but the device chooses which installed WhatsApp account handles it. Staff must check the sender account before sending.
+
+This is the current default for customer intake, replacement customer links, driver availability, assignment/access links, and initial driver access. Customer details and photos remain in Iceland Road Assistance. The customer link expires after 24 hours. Driver access links are one-time links. Raw links are shown only when generated; if the draft is lost, generate a new link rather than trying to recover a stored token.
+
+The Cloud API integration and sandbox evidence are retained for later work. Current UI actions do not call the send function, and `invokeWhatsAppSendFunction` refuses to send unless the server-only `WHATSAPP_API_ENABLED=true` setting is explicitly supplied. The default is paused. No new API phone number, coexistence onboarding, WABA billing, or template approval is needed for this manual workflow.
+
+Manual WhatsApp replies and delivery/read status stay in the Business app. Staff read driver availability replies there and make the assignment in Iceland Road Assistance. The job timeline can record that a WhatsApp draft was opened; it cannot prove a manual message was sent or read. Copying the draft is not recorded as a send.
+
+Phone acceptance check: on the connected test phone, create a disposable customer link, copy the prepared message, paste it into a test chat, and check that **Open WhatsApp** launches the installed app. A phone with a different WhatsApp number is adequate for this opener test. Before real customer or driver sends, repeat on the device or linked desktop session using the company's `+354 853 7704` WhatsApp Business account and verify the sender shown in WhatsApp. Do not treat an opened draft as a delivered message.
+
+Local opener check on 26 September: the connected Samsung SM-G990B2 has `com.whatsapp` installed. An Android `VIEW` intent for a `wa.me` link with a harmless test draft launched `com.whatsapp/.contact.ui.picker.ContactPicker`; the draft was not sent. This proves the link reaches WhatsApp on that phone. The dashboard-to-phone handoff, clipboard paste, and company Business-account sender still need a physical workflow check.

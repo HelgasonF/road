@@ -1,5 +1,5 @@
 import { FunctionsHttpError } from "@supabase/supabase-js";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { invokeWhatsAppSendFunction } from "./send-api";
 
@@ -19,13 +19,31 @@ vi.mock("@/lib/supabase/server", () => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.stubEnv("WHATSAPP_API_ENABLED", "true");
   mocks.getSession.mockResolvedValue({
     data: { session: { access_token: "verified-staff-token" } },
     error: null,
   });
 });
 
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
 describe("WhatsApp send Edge Function client", () => {
+  it("does not call Meta while API sending is paused", async () => {
+    vi.stubEnv("WHATSAPP_API_ENABLED", "false");
+
+    await expect(invokeWhatsAppSendFunction({
+      action: "send_template",
+      idempotencyKey: "80000000-0000-4000-8000-000000000001",
+      purpose: "test",
+      recipientPhone: "5550104",
+    })).resolves.toEqual({ ok: false, errorCode: "api_paused" });
+    expect(mocks.getSession).not.toHaveBeenCalled();
+    expect(mocks.invoke).not.toHaveBeenCalled();
+  });
+
   it("forwards the staff token and returns the constrained receipt", async () => {
     mocks.invoke.mockResolvedValue({
       data: {

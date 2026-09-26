@@ -2,6 +2,8 @@
 
 Last updated: 26 September 2026
 
+Current WhatsApp decision, later on 26 September: Cloud API sending is paused. The owner keeps `+354 853 7704` in the WhatsApp Business app for calls and manual messages. The dashboard prepares customer and driver text with private links for staff to copy and send in the correct chat. It does not mark a copied or opened draft as delivered. The historical Cloud API work below is retained but no longer blocks the manual workflow. See [manual handoff](manual-whatsapp-handoff-2026-09-26.md).
+
 Brand alignment, 26 September: the public app name is **Iceland Road Assistance**, matching the approved WhatsApp templates. The customer form, submitted/unavailable pages, page metadata, and prepared manual WhatsApp message now use that exact name. Staff, driver, billing, and timeline screens use it too. Existing URLs, internal identifiers, and the earlier dated audit records remain unchanged.
 
 Customer map correction, 14 September evening: a user-reported OSM **Access blocked** image exposed a gap in the earlier visual check. The error PNG returned HTTP 200. The customer map's tile requests now use an origin-only referrer, preserving the private URL and other requests' `no-referrer` protection. Actual browser/phone map rendering, pin selection, request-header checks, build/typecheck/lint, and 26 nearby tests passed. Deployment details are in the [map follow-up](customer-map-error-2026-09-14.md).
@@ -22,7 +24,7 @@ The shutdown/resume state, active repository path, uncommitted work, restart com
 - Dispatch remains manual. Matching suggests suitable operators, but a dispatcher makes the assignment.
 - Drivers use a dedicated mobile-first Vegstoð screen for operational job data.
 - Drivers never receive operational email and do not need an email address or password. Dispatch generates a private one-time Vegstoð access link and delivers it to the registered phone through WhatsApp.
-- The tested MVP uses normal manual WhatsApp messages opened from Vegstoð on a phone or computer. The dispatcher reviews and presses Send. The official Meta WhatsApp Cloud API is now the planned production delivery channel; the existing manual `wa.me` handoff and calling remain operational fallbacks.
+- The current workflow uses manual WhatsApp Business messages prepared by Vegstoð on a phone or computer. The dispatcher copies, reviews, and presses Send in the correct Business account. Cloud API sending is paused.
 - A customer does not need an account. From the new-job **+** modal, dispatch can enter only the phone number and immediately open a prepared WhatsApp handoff with a 24-hour job-specific link. The customer enters their name, confirmed location, assistance type, description, registration, vehicle brand from a common-brand list or free-text fallback, optional rental company, number of people involved, and private photos inside Vegstoð. Staff can still switch to a complete manual job form with the same vehicle fields.
 - Every payer pays Vegstoð. Vegstoð is the payer-facing seller in the system and separately settles with the assigned service provider; the provider never invoices the customer through this workflow.
 - Billing stays in a separate staff-only **Uppgjör** workspace so the dispatcher map remains operational. Drivers cannot see payer prices, provider totals, or Vegstoð's gross difference.
@@ -269,30 +271,30 @@ The implemented flows are complete locally, and the complete dispatcher → cust
 
 1. Let the owner inspect the completed phone-audit job from the staff interface, then delete its disposable database, Storage, and Auth records.
 2. Replace the simplified administrator testing password with a unique production password before launch, and remove the linked WhatsApp Web device if it should not remain connected.
-3. Have the company owner add the applicable WABA payment method and complete business verification from Meta Business Settings. The three approved templates and their sandbox-phone paths passed on 14 September; preserve their working language and URL-button setup.
-4. Select and verify the permanent company-owned sender. The earlier `+354 853 7704` candidate is not confirmed as the final choice. If reusing a WhatsApp Business phone-app number, back up required chats before its Cloud API cutover.
-5. Register the selected number in Cloud API, subscribe its WABA, switch the active server-side Phone Number ID, and run the production phone test. Do not use Embedded Signup Builder.
+3. On the connected test phone, verify that the dashboard copies a complete message and that its optional opener launches WhatsApp. The phone's account number can differ for this opener test.
+4. Before real customer and driver sends, use the `+354 853 7704` WhatsApp Business account and verify the sender in the app. Staff must press Send and read replies manually.
+5. Keep WABA payment, business verification, API sender registration, and coexistence onboarding paused unless the company later chooses to resume Cloud API sending.
 6. Promote a reviewed build to production only after the launch checklist is approved; upgrade the same Supabase project later when capacity, uptime, backup, or support requirements justify it.
-7. Select and integrate Iceland-compatible accounting/invoicing and payment providers only after an accountant confirms the invoice, VAT, refund/credit-note, provider-payment, and reconciliation requirements. Customer payment links should use the Cloud API with the manual WhatsApp handoff as fallback.
+7. Select and integrate Iceland-compatible accounting/invoicing and payment providers only after an accountant confirms the invoice, VAT, refund/credit-note, provider-payment, and reconciliation requirements. Any customer payment link should follow the current manual WhatsApp handoff.
 
 ## Intended end-to-end workflow
 
 ```text
 Customer calls dispatcher on +354 853 7704
-        -> dispatcher enters the caller number and Vegstoð sends the intake link through Cloud API
-        -> Vegstoð creates a pending job and secure customer link
+        -> dispatcher enters the caller number and Vegstoð creates a pending job and secure customer link
+        -> dispatcher copies the prepared message into the correct WhatsApp Business chat and presses Send
         -> customer chooses assistance, describes the issue, confirms location, and uploads photos
         -> Vegstoð unlocks matching and assignment
-        -> Vegstoð asks suitable drivers about availability
-        -> driver replies Laus or Ekki laus
+        -> dispatcher copies an availability message to suitable drivers
+        -> dispatcher reads their WhatsApp replies manually
         -> dispatcher assigns one operator/driver and vehicle
-        -> Vegstoð sends the assigned driver's secure access link
+        -> dispatcher copies the assigned driver's secure access link into WhatsApp Business
         -> driver accepts in the Vegstoð driver screen
         -> driver calls/navigates and updates job status
         -> dispatcher follows the same job through completion
         -> completed job becomes ready in Uppgjör
         -> Vegstoð invoices and collects from the payer
-        -> Vegstoð sends the customer payment link through WhatsApp
+        -> dispatcher sends any future customer payment link manually through WhatsApp Business
         -> Vegstoð approves and pays the provider separately
         -> both paid legs mark the case fully settled
 ```

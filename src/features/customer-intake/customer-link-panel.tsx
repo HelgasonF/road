@@ -1,10 +1,10 @@
 "use client";
 
-import { Check, Link2, LockKeyhole, MessageCircle, RefreshCw, Unlink } from "lucide-react";
+import { Check, Link2, LockKeyhole, RefreshCw, Unlink } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-import { buildWhatsAppHref } from "@/lib/contact-links";
+import { ManualWhatsAppMessage } from "@/features/whatsapp/manual-message";
 import {
   createCustomerIntakeLinkAction,
   revokeCustomerIntakeLinkAction,
@@ -24,14 +24,10 @@ export function CustomerLinkPanel({ customerName, customerPhone, jobId, link }: 
   const router = useRouter();
   const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [sendError, setSendError] = useState<string | null>(null);
-  const [sentAutomatically, setSentAutomatically] = useState(false);
   const [pending, startTransition] = useTransition();
 
   function createLink() {
     setError(null);
-    setSendError(null);
-    setSentAutomatically(false);
     startTransition(async () => {
       const result = await createCustomerIntakeLinkAction({ jobId });
       if (!result.ok || !result.data) {
@@ -39,8 +35,6 @@ export function CustomerLinkPanel({ customerName, customerPhone, jobId, link }: 
         return;
       }
       setGeneratedUrl(new URL(result.data.path, window.location.origin).toString());
-      setSentAutomatically(Boolean(result.data.receipt));
-      setSendError(result.data.sendError);
       router.refresh();
     });
   }
@@ -55,19 +49,14 @@ export function CustomerLinkPanel({ customerName, customerPhone, jobId, link }: 
         return;
       }
       setGeneratedUrl(null);
-      setSentAutomatically(false);
-      setSendError(null);
       router.refresh();
     });
   }
 
   const active = link?.status === "active";
   const submitted = link?.status === "submitted";
-  const customerWhatsAppHref = generatedUrl
-    ? buildWhatsAppHref(
-      customerPhone,
-      buildCustomerIntakeWhatsAppMessage(customerName, generatedUrl),
-    )
+  const customerMessage = generatedUrl
+    ? buildCustomerIntakeWhatsAppMessage(customerName, generatedUrl)
     : null;
 
   return (
@@ -78,31 +67,14 @@ export function CustomerLinkPanel({ customerName, customerPhone, jobId, link }: 
       {active ? <p className="customer-link-status status-active"><Link2 size={15} /> Virkur til {formatCustomerLinkExpiry(link.expiresAt, "is")}</p> : null}
       {link && !active && !submitted ? <p className="customer-link-status">Tengill er útrunninn eða hefur verið afturkallaður.</p> : null}
 
-      {generatedUrl ? (
-        sentAutomatically ? (
-          <div className="customer-whatsapp-handoff">
-            <p>WhatsApp tók við sjálfvirku sendingunni. Afhendingarstaðan er skráð um leið og Meta staðfestir hana.</p>
-          </div>
-        ) : customerWhatsAppHref ? (
-          <div className="customer-whatsapp-handoff">
-            <p>{sendError ?? "Sjálfvirk sending var ekki tiltæk."} Opnaðu handvirku varaleiðina, farðu yfir skilaboðin og ýttu á Senda.</p>
-            <a
-              aria-label={`Senda öruggan tengil til ${customerName || "viðskiptavinar"} í WhatsApp`}
-              className="customer-whatsapp-send"
-              href={customerWhatsAppHref}
-              rel="noreferrer"
-              target="_blank"
-            >
-              <MessageCircle size={16} /> Opna WhatsApp handvirkt
-            </a>
-          </div>
-        ) : (
-          <p className="compact-error" role="alert">Ekki er hægt að opna WhatsApp fyrir skráða símanúmerið. Leiðréttu símanúmer viðskiptavinar og búðu til nýjan tengil.</p>
-        )
+      {customerMessage ? (
+        <div className="customer-whatsapp-handoff">
+          <ManualWhatsAppMessage key={customerMessage} message={customerMessage} phone={customerPhone} recipientName={customerName || customerPhone} />
+        </div>
       ) : active ? <p className="muted-copy">Vegna öryggis er hrái tengillinn aðeins tiltækur þegar hann er búinn til. Búðu til nýjan til að senda aftur í WhatsApp.</p> : null}
 
       <div className="customer-link-actions">
-        <button className="secondary-button" type="button" disabled={pending} onClick={createLink}>{active || submitted ? <RefreshCw size={15} /> : <Link2 size={15} />}{pending ? "Bý til og sendi…" : active ? "Nýr tengill og senda" : submitted ? "Óska eftir leiðréttingu" : "Búa til og senda tengil"}</button>
+        <button className="secondary-button" type="button" disabled={pending} onClick={createLink}>{active || submitted ? <RefreshCw size={15} /> : <Link2 size={15} />}{pending ? "Bý til…" : active ? "Nýr tengill" : submitted ? "Óska eftir leiðréttingu" : "Búa til tengil"}</button>
         {active ? <button className="text-danger-button" type="button" disabled={pending} onClick={revokeLink}><Unlink size={15} /> Afturkalla</button> : null}
       </div>
       {active && !generatedUrl ? <small>Nýr tengill afturkallar sjálfkrafa þann gamla.</small> : null}

@@ -1,16 +1,14 @@
 "use client";
 
-import { MessageCircle, PhoneCall, Send } from "lucide-react";
+import { PhoneCall, Send } from "lucide-react";
 import { useState, useTransition } from "react";
 
 import { recordJobContactAction } from "@/features/job-timeline/actions";
-import {
-  createAndSendDriverAssignmentWhatsAppAction,
-  sendDriverAvailabilityWhatsAppAction,
-} from "@/features/whatsapp/actions";
+import { createDriverAccessLinkAction } from "@/features/operators/actions";
+import { ManualWhatsAppMessage } from "@/features/whatsapp/manual-message";
 import type { JobContactPurpose } from "@/lib/domain/types";
 import type { DriverAccessStatus } from "@/lib/domain/types";
-import { buildContactLinks, buildWhatsAppHref } from "@/lib/contact-links";
+import { buildContactLinks } from "@/lib/contact-links";
 import {
   buildDriverAssignmentMessage,
   buildDriverAvailabilityMessage,
@@ -71,55 +69,19 @@ export function DriverAvailabilityContactActions({
   phone,
   summary,
 }: DriverAvailabilityContactActionsProps) {
-  const [error, setError] = useState<string | null>(null);
-  const [sent, setSent] = useState(false);
-  const [pending, startTransition] = useTransition();
-  const whatsappHref = buildWhatsAppHref(
-    phone,
-    buildDriverAvailabilityMessage(summary, distanceKm),
-  );
-
-  function sendAvailability() {
-    setError(null);
-    startTransition(async () => {
-      const result = await sendDriverAvailabilityWhatsAppAction({ jobId, operatorId });
-      if (!result.ok) {
-        setError(result.error ?? "Sjálfvirk WhatsApp-sending mistókst.");
-        return;
-      }
-      setSent(true);
-    });
-  }
+  const message = buildDriverAvailabilityMessage(summary, distanceKm);
 
   return (
     <div className="match-contact-block">
       <div className="driver-job-contact-actions" aria-label={`Hafa samband við ${summary.driverName}`}>
         <DriverCallLink driverName={summary.driverName} jobId={jobId} operatorId={operatorId} phone={phone} purpose="availability" />
-        {whatsappHref ? (
-          <button
-            className="driver-job-contact driver-job-contact-whatsapp"
-            type="button"
-            disabled={pending || sent}
-            onClick={sendAvailability}
-            aria-label={`Spyrja ${summary.driverName} um framboð í WhatsApp`}
-          >
-            <MessageCircle size={14} /> {pending ? "Sendi…" : sent ? "Sent í WhatsApp" : "Spyrja um framboð"}
-          </button>
-        ) : null}
-        {whatsappHref && !sent ? (
-          <a
-            className="driver-job-contact"
-            href={whatsappHref}
-            onClick={() => recordContact(jobId, operatorId, "whatsapp", "availability")}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`Opna handvirka WhatsApp-varaleið fyrir ${summary.driverName}`}
-          >
-            Handvirkt
-          </a>
-        ) : null}
       </div>
-      {error ? <p className="compact-error" role="alert">{error}</p> : null}
+      <ManualWhatsAppMessage
+        message={message}
+        onOpen={() => recordContact(jobId, operatorId, "whatsapp", "availability")}
+        phone={phone}
+        recipientName={summary.driverName}
+      />
     </div>
   );
 }
@@ -134,23 +96,20 @@ export function DriverAssignmentContactActions({
   const { whatsappHref } = buildContactLinks(phone);
   const [driverUrl, setDriverUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [sent, setSent] = useState(false);
   const [pending, startTransition] = useTransition();
-  const assignmentWhatsAppHref = driverUrl
-    ? buildWhatsAppHref(phone, buildDriverAssignmentMessage(summary, driverUrl))
+  const assignmentMessage = driverUrl
+    ? buildDriverAssignmentMessage(summary, driverUrl)
     : null;
 
   function createAssignmentLink() {
     setError(null);
     startTransition(async () => {
-      const result = await createAndSendDriverAssignmentWhatsAppAction({ jobId, operatorId });
+      const result = await createDriverAccessLinkAction({ operatorId });
       if (!result.ok || !result.data) {
         setError(result.error ?? "Ekki tókst að búa til ökumannstengil.");
         return;
       }
       setDriverUrl(new URL(result.data.path, window.location.origin).toString());
-      setSent(Boolean(result.data.receipt));
-      setError(result.data.sendError);
     });
   }
 
@@ -166,30 +125,22 @@ export function DriverAssignmentContactActions({
             onClick={createAssignmentLink}
             aria-label={`Búa til öruggan úthlutunartengil fyrir ${summary.driverName}`}
           >
-            <Send size={14} /> {pending ? "Bý til og sendi…" : "Búa til og senda"}
+            <Send size={14} /> {pending ? "Bý til…" : "Búa til tengil"}
           </button>
-        ) : null}
-        {assignmentWhatsAppHref && !sent ? (
-          <a
-            className="driver-job-contact driver-job-contact-whatsapp"
-            href={assignmentWhatsAppHref}
-            onClick={() => recordContact(jobId, operatorId, "whatsapp", "assignment")}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`Senda úthlutun til ${summary.driverName} í WhatsApp`}
-          >
-            <MessageCircle size={14} /> Opna WhatsApp handvirkt
-          </a>
         ) : null}
       </div>
       {accessStatus === "disabled" ? (
         <p>Ökumannsaðgangur er óvirkur.</p>
-      ) : sent ? (
-        <p>WhatsApp tók við úthlutuninni og örugga tenglinum.</p>
-      ) : assignmentWhatsAppHref ? (
-        <p>Öruggi tengillinn er tilbúinn. Opnaðu handvirku varaleiðina og ýttu á Senda.</p>
+      ) : assignmentMessage ? (
+        <ManualWhatsAppMessage
+          key={assignmentMessage}
+          message={assignmentMessage}
+          onOpen={() => recordContact(jobId, operatorId, "whatsapp", "assignment")}
+          phone={phone}
+          recipientName={summary.driverName}
+        />
       ) : (
-        <p>Býr til einkatengil sem skráir ökumanninn inn í Iceland Road Assistance eftir staðfestingu.</p>
+        <p>Býr til einkatengil fyrir ökumanninn. Afritaðu síðan skilaboðin í WhatsApp Business.</p>
       )}
       {error ? <p className="compact-error" role="alert">{error}</p> : null}
     </div>

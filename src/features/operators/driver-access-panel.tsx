@@ -10,7 +10,8 @@ import {
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
-import { buildContactLinks, buildWhatsAppHref } from "@/lib/contact-links";
+import { buildContactLinks } from "@/lib/contact-links";
+import { ManualWhatsAppMessage } from "@/features/whatsapp/manual-message";
 import type { DriverAccessStatus, Operator } from "@/lib/domain/types";
 import {
   createDriverAccessLinkAction,
@@ -39,11 +40,8 @@ export function DriverAccessPanel({ demoMode, operator }: DriverAccessPanelProps
 
   const access = operator.driverAccess;
   const { whatsappHref } = buildContactLinks(operator.phone);
-  const accessWhatsAppHref = generatedUrl
-    ? buildWhatsAppHref(
-      operator.phone,
-      buildDriverAccessWhatsAppMessage(operator.name, generatedUrl),
-    )
+  const accessMessage = generatedUrl
+    ? buildDriverAccessWhatsAppMessage(operator.name, generatedUrl)
     : null;
 
   function createLink() {
@@ -82,7 +80,7 @@ export function DriverAccessPanel({ demoMode, operator }: DriverAccessPanelProps
       <div className="section-heading">
         <div>
           <h3 id="driver-access-heading">Ökumannsaðgangur</h3>
-          <p>Öruggur innskráningartengill sendur í WhatsApp</p>
+          <p>Öruggur innskráningartengill tilbúinn fyrir WhatsApp</p>
         </div>
         {access ? (
           <span className={`driver-access-status driver-access-status-${access.status}`}>
@@ -101,7 +99,7 @@ export function DriverAccessPanel({ demoMode, operator }: DriverAccessPanelProps
               {!access
                 ? "Enginn ökumannsaðgangur hefur verið stofnaður"
                 : access.status === "pending"
-                  ? "Bíður eftir að ökumaður opni WhatsApp-tengil"
+                  ? "Tengill tilbúinn; bíður eftir notkun"
                   : access.status === "active"
                     ? "Tengt þessum þjónustuaðila"
                     : "Aðgangurinn er lokaður"}
@@ -132,18 +130,9 @@ export function DriverAccessPanel({ demoMode, operator }: DriverAccessPanelProps
           ) : null}
         </div>
 
-        {accessWhatsAppHref ? (
+        {accessMessage ? (
           <div className="driver-whatsapp-handoff">
-            <p>Farðu yfir skilaboðin og ýttu sjálf/ur á Senda í WhatsApp.</p>
-            <a
-              className="customer-whatsapp-send"
-              href={accessWhatsAppHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Senda ökumannsaðgang til ${operator.name} í WhatsApp`}
-            >
-              <MessageCircle size={16} /> Senda í WhatsApp
-            </a>
+            <ManualWhatsAppMessage key={accessMessage} message={accessMessage} phone={operator.phone} recipientName={operator.name} />
           </div>
         ) : null}
       </div>
