@@ -27,7 +27,7 @@ export function ManualWhatsAppMessage({ message, onOpen, phone, recipientName }:
 
   return (
     <div className="manual-whatsapp-message">
-      <p>Skilaboðin eru tilbúin. Afritaðu þau, límdu í rétt spjall í WhatsApp Business og ýttu sjálf/ur á Senda.</p>
+      <p>Skilaboðin eru tilbúin. Opnaðu WhatsApp eða afritaðu þau og límdu í spjallið við viðtakandann. Ýttu sjálf/ur á Senda.</p>
       <div className="manual-whatsapp-actions">
         <button aria-label={recipientName ? `Afrita skilaboð til ${recipientName}` : undefined} className="customer-whatsapp-send" type="button" onClick={copyMessage}>
           {copyResult?.message === message && !copyResult.error ? <Check size={16} /> : <Copy size={16} />}
@@ -40,7 +40,7 @@ export function ManualWhatsAppMessage({ message, onOpen, phone, recipientName }:
         ) : null}
       </div>
       {copyResult?.message === message ? (
-        <p role="status">{copyResult.error ? "Ekki tókst að afrita. Opnaðu skilaboðin hér að neðan og veldu textann handvirkt." : "Skilaboðin voru afrituð. Farðu í WhatsApp Business og límdu þau í rétt spjall."}</p>
+        <p role="status">{copyResult.error ? "Ekki tókst að afrita. Opnaðu skilaboðin hér að neðan og veldu textann handvirkt." : "Skilaboðin voru afrituð. Farðu í WhatsApp og límdu þau í spjallið við viðtakandann."}</p>
       ) : null}
       <details>
         <summary>Skoða tilbúin skilaboð</summary>

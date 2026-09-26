@@ -114,7 +114,7 @@ export function JobEditor({ capabilities, job, onClose, onQuickCreated, onSaved 
             <div className="quick-job-success">
               <span><CheckCircle2 size={28} /></span>
               <h3>Verkefnið og tengillinn eru tilbúin</h3>
-              <p>Afritaðu skilaboðin og sendu þau úr WhatsApp Business.</p>
+              <p>Opnaðu WhatsApp eða afritaðu skilaboðin og sendu þau þaðan.</p>
               <small>{formatCustomerLinkExpiry(quickLink.expiresAt, "is")}</small>
               <ManualWhatsAppMessage key={quickLink.message} message={quickLink.message} phone={quickLink.phone} recipientName={quickLink.phone} />
               <button className="secondary-button" type="button" onClick={onClose}>Loka</button>
@@ -130,7 +130,7 @@ export function JobEditor({ capabilities, job, onClose, onQuickCreated, onSaved 
               </div>
               <label className="field quick-job-phone">
                 <span>{is.customerPhone}</span>
-                <input name="customerPhone" type="tel" inputMode="tel" autoComplete="tel" autoFocus placeholder="6597003 eða erlent númer með landskóða" required />
+                <input name="customerPhone" type="tel" inputMode="tel" autoComplete="tel" placeholder="6597003 eða erlent númer með landskóða" required />
               </label>
               {error ? <p className="form-error" role="alert">{error}</p> : null}
               <button className="primary-button quick-create-button" type="submit" disabled={pending}>
