@@ -2,7 +2,7 @@
 
 Updated: 12 September 2026 (Atlantic/Reykjavik)
 
-**Superseded product decision, 26 September:** the owners need WhatsApp Business phone-app calls, but Vegstoð may send automated messages from a different number. Keep the call number registered in the phone app and use a separate unused company-owned number for direct Cloud API registration. The same-number registration and release steps in this historical checkpoint no longer apply; see the current plan at the top of [`whatsapp-production-handoff-2026-09-12.md`](whatsapp-production-handoff-2026-09-12.md). The Meta MCP can inspect the developer app but does not provide phone-number onboarding or a fresh WABA status read.
+**Superseded product decision, 26 September:** the owners need WhatsApp Business phone-app calls, but Vegstoð could send automated messages from a different number. That would start a separate customer chat, which the owner is evaluating. Keep the call number registered in the phone app; the direct-registration and release steps for that number in this historical checkpoint no longer apply. See the sender options at the top of [`whatsapp-production-handoff-2026-09-12.md`](whatsapp-production-handoff-2026-09-12.md). The Meta MCP can inspect the developer app but does not provide phone-number onboarding or a fresh WABA status read.
 
 This file preserves the Meta MCP and asset-discovery checkpoint. The newer [`whatsapp-production-handoff-2026-09-12.md`](whatsapp-production-handoff-2026-09-12.md) is authoritative for the manual templates, current Meta checklist, code alignment, and production cutover sequence.
 
