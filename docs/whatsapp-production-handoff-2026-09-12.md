@@ -2,7 +2,7 @@
 
 Updated: 26 September 2026, Atlantic/Reykjavik. Original handoff: 12 September 2026.
 
-**Requirement changed, 26 September:** the owners need WhatsApp voice calls to keep ringing in the WhatsApp Business phone app while Vegstoð uses API messaging on the same number. The direct Cloud API cutover instructions below are historical and must not be followed for this number. Meta's standard **Add your WhatsApp phone number** screen rejected the newly used phone-app number with `#2655122` because it is already registered. Do not delete or disconnect the phone-app account. The active route is [WhatsApp Business app coexistence via Embedded Signup](https://developers.facebook.com/documentation/business-messaging/whatsapp/embedded-signup/onboarding-business-app-users), offered by a Solution Partner or eligible Tech Provider. Meta documents that voice and video calls continue in the phone app. A provider/implementation has not yet been selected, the exact number has not been reconfirmed, and no production asset or Supabase sender secret has changed. Check the number's WhatsApp Business app age and the intended WABA before onboarding; then verify `is_on_biz_app: true` with `platform_type: CLOUD_API`, production templates, webhooks, and the complete phone workflow before switching the sender.
+**Clarified call and message flow, 26 September:** the owners need WhatsApp voice calls to ring in the WhatsApp Business phone app, but the Cloud API sender may be a different number. Dispatch reads the caller's number, enters it in Vegstoð's new-job form, and Vegstoð sends the customer link to that number; the outbound sender is configured separately. The recommended route is to keep the call number in the phone app and register a separate, unused company-owned number directly with Cloud API. The phone-app number rejected by Meta with `#2655122` should remain in the phone app. This two-number route does not require [Business app coexistence](https://developers.facebook.com/documentation/business-messaging/whatsapp/embedded-signup/onboarding-business-app-users). Customers will see the API number as the sender of automated WhatsApp messages. The exact call number and new API sender are not yet confirmed, and no production asset or Supabase sender secret has changed. Staff enter caller numbers manually; Vegstoð does not import WhatsApp call events.
 
 Latest result, 14 September: the [hosted end-to-end audit](whatsapp-e2e-audit-2026-09-14.md) **passed** after template approval. The corrected customer button, phone form with GPS/photo, availability reply, assignment/access, driver statuses through completion, internal billing, and timeline all worked. The three templates reached `read` with `en` and no send errors. The dispatcher still needs refresh for changes from another device. No templates or sender settings were changed in this test; the permanent sender is still undecided.
 
@@ -27,10 +27,10 @@ Meta MCP OAuth may ask to authenticate again after Codex restarts. Use the exist
 
 ## Decisions confirmed today
 
-- Vegstoð is integrating WhatsApp Cloud API for one towing company and its own number. This is a direct business integration.
-- Do not use **Embedded Signup Builder**. That flow is for a platform or provider onboarding other businesses and is not part of this implementation.
-- Coexistence and Independent Tech Provider onboarding are also outside the selected route. The company does not need to keep using the WhatsApp Business phone app after the final Cloud API cutover.
-- Customers will continue to call the ordinary cellular number `+354 853 7704`. The dispatcher enters the caller's number into Vegstoð, and Vegstoð sends the secure customer and driver links through Cloud API.
+- Vegstoð is integrating WhatsApp Cloud API for one towing company. The outbound API sender can differ from the number customers call.
+- Keep the call number in the WhatsApp Business phone app. Dispatch enters the caller's number into Vegstoð, which sends the secure customer link from a separate API number. Driver links go to the drivers' registered numbers.
+- Use a fresh, company-owned, SMS/voice-verifiable number that has never been registered in a WhatsApp phone app as the direct Cloud API sender. No coexistence partner or Embedded Signup Builder is needed for this two-number route.
+- The earlier `+354 853 7704` number was a candidate. Confirm the current call number and choose the API number before production registration.
 - The company owner can add the WhatsApp payment method and complete business verification from Meta Business Settings without developer-app access. Developer access remains necessary for the app, webhooks, templates, and API configuration.
 - Use `Atlantic/Reykjavik` / `UTC+00:00` when Meta asks for the time zone.
 
@@ -43,8 +43,9 @@ Meta MCP OAuth may ask to authenticate again after Codex restarts. Use the exist
 | Sandbox sender | `+1 555-601-6830` | Current test sender |
 | Sandbox Phone Number ID | `1251932438011191` | Active Phone Number ID in Supabase until cutover |
 | Real company WABA | `931911699982634` | WABA containing the intended company number |
-| Real company number | `+354 853 7704` | Intended production sender and normal customer call number |
-| Real Phone Number ID | `1209825652224082` | Last read as `ON_PREMISE`, `DISCONNECTED`, and `NOT_VERIFIED` |
+| Earlier company number candidate | `+354 853 7704` | Current call-number role needs owner confirmation; do not register directly if retained in the phone app |
+| Earlier company Phone Number ID | `1209825652224082` | Last read as `ON_PREMISE`, `DISCONNECTED`, and `NOT_VERIFIED`; not the selected API sender |
+| New production API sender | To be chosen | Separate unused number, pending verification and registration |
 
 The green **Register your WhatsApp phone number** item in the developer-app Step 2 screen proves that the current setup has a registered number. It does not by itself prove that `+354 853 7704` is the active Cloud API sender.
 
@@ -206,9 +207,10 @@ These changes were prepared on top of commit `10a61d8` and saved in the checkpoi
 
 1. Preserve the three approved `en` templates and corrected URL-button bases; all three passed the 14 September sandbox-phone flow.
 2. Have the company owner add the payment method to the WABA that will own the production Cloud API number, and complete Step 3 business verification with the company's real details and documents.
-3. Select and verify the permanent company-owned sender. The earlier `+354 853 7704` candidate is not confirmed as the final choice. If reusing a WhatsApp Business phone-app number, export any chats the owner wants to retain before cutover.
-4. Register the selected number directly with Cloud API. Connect/subscribe its WABA to the existing app and signed webhook, update the active WABA/Phone Number ID secrets, and run a physical-phone production test through Iceland Road Assistance. Do not use Embedded Signup Builder.
-5. Keep the manual `wa.me` fallback until the owner accepts the complete production test.
+3. Confirm the WhatsApp Business phone-app call number, and obtain a separate unused company-owned number that can receive Meta's SMS or voice verification code. Do not remove the call number from the phone app.
+4. Register the new sender directly with Cloud API in the intended production WABA. Ensure all three operational templates are approved in that WABA; sandbox approval alone is insufficient. Connect/subscribe the WABA to the existing app and signed webhook, update the active WABA/Phone Number ID secrets, and run a physical-phone production test from a call through Iceland Road Assistance. Do not use Embedded Signup Builder.
+5. During the call, ask the customer for permission to receive WhatsApp updates from Iceland Road Assistance before creating the phone-first job. Caller ID alone does not establish WhatsApp messaging opt-in under [Meta's Business Messaging Policy](https://business.whatsapp.com/policy/).
+6. Keep the manual `wa.me` fallback until the owner accepts the complete production test.
 
 ## Evidence boundary
 
