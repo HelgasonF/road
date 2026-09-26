@@ -12,6 +12,8 @@ describe("WhatsApp operational template values", () => {
     expect(buildDriverTemplateBodyParameters({
       driverName: "  Jón   Einarsson ",
       locationLabel: "Suðurlandsvegur 12, Hvolsvöllur, Ísland",
+      latitude: 63.7508,
+      longitude: -20.2238,
       priority: "urgent",
       requiredCapabilities: ["towing", "tire_assistance"],
     })).toEqual([

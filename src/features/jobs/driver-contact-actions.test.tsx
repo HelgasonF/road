@@ -27,6 +27,8 @@ const operatorId = "10000000-0000-4000-8000-000000000001";
 const summary: DriverJobContactSummary = {
   driverName: "Bjarni Ólafsson",
   locationLabel: "Hella",
+  latitude: 63.8355,
+  longitude: -20.3987,
   priority: "high",
   requiredCapabilities: ["tire_assistance"],
 };
@@ -41,6 +43,7 @@ describe("driver job contact actions", () => {
     render(
       <DriverAvailabilityContactActions
         distanceKm={42.6}
+        origin={{ latitude: 64.146, longitude: -21.9422, source: "base" }}
         jobId={jobId}
         operatorId={operatorId}
         phone="555-0104"
@@ -52,6 +55,7 @@ describe("driver job contact actions", () => {
     const url = new URL(link.getAttribute("href")!);
     expect(url.pathname).toBe("/3545550104");
     expect(url.searchParams.get("text")).toContain("Svæði: Hella");
+    expect(url.searchParams.get("text")).toContain("um 43 km SA frá bækistöð þinni");
 
     fireEvent.click(link);
     expect(recordJobContactAction).toHaveBeenCalledWith({

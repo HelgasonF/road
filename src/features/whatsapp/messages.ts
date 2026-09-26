@@ -1,10 +1,12 @@
-import { toDriverContactArea } from "@/features/jobs/driver-contact";
+import { describeDriverArea } from "@/features/jobs/driver-area";
 import type { CapabilityCode, JobPriority } from "@/lib/domain/types";
 import { capabilityLabels, jobPriorityLabels } from "@/lib/i18n/is";
 
 export interface DriverTemplateSummary {
   driverName: string;
   locationLabel: string;
+  latitude: number;
+  longitude: number;
   priority: JobPriority;
   requiredCapabilities: CapabilityCode[];
 }
@@ -12,7 +14,7 @@ export interface DriverTemplateSummary {
 export function buildDriverTemplateBodyParameters(summary: DriverTemplateSummary) {
   return [
     summary.driverName.replace(/\s+/g, " ").trim(),
-    toDriverContactArea(summary.locationLabel),
+    describeDriverArea(summary),
     summary.requiredCapabilities.map((code) => capabilityLabels[code]).join(", "),
     jobPriorityLabels[summary.priority],
   ];

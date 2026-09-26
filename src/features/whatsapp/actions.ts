@@ -87,6 +87,8 @@ function contactSummary(rows: ContactRows) {
     driverName: rows.operator.name,
     locationLabel: rows.job.location_label
       ?? `${rows.job.latitude.toFixed(4)}, ${rows.job.longitude.toFixed(4)}`,
+    latitude: rows.job.latitude,
+    longitude: rows.job.longitude,
     priority: rows.job.priority,
     requiredCapabilities: rows.job.requiredCapabilities,
   };

@@ -23,7 +23,7 @@ import {
   DriverAssignmentContactActions,
   DriverAvailabilityContactActions,
 } from "./driver-contact-actions";
-import type { DriverJobContactSummary } from "./driver-contact";
+import { driverOrigin, type DriverJobContactSummary } from "./driver-contact";
 import { buildJobCandidates } from "./matching";
 
 interface JobDetailProps {
@@ -41,6 +41,8 @@ function driverContactSummary(job: Job, driverName: string): DriverJobContactSum
   return {
     driverName,
     locationLabel: job.locationLabel,
+    latitude: job.latitude,
+    longitude: job.longitude,
     priority: job.priority,
     requiredCapabilities: job.requiredCapabilities,
   };
@@ -242,6 +244,7 @@ export function JobDetail({ customerLink, demoMode, job, matches, operators, onC
                   distanceKm={match?.distanceKm ?? null}
                   jobId={job.id}
                   operatorId={operator.id}
+                  origin={driverOrigin(operator)}
                   phone={operator.phone}
                   summary={driverContactSummary(job, operator.name)}
                 />
