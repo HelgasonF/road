@@ -24,6 +24,7 @@ import { useMemo, useState, useTransition } from "react";
 import { logoutAction } from "@/features/auth/actions";
 import { ContactActions } from "@/features/contact/contact-actions";
 import { JobPhotoGallery } from "@/features/customer-intake/job-photo-gallery";
+import { useLiveRefresh } from "@/lib/supabase/use-live-refresh";
 import type {
   AvailabilityStatus,
   Job,
@@ -62,8 +63,11 @@ function jobVehicle(job: Job) {
   return job.vehicleMake || "Bílamerki óskráð";
 }
 
+const DRIVER_LIVE_TABLES = ["jobs", "job_assignments"] as const;
+
 export function DriverWorkspace({ demoMode, jobs, operator }: DriverWorkspaceProps) {
   const router = useRouter();
+  useLiveRefresh({ enabled: !demoMode, tables: DRIVER_LIVE_TABLES });
   const [pending, startTransition] = useTransition();
   const [selectedJobId, setSelectedJobId] = useState(
     jobs.find((job) => job.status !== "completed" && job.status !== "cancelled")?.id

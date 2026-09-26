@@ -23,6 +23,7 @@ import { JobDetail } from "@/features/jobs/job-detail";
 import type { JobOperatorMatch, JobWhatsAppReply } from "@/features/jobs/queries";
 import { OperatorEditor, VehicleEditor } from "@/features/operators/editors";
 import { OperatorDetail } from "@/features/operators/operator-detail";
+import { useLiveRefresh } from "@/lib/supabase/use-live-refresh";
 import type {
   AvailabilityStatus,
   Capability,
@@ -50,6 +51,8 @@ type StatusFilter = "all" | AvailabilityStatus;
 type JobFilter = "active" | "unassigned" | "completed" | "all";
 type WorkspaceMode = "jobs" | "operators";
 
+const DISPATCH_LIVE_TABLES = ["jobs", "job_assignments", "operators"] as const;
+
 export function DispatcherWorkspace({
   capabilities,
   customerLinks,
@@ -62,6 +65,7 @@ export function DispatcherWorkspace({
   whatsappReplies,
 }: DispatcherWorkspaceProps) {
   const router = useRouter();
+  useLiveRefresh({ enabled: !demoMode, tables: DISPATCH_LIVE_TABLES });
   const initialJob = jobs.find((job) => job.id === initialJobId) ?? null;
   const [mode, setMode] = useState<WorkspaceMode>(jobs.length > 0 ? "jobs" : "operators");
   const [query, setQuery] = useState("");
