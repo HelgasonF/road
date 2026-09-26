@@ -51,6 +51,7 @@ export async function saveJobAction(input: JobInput): Promise<ActionResult<{ id:
 
   if (error) return { ok: false, error: "Ekki tókst að vista verkefnið." };
   revalidatePath("/");
+  revalidatePath(`/jobs/${data}/history`);
   return { ok: true, data: { id: data } };
 }
 

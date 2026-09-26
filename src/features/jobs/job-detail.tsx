@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, CheckCircle2, Clock3, History, MapPin, MessageCircle, Pencil, ReceiptText, Route, Truck, UserRound, UsersRound } from "lucide-react";
+import { Building2, CheckCircle2, Clock3, History, IdCard, MapPin, MessageCircle, Pencil, ReceiptText, Route, Truck, UserRound, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 
@@ -167,6 +167,7 @@ export function JobDetail({ customerLink, demoMode, job, matches, operators, onC
         <section className="detail-section job-summary-grid">
           <div><Clock3 size={15} /><span><small>{is.priority}</small><strong>{jobPriorityLabels[job.priority]}</strong></span></div>
           <div><Truck size={15} /><span><small>Bílamerki</small><strong>{job.vehicleMake || "Óskráð"}</strong></span></div>
+          <div><IdCard size={15} /><span><small>{is.registrationNumber}</small><strong>{job.vehicleRegistration || "Óskráð"}</strong></span></div>
           <div><UsersRound size={15} /><span><small>Fjöldi fólks</small><strong>{job.peopleCount ?? "Óskráð"}</strong></span></div>
           {job.rentalCompany ? <div><Building2 size={15} /><span><small>Bílaleiga</small><strong>{job.rentalCompany}</strong></span></div> : null}
         </section>
