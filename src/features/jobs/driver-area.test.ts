@@ -44,11 +44,12 @@ describe("describeDriverArea", () => {
   });
 
   it.each([
-    ["Ártúnshöfði", 64.1261, -21.8417, /^Reykjavík – /],
-    ["Vellir", 64.0475, -21.975, /^Hafnarfjörður – Vellir$/],
-    ["Glerárhverfi edge", 65.6938, -18.1106, /^Akureyri – Holtahverfi$/],
-  ])("names the town and district inside a city: %s", (_place, latitude, longitude, expected) => {
-    expect(describeDriverArea({ locationLabel: "GPS · x", latitude, longitude })).toMatch(expected);
+    ["Ártúnshöfði", 64.1261, -21.8417, "Reykjavík"],
+    ["Grafarvogur", 64.1483, -21.792, "Reykjavík"],
+    ["Vellir", 64.0475, -21.975, "Hafnarfjörður"],
+    ["Holtahverfi", 65.6938, -18.1106, "Akureyri"],
+  ])("names only the town inside a city, not the district: %s", (_place, latitude, longitude, expected) => {
+    expect(describeDriverArea({ locationLabel: "GPS · x", latitude, longitude })).toBe(expected);
   });
 
   it("flags the Kjölur road as highland even when Gullfoss is the closest known place", () => {

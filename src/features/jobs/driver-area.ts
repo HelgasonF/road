@@ -21,7 +21,8 @@ const AT_PLACE_KM = 2;
 const NEAR_SETTLEMENT_KM = 15;
 // A landmark further away than this tells the driver little.
 const LANDMARK_MAX_KM = 40;
-// Within this distance of a city district point the job is in that district.
+// Within this distance of a city district point the job is in that district's
+// town. Only the town is shown: district names meant little to drivers.
 const IN_DISTRICT_KM = 3;
 // A job this close to a lowland site is at that site, not in the highlands.
 const AT_LOWLAND_SITE_KM = 5;
@@ -97,7 +98,7 @@ function isHighland(target: GeoPoint, settlementKm: number) {
 
 function describePinnedArea(target: GeoPoint) {
   const district = nearest(DISTRICTS, target);
-  if (district.km <= IN_DISTRICT_KM) return `${district.point.town} – ${district.point.name}`;
+  if (district.km <= IN_DISTRICT_KM) return district.point.town;
 
   const settlement = nearest(SETTLEMENTS, target);
   if (settlement.km <= NEAR_SETTLEMENT_KM) return relativeTo(settlement, target);

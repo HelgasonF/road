@@ -143,8 +143,10 @@ export interface DistrictPoint extends ReferencePoint {
   town: string;
 }
 
-// City districts from the imported place names (category suburb). District
-// names repeat between towns, so each carries its town explicitly.
+// City districts from the imported place names (category suburb), used only to
+// tell which town a job is in: a single town point is too coarse for large
+// towns (a pin in eastern Reykjavík is nearer Kópavogur's point than
+// Reykjavík's). The message shows the town, never the district.
 export const DISTRICTS: readonly DistrictPoint[] = [
   { town: "Reykjavík", name: "Kjalarnes", latitude: 64.2422, longitude: -21.8315 },
   { town: "Reykjavík", name: "Grafarvogur", latitude: 64.1483, longitude: -21.792 },
