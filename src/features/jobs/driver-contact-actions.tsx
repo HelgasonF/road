@@ -13,7 +13,6 @@ import {
   buildDriverAssignmentMessage,
   buildDriverAvailabilityMessage,
   type DriverJobContactSummary,
-  type DriverOrigin,
 } from "./driver-contact";
 
 interface DriverContactBaseProps {
@@ -21,11 +20,6 @@ interface DriverContactBaseProps {
   operatorId: string;
   phone: string;
   summary: DriverJobContactSummary;
-}
-
-interface DriverAvailabilityContactActionsProps extends DriverContactBaseProps {
-  distanceKm: number | null;
-  origin?: DriverOrigin;
 }
 
 interface DriverAssignmentContactActionsProps extends DriverContactBaseProps {
@@ -65,14 +59,12 @@ function DriverCallLink({
 }
 
 export function DriverAvailabilityContactActions({
-  distanceKm,
   jobId,
   operatorId,
-  origin,
   phone,
   summary,
-}: DriverAvailabilityContactActionsProps) {
-  const message = buildDriverAvailabilityMessage(summary, distanceKm, origin);
+}: DriverContactBaseProps) {
+  const message = buildDriverAvailabilityMessage(summary);
 
   return (
     <div className="match-contact-block">

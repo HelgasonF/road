@@ -32,6 +32,16 @@ function renderJob(overrides: Partial<(typeof demoJobs)[number]>) {
   );
 }
 
+describe("JobDetail layout", () => {
+  it("shows the provider ranking before the assignment controls", () => {
+    renderJob({ status: "new", intakePending: false, assignment: null });
+
+    const ranking = screen.getByRole("heading", { name: "Röðun þjónustuaðila" });
+    const assignment = screen.getByRole("heading", { name: "Úthlutun" });
+    expect(ranking.compareDocumentPosition(assignment) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+});
+
 describe("JobDetail vehicle summary", () => {
   it("shows the vehicle registration the customer submitted", () => {
     renderJob({ vehicleRegistration: "AB123" });

@@ -42,8 +42,6 @@ describe("driver job contact actions", () => {
   it("prepares driver availability in WhatsApp without claiming it was sent", () => {
     render(
       <DriverAvailabilityContactActions
-        distanceKm={42.6}
-        origin={{ latitude: 64.146, longitude: -21.9422, source: "base" }}
         jobId={jobId}
         operatorId={operatorId}
         phone="555-0104"
@@ -55,7 +53,7 @@ describe("driver job contact actions", () => {
     const url = new URL(link.getAttribute("href")!);
     expect(url.pathname).toBe("/3545550104");
     expect(url.searchParams.get("text")).toContain("Svæði: Hella");
-    expect(url.searchParams.get("text")).toContain("um 43 km SA frá bækistöð þinni");
+    expect(url.searchParams.get("text")).not.toContain("fjarlægð");
 
     fireEvent.click(link);
     expect(recordJobContactAction).toHaveBeenCalledWith({

@@ -23,7 +23,7 @@ import {
   DriverAssignmentContactActions,
   DriverAvailabilityContactActions,
 } from "./driver-contact-actions";
-import { driverOrigin, type DriverJobContactSummary } from "./driver-contact";
+import type { DriverJobContactSummary } from "./driver-contact";
 import { buildJobCandidates } from "./matching";
 
 interface JobDetailProps {
@@ -179,6 +179,47 @@ export function JobDetail({ customerLink, demoMode, job, matches, operators, onC
       {job.customerNotes ? <section className="detail-section notes-section customer-notes-section"><h3>Lýsing viðskiptavinar</h3><p>{job.customerNotes}</p></section> : null}
       <JobPhotoGallery photos={job.photos} />
 
+      {!isClosed && !job.intakePending ? (
+        <section className="detail-section">
+          <div className="matching-heading">
+            <div><h3>Röðun þjónustuaðila</h3><span>{suitableCount === 1 ? "1 hentugur" : `${suitableCount} hentugir`} af {candidates.length}</span></div>
+            <label><input type="checkbox" checked={suitableOnly} onChange={(event) => setSuitableOnly(event.target.checked)} /> Aðeins hentugir</label>
+          </div>
+          <p className="matching-contact-note">Afritaðu undirbúin skilaboð í WhatsApp Business til að spyrja ökumenn um framboð. Skilaboðin innihalda ekki persónuupplýsingar viðskiptavinar.</p>
+          <div className="match-list">
+            {visibleCandidates.map(({ operator, match, hasRequiredCapabilities, isSuitable, withinServiceArea }, index) => (
+              <article className={`match-card ${selectedOperatorId === operator.id ? "match-card-selected" : ""}`} key={operator.id}>
+                <button className="match-select-button" type="button" aria-pressed={selectedOperatorId === operator.id} onClick={() => { setSelectedOperatorId(operator.id); setSelectedVehicleId(""); }}>
+                  <b>{index + 1}</b><span><strong>{operator.name}</strong><small>{availabilityLabels[operator.availabilityStatus]} · {match ? `${match.distanceKm} km` : "fjarlægð óþekkt"}</small></span>
+                  <span className="match-criteria">
+                    {isSuitable ? <i className="match-suitable">Hentugur</i> : null}
+                    <i className={withinServiceArea ? "match-ok" : "match-missing"}>{withinServiceArea ? "Innan svæðis" : "Utan svæðis"}</i>
+                    <i className={hasRequiredCapabilities ? "match-ok" : "match-missing"}>{hasRequiredCapabilities ? "Hæfur" : "Vantar getu"}</i>
+                  </span>
+                </button>
+                {(() => {
+                  const reply = whatsappReplies.find((item) => item.jobId === job.id && item.operatorId === operator.id);
+                  if (!reply) return null;
+                  const replyText = reply.classification === "available"
+                    ? "Svaraði laus"
+                    : reply.classification === "unavailable"
+                      ? "Svaraði: Ekki laus"
+                      : `Svar í WhatsApp${reply.textBody ? `: ${reply.textBody.slice(0, 120)}` : ""}`;
+                  return <p className={`match-whatsapp-reply match-whatsapp-reply-${reply.classification}`}><MessageCircle size={13} /> {replyText}</p>;
+                })()}
+                <DriverAvailabilityContactActions
+                  jobId={job.id}
+                  operatorId={operator.id}
+                  phone={operator.phone}
+                  summary={driverContactSummary(job, operator.name)}
+                />
+              </article>
+            ))}
+            {visibleCandidates.length === 0 ? <p className="match-empty">Enginn laus þjónustuaðili er bæði innan þjónustusvæðis og með rétta getu.</p> : null}
+          </div>
+        </section>
+      ) : null}
+
       {job.intakePending ? (
         <section className="detail-section pending-intake-panel">
           <h3>{is.assignment}</h3>
@@ -212,48 +253,6 @@ export function JobDetail({ customerLink, demoMode, job, matches, operators, onC
         </section>
       )}
 
-      {!isClosed && !job.intakePending ? (
-        <section className="detail-section">
-          <div className="matching-heading">
-            <div><h3>Röðun þjónustuaðila</h3><span>{suitableCount === 1 ? "1 hentugur" : `${suitableCount} hentugir`} af {candidates.length}</span></div>
-            <label><input type="checkbox" checked={suitableOnly} onChange={(event) => setSuitableOnly(event.target.checked)} /> Aðeins hentugir</label>
-          </div>
-          <p className="matching-contact-note">Afritaðu undirbúin skilaboð í WhatsApp Business til að spyrja ökumenn um framboð. Skilaboðin innihalda ekki persónuupplýsingar viðskiptavinar.</p>
-          <div className="match-list">
-            {visibleCandidates.map(({ operator, match, hasRequiredCapabilities, isSuitable, withinServiceArea }, index) => (
-              <article className={`match-card ${selectedOperatorId === operator.id ? "match-card-selected" : ""}`} key={operator.id}>
-                <button className="match-select-button" type="button" aria-pressed={selectedOperatorId === operator.id} onClick={() => { setSelectedOperatorId(operator.id); setSelectedVehicleId(""); }}>
-                  <b>{index + 1}</b><span><strong>{operator.name}</strong><small>{availabilityLabels[operator.availabilityStatus]} · {match ? `${match.distanceKm} km` : "fjarlægð óþekkt"}</small></span>
-                  <span className="match-criteria">
-                    {isSuitable ? <i className="match-suitable">Hentugur</i> : null}
-                    <i className={withinServiceArea ? "match-ok" : "match-missing"}>{withinServiceArea ? "Innan svæðis" : "Utan svæðis"}</i>
-                    <i className={hasRequiredCapabilities ? "match-ok" : "match-missing"}>{hasRequiredCapabilities ? "Hæfur" : "Vantar getu"}</i>
-                  </span>
-                </button>
-                {(() => {
-                  const reply = whatsappReplies.find((item) => item.jobId === job.id && item.operatorId === operator.id);
-                  if (!reply) return null;
-                  const replyText = reply.classification === "available"
-                    ? "Svaraði laus"
-                    : reply.classification === "unavailable"
-                      ? "Svaraði: Ekki laus"
-                      : `Svar í WhatsApp${reply.textBody ? `: ${reply.textBody.slice(0, 120)}` : ""}`;
-                  return <p className={`match-whatsapp-reply match-whatsapp-reply-${reply.classification}`}><MessageCircle size={13} /> {replyText}</p>;
-                })()}
-                <DriverAvailabilityContactActions
-                  distanceKm={match?.distanceKm ?? null}
-                  jobId={job.id}
-                  operatorId={operator.id}
-                  origin={driverOrigin(operator)}
-                  phone={operator.phone}
-                  summary={driverContactSummary(job, operator.name)}
-                />
-              </article>
-            ))}
-            {visibleCandidates.length === 0 ? <p className="match-empty">Enginn laus þjónustuaðili er bæði innan þjónustusvæðis og með rétta getu.</p> : null}
-          </div>
-        </section>
-      ) : null}
 
       <section className="detail-section">
         <h3>{is.jobStatus}</h3>
