@@ -154,7 +154,12 @@ export type Database = {
           updated_at: string;
         };
         Insert: never;
-        Update: never;
+        // Only the server's admin client can write; RLS has no update policy.
+        Update: {
+          display_name?: string;
+          email?: string;
+          role?: "pending" | "dispatcher" | "admin" | "driver";
+        };
         Relationships: [];
       };
       whatsapp_contact_preferences: {

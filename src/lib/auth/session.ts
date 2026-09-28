@@ -51,3 +51,8 @@ export async function getVerifiedStaffSession(): Promise<DispatcherIdentity | nu
     ? identity
     : null;
 }
+
+export async function getVerifiedAdminSession(): Promise<DispatcherIdentity | null> {
+  const identity = await getVerifiedStaffSession();
+  return identity?.role === "admin" ? identity : null;
+}

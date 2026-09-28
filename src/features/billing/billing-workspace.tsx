@@ -10,6 +10,7 @@ import {
   ReceiptText,
   Search,
   ShieldAlert,
+  UserCog,
   WalletCards,
 } from "lucide-react";
 import Link from "next/link";
@@ -88,6 +89,7 @@ export function BillingWorkspace({ billingCases, demoMode, events, identity, ini
         <nav className="billing-nav" aria-label="Aðalvalmynd">
           <Link href="/"><BriefcaseBusiness size={16} /> Aðgerðastjórn</Link>
           <Link className="billing-nav-active" href="/billing"><ReceiptText size={16} /> Uppgjör</Link>
+          <Link href="/account"><UserCog size={16} /> Aðgangur</Link>
         </nav>
         <div className="topbar-actions">
           {demoMode ? <span className="demo-badge">Sýnishamur</span> : null}

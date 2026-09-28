@@ -1895,3 +1895,26 @@ button.driver-job-contact { cursor: pointer; }
   .job-detail-action-links { grid-template-columns: 1fr; }
   .job-detail-action-links a + a { border-left: 0; border-top: 1px solid var(--line); }
 }
+
+/* Account and staff management */
+.account-page { margin: 0 auto; max-width: 1180px; padding: 30px 24px 48px; }
+.account-grid { align-items: start; display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); margin-top: 22px; }
+.account-card { background: white; border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+.account-card-heading { align-items: center; color: var(--pine); display: flex; gap: 9px; }
+.account-card-heading h2 { color: var(--ink, #10231f); font-size: 16px; margin: 0; }
+.account-help { color: var(--muted); font-size: 11px; line-height: 1.5; margin: 8px 0 14px; }
+.account-form { display: flex; flex-direction: column; gap: 12px; }
+.account-form .primary-button { align-self: flex-start; }
+.account-success { background: #e4f4ec; border: 1px solid #a9d8c4; border-radius: 7px; color: #087d50; font-size: 11px; margin: 12px 0 0; padding: 8px 10px; }
+.account-staff-list { display: flex; flex-direction: column; gap: 8px; list-style: none; margin: 14px 0 0; padding: 0; }
+.account-staff-list li { align-items: center; border: 1px solid var(--line); border-radius: 10px; display: flex; gap: 12px; justify-content: space-between; padding: 10px 12px; }
+.account-staff-list li > span:first-child { display: flex; flex-direction: column; min-width: 0; }
+.account-staff-list small { color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+.account-role { border-radius: 999px; flex-shrink: 0; font-size: 10px; font-weight: 800; padding: 4px 9px; }
+.account-role-admin { background: #11453f; color: white; }
+.account-role-dispatcher { background: #e3eeea; color: var(--pine); }
+@media (max-width: 640px) {
+  .account-page { padding: 22px 16px 36px; }
+  .account-grid { grid-template-columns: 1fr; }
+  .account-form .primary-button { align-self: stretch; }
+}

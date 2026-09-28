@@ -9,6 +9,7 @@ import {
   ReceiptText,
   Search,
   SlidersHorizontal,
+  UserCog,
   UsersRound,
   Wrench,
 } from "lucide-react";
@@ -150,6 +151,7 @@ export function DispatcherWorkspace({
         </div>
         <div className="topbar-actions">
           <Link className="topbar-section-link" href="/billing"><ReceiptText size={16} /> Uppgjör</Link>
+          <Link className="topbar-section-link" href="/account"><UserCog size={16} /> Aðgangur</Link>
           {demoMode ? <span className="demo-badge">{is.demoMode}</span> : null}
           <div className="identity"><CircleUserRound size={26} /><span><strong>{identity.displayName}</strong><small>{identity.email}</small></span></div>
           <form action={logoutAction}><button className="icon-button" type="submit" aria-label={is.signOut} title={is.signOut}><LogOut size={18} /></button></form>
