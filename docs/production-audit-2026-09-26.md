@@ -33,4 +33,4 @@ Deployed to `https://vegstod.vercel.app` (alias moved to `vegstod-ifupvwfmt-frey
 - A job can be assigned to a provider with no vehicle registered.
 - The first load of a new deployment took about 10 s (cold start).
 
-Test data from this pass: jobs `AUDIT TEST - delete me`, `AUDIT LIVE 2` (settled), `AUDIT LIVE 3`, two unsubmitted `+354 6597003` jobs, unsent drafts in the phone's own WhatsApp chat, and `/sdcard/Download/audit-photo.jpg` on the phone.
+Update 7 October 2026: all of the following test data has since been deleted together with every other test job and driver. Test data from this pass: jobs `AUDIT TEST - delete me`, `AUDIT LIVE 2` (settled), `AUDIT LIVE 3`, two unsubmitted `+354 6597003` jobs, unsent drafts in the phone's own WhatsApp chat, and `/sdcard/Download/audit-photo.jpg` on the phone.
