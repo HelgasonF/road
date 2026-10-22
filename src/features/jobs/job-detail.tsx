@@ -6,6 +6,7 @@ import { useMemo, useState, useTransition } from "react";
 
 import { ContactActions } from "@/features/contact/contact-actions";
 import { CustomerLinkPanel } from "@/features/customer-intake/customer-link-panel";
+import { PaymentPanel } from "@/features/payments/payment-panel";
 import { JobPhotoGallery } from "@/features/customer-intake/job-photo-gallery";
 import type { CustomerIntakeLinkSummary } from "@/features/customer-intake/queries";
 import type { Job, JobStatus, Operator } from "@/lib/domain/types";
@@ -132,6 +133,8 @@ export function JobDetail({ customerLink, demoMode, job, matches, operators, onC
       </header>
 
       <ContactActions personName={job.intakePending ? "Viðskiptavinur" : job.customerName} phone={job.customerPhone} />
+
+      {!demoMode ? <PaymentPanel key={job.id} jobId={job.id} customerName={job.customerName} customerPhone={job.customerPhone} intakePending={job.intakePending} /> : null}
 
       <div className="job-detail-action-links">
         <Link className="job-timeline-link" href={`/jobs/${job.id}/history`}><History size={17} /> Skoða feril verkefnis</Link>

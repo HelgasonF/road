@@ -1,5 +1,83 @@
 # Road / Iceland Road Assistance maintenance handoff
 
+Last updated: 22 October 2026 (Atlantic/Reykjavik)
+
+## Current resume point
+
+- Repository: `/mnt/ssd4tb/web-apps/Road`; branch
+  `chore/vercel-git-connection`, remote `git@github.com:HelgasonF/road.git`.
+  This Git checkpoint records the tested release, migrations, tests and current
+  documentation together. Freyr authorized committing/pushing without another
+  deployment. `vercel.json` sets `git.deploymentEnabled=false`; pushes containing
+  that file do not auto-deploy. Keep it on future branches. Check
+  `git status --short` before any new work.
+- Live customer site: `https://vegstod.vercel.app` points to Ready deployment
+  `vegstod-gyj57bol4-freyrs-projects-fad4047a.vercel.app`
+  (`dpl_FwCDqd93y9rmEnRmgono7VQUqebB`). It uses Vercel's Preview target with real
+  myPOS payments enabled; the separate Production target is unused.
+- Linked hosted Supabase: `Road` / `abpmzqtbllszqqetuubp`. Both payment migrations
+  and `20261021220248_enable_payment_reconciliation_extensions.sql` are applied.
+  The minute reconciliation schedule is active, using Vault-managed origin and
+  worker secret. Merchant credentials remain server-only in Vercel Preview.
+- First fee: **10,490 ISK**. One **Pay and submit** saves the details before
+  checkout. Trusted API verification completes the saved intake once. The second
+  payment uses a dispatcher-entered amount/description and a separate private
+  summary; the customer does not enter their details again.
+- WhatsApp is manual from the company's Business app. Cloud API sending remains
+  paused; do not resume phone onboarding or change sender configuration.
+- The live customer/payment phone audit passed both payments, automatic staff
+  updates, link reissue, private photos and no-charge correction. Driver
+  assignment/progression was not repeated in this audit. Confirmed overall test
+  spend is **210 ISK across six 35 ISK payments**; no more payment test is planned.
+- Live inventory: **zero active jobs, zero operators/drivers, three staff
+  profiles**. The single cancelled owned audit job and its two Paid payment
+  records remain as history. The company owner will add their actual providers.
+- Temporary 35 ISK deployment, phone fixture, hosted photo and owned verification
+  sessions were removed. The phone display setting was restored. Private audit
+  ledgers, credentials and ignored evidence remain outside versioned source.
+- Latest code verification: build/typecheck/lint, **469 application tests** and
+  **363 pgTAP assertions** passed. Runtime application source is unchanged from
+  the 22:04 UTC deployment on 21 October. The 22 October checkpoint adds the
+  Git deployment control and documentation updates, preserving private evidence,
+  credentials and local build artifacts outside Git. The preceding Markdown
+  audit passed all 28 files and 135 local links; historical notes remain labelled.
+- Repository checkpoint validation on 22 October: the 81 commit-candidate files
+  contain no matching private merchant/worker/admin credential values or private
+  runtime artifacts. The `vercel.json` fields pass the official configuration
+  schema, `git.deploymentEnabled` is false, all 28 Markdown files pass their
+  140 relative links/fenced-block checks, and `git diff --check` passes. The
+  existing application test results above were retained because runtime source
+  was unchanged. Verify the remote branch, clean tree and unchanged Vercel
+  deployment list/live alias after pushing this checkpoint.
+
+See [implementation status](implementation-status.md),
+[myPOS setup](MYPOS_SETUP.md), [deployment runbook](deployment.md),
+[hosted release](mypos-hosted-release-2026-10-21.md) and
+[live phone audit](live-phone-audit-2026-10-21.md).
+
+## Local restart
+
+```bash
+cd /mnt/ssd4tb/web-apps/Road
+npx supabase start
+npm run dev
+```
+
+Start Docker first if needed. Do not run `supabase db reset` during a normal
+restart or overwrite existing volumes. Local collection defaults remain
+**disabled**, and the original local database was not migrated during the hosted
+release; inspect/apply pending local migrations before using it for checkout.
+`npm run mypos:test:system -- --full` instead uses a disposable local clone for
+repeatable zero-cost verification. Never copy live merchant/worker secrets into
+source, browser variables or documentation.
+
+## Historical maintenance records — September 2026
+
+All remaining notes record earlier checkpoints, deployments, datasets and
+verification. Their references to the current alias, retained demo data, API
+sending, refresh limitations or outstanding payment integration describe that
+earlier state. Use the current resume point above for new work.
+
 **Current WhatsApp decision, 26 September:** manual copy/paste from the owner's `+354 853 7704` WhatsApp Business app is now the default; Cloud API sending and number onboarding are paused. The older API workflow and readiness checklist below are historical. Follow the [manual WhatsApp handoff](manual-whatsapp-handoff-2026-09-26.md) for the current phone check.
 
 Updated: 26 September 2026 (Atlantic/Reykjavik)

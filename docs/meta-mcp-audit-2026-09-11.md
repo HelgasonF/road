@@ -1,5 +1,7 @@
 # Meta MCP / WhatsApp audit
 
+> Historical record: this file preserves the state and evidence at its dated checkpoint. For current payments, manual WhatsApp messaging, deployment and remaining work, use [implementation status](implementation-status.md) and the [deployment runbook](deployment.md), updated 21 October 2026.
+
 Audited: 11 September 2026, approximately 21:31 UTC (Atlantic/Reykjavik).
 
 Starting point: commit `29a92fd` on `chore/vercel-git-connection`, using the [resume checkpoint](meta-mcp-resume-2026-09-11.md).

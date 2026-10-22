@@ -19,6 +19,7 @@ import { capabilityCodes } from "@/lib/domain/types";
 import { OTHER_VEHICLE_MAKE, vehicleMakes } from "@/lib/domain/vehicle-makes";
 import { capabilityLabels } from "@/lib/i18n/is";
 import { createClient } from "@/lib/supabase/client";
+import { startCustomerCheckoutAction } from "@/features/payments/checkout-actions";
 import {
   finalizeCustomerPhotoUploadAction,
   prepareCustomerPhotoUploadAction,
@@ -144,9 +145,10 @@ interface CustomerIntakeFormProps {
   initialPhotos: CustomerIntakePhoto[];
   job: ActiveCustomerIntake["job"];
   token: string;
+  payment?: { enabled: boolean; ready: boolean; amountIsk: number | null };
 }
 
-export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token }: CustomerIntakeFormProps) {
+export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token, payment }: CustomerIntakeFormProps) {
   const router = useRouter();
   const initialVehicleMake = job.vehicleMake?.trim() ?? "";
   const knownInitialVehicleMake = vehicleMakes.find(
@@ -276,7 +278,7 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token }: Cus
       : vehicleMakeSelection;
     setError(null);
     startTransition(async () => {
-      const result = await submitCustomerIntakeAction({
+      const details = {
         token,
         customerName: String(form.get("customerName") ?? ""),
         customerPhone: String(form.get("customerPhone") ?? ""),
@@ -290,13 +292,46 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token }: Cus
         locationLabel,
         locationSource,
         customerNotes: String(form.get("customerNotes") ?? ""),
-      });
+      };
+      if (payment?.enabled) {
+        try {
+          const checkout = await startCustomerCheckoutAction({ ...details, language });
+          if (checkout.ok) {
+            window.location.assign(checkout.data.checkoutUrl);
+            return;
+          }
+          setError(checkout.error);
+        } catch {
+          setError(language === "is" ? "Upplýsingarnar gætu verið vistaðar. Hafðu samband við aðgerðastjórn áður en þú reynir aftur." : "Your details may have been saved. Please contact dispatch before trying again.");
+        }
+        router.refresh();
+        return;
+      }
+      const result = await submitCustomerIntakeAction(details);
       if (!result.ok) {
         setError(result.error ?? "The information could not be sent.");
         return;
       }
       router.refresh();
     });
+  }
+
+  function explainInvalidField(event: FormEvent<HTMLFormElement>) {
+    const field = event.target;
+    if (!(field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement)) return;
+    // Native validation can reject a mobile submit without a visible bubble.
+    // Keep the first invalid field focused and explain it in the form too.
+    const firstInvalid = Array.from(event.currentTarget.elements).find((control) =>
+      (control instanceof HTMLInputElement || control instanceof HTMLSelectElement || control instanceof HTMLTextAreaElement)
+      && !control.validity.valid);
+    if (field !== firstInvalid) return;
+    const label = field.closest("label")?.querySelector("span")?.textContent?.trim()
+      || (language === "is" ? "Reitinn" : "this field");
+    setError(field.validity.valueMissing
+      ? language === "is" ? `${label} vantar.` : `${label} is required.`
+      : language === "is" ? `Athugaðu ${label.toLocaleLowerCase("is")}: ${field.validationMessage}` : `Please check ${label}: ${field.validationMessage}`);
+    field.focus();
+    field.scrollIntoView?.({ block: "center", behavior: "smooth" });
   }
 
   return (
@@ -309,7 +344,7 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token }: Cus
         </div>
       </header>
 
-      <form className="customer-intake-form" onSubmit={submit}>
+      <form className="customer-intake-form" onSubmit={submit} onInvalidCapture={explainInvalidField}>
         <section className="customer-intake-intro">
           <div><p className="eyebrow"><LockKeyhole size={14} /> {t.eyebrow}</p><h1>{t.title}</h1><p>{t.intro}</p></div>
           <span><ShieldCheck size={20} /> {t.expires} {formatCustomerLinkExpiry(expiresAt, language)}</span>
@@ -417,9 +452,16 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token }: Cus
           <p className="customer-privacy"><LockKeyhole size={14} /> {t.privacy}</p>
         </section>
 
+        {payment?.enabled ? <section className="customer-form-card intake-payment-card">
+          <h2>{language === "is" ? "Upphafsgjald fyrir aðstoð" : "Initial assistance fee"}</h2>
+          {payment.amountIsk !== null ? <strong>{new Intl.NumberFormat(language === "is" ? "is-IS" : "en-GB").format(payment.amountIsk)} ISK</strong> : null}
+          <p>{language === "is" ? "Upplýsingarnar eru vistaðar áður en myPOS opnast. Beiðnin er send sjálfkrafa þegar greiðsla hefur verið staðfest. Þú þarft ekki að koma aftur á síðuna." : "Your details are saved before myPOS opens. Your request is submitted automatically once payment is confirmed. You do not need to return to this page."}</p>
+          <p>{language === "is" ? "Greiðsla fyrir þjónustuna er send sérstaklega eftir að verð liggur fyrir." : "The service payment will be sent separately once the price has been confirmed."}</p>
+          {!payment.ready ? <p className="customer-form-error" role="alert">{language === "is" ? "Greiðsla er ekki tiltæk í augnablikinu. Hafðu samband við aðgerðastjórn." : "Payment is currently unavailable. Please contact dispatch."}</p> : null}
+        </section> : null}
         {error ? <p className="customer-form-error" role="alert">{error}</p> : null}
-        <button className="customer-submit-button" type="submit" disabled={pending || uploading || !locationConfirmed}>
-          {pending ? <LoaderCircle className="spin" size={19} /> : <Upload size={19} />} {pending ? t.sending : t.submit}
+        <button className="customer-submit-button" type="submit" disabled={pending || uploading || !locationConfirmed || Boolean(payment?.enabled && !payment.ready)}>
+          {pending ? <LoaderCircle className="spin" size={19} /> : <Upload size={19} />} {pending ? t.sending : payment?.enabled ? language === "is" ? "Greiða og senda" : "Pay and submit" : t.submit}
         </button>
       </form>
     </main>

@@ -17,10 +17,16 @@ const securityHeaders = [
   { key: "Permissions-Policy", value: "camera=(self), geolocation=(self), microphone=(), payment=()" },
 ];
 
+// A temporary phone-test tunnel needs its exact host allowed for dev assets
+// and Server Actions. Production ignores this development-only setting.
+const developmentOrigin = process.env.NODE_ENV === "development" ? process.env.ROAD_DEV_ORIGIN?.trim() : undefined;
+const developmentHost = developmentOrigin ? new URL(developmentOrigin).hostname : null;
+
 const nextConfig: NextConfig = {
   // Android devices connected through ADB reach the local dev server through
   // the phone's loopback address. Allow that origin to load Next.js dev assets.
-  allowedDevOrigins: ["127.0.0.1"],
+  allowedDevOrigins: ["127.0.0.1", ...(developmentHost ? [developmentHost] : [])],
+  ...(developmentHost ? { experimental: { serverActions: { allowedOrigins: [developmentHost] } } } : {}),
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },

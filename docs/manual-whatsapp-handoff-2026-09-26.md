@@ -1,5 +1,16 @@
 # Manual WhatsApp handoff — 26 September 2026
 
+Payment-flow update, 21 October 2026: this manual sending policy still applies
+on the live site. Staff send the initial private form link once. The customer
+enters their details and uses **Pay and submit** for the fixed **10,490 ISK**
+first payment; API-confirmed Paid submits those saved details automatically.
+Later, the dispatcher enters the separate service amount/description and sends
+its private payment-summary link manually. The customer does not enter their
+details again. A requested correction after the first payment uses **Send
+details securely** without a new first charge. See [myPOS setup](MYPOS_SETUP.md)
+and the completed [live phone audit](live-phone-audit-2026-10-21.md). The dated
+26 September phone check below is historical evidence of the manual opener.
+
 The owner keeps `+354 853 7704` in the WhatsApp Business phone app for ordinary and WhatsApp calls. Staff enter the caller's number in Iceland Road Assistance. The app creates a private link and prepares a complete message. Staff can open a WhatsApp draft addressed to that customer or copy the message into a chat, check both the recipient and sender account, then press Send. **The app does not send the message or verify its delivery.** The device chooses which installed WhatsApp account handles the link; its account number does not determine the customer recipient.
 
 This is the current default for customer intake, replacement customer links, driver availability, assignment/access links, and initial driver access. Customer details and photos remain in Iceland Road Assistance. The customer link expires after 24 hours. Driver access links are one-time links. Raw links are shown only when generated; if the draft is lost, generate a new link rather than trying to recover a stored token.

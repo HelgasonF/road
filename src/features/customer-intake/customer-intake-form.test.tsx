@@ -4,11 +4,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   finalizeCustomerPhotoUploadAction,
   prepareCustomerPhotoUploadAction,
+  submitCustomerIntakeAction,
 } from "./actions";
 import { CustomerIntakeForm } from "./customer-intake-form";
+import { startCustomerCheckoutAction } from "@/features/payments/checkout-actions";
 import type { ActiveCustomerIntake } from "./queries";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+vi.mock("@/features/payments/checkout-actions", () => ({ startCustomerCheckoutAction: vi.fn() }));
 vi.mock("./actions", () => ({
   finalizeCustomerPhotoUploadAction: vi.fn(),
   prepareCustomerPhotoUploadAction: vi.fn(),
@@ -63,6 +66,52 @@ describe("CustomerIntakeForm", () => {
     renderForm();
 
     expect(screen.getByText(/Link valid until 27 Sep 2026, 16:38/)).toBeInTheDocument();
+  });
+
+  it("uses one Pay and submit button and explains unattended completion", () => {
+    render(<CustomerIntakeForm expiresAt="2026-09-27T16:38:00.000Z" initialPhotos={[]} job={job} token="token" payment={{ enabled: true, ready: true, amountIsk: 5000 }} />);
+    expect(screen.getByRole("button", { name: "Pay and submit" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Send details securely" })).not.toBeInTheDocument();
+    expect(screen.getByText(/You do not need to return/)).toBeInTheDocument();
+    expect(screen.getByText("5,000 ISK")).toBeInTheDocument();
+  });
+
+  it("fails closed when payment setup is incomplete", () => {
+    render(<CustomerIntakeForm expiresAt="2026-09-27T16:38:00.000Z" initialPhotos={[]} job={job} token="token" payment={{ enabled: true, ready: false, amountIsk: null }} />);
+    fireEvent.click(screen.getByRole("button", { name: "Pick on map" }));
+    expect(screen.getByRole("button", { name: "Pay and submit" })).toBeDisabled();
+    expect(startCustomerCheckoutAction).not.toHaveBeenCalled();
+  });
+
+  it("sends the entered details to checkout without first submitting the intake", async () => {
+    vi.mocked(startCustomerCheckoutAction).mockResolvedValueOnce({ ok: false, errorCode: "preview", error: "Payment unavailable in this test." });
+    render(<CustomerIntakeForm expiresAt="2026-09-27T16:38:00.000Z" initialPhotos={[]} job={{ ...job, customerName: "Customer", requiredCapability: "jump_start", customerNotes: "Battery is flat." }} token="token" payment={{ enabled: true, ready: true, amountIsk: 5000 }} />);
+    fireEvent.click(screen.getByRole("button", { name: "Pick on map" }));
+    fireEvent.submit(screen.getByRole("button", { name: "Pay and submit" }).closest("form")!);
+    await waitFor(() => expect(startCustomerCheckoutAction).toHaveBeenCalledWith(expect.objectContaining({ token: "token", customerName: "Customer", language: "en", locationSource: "map_pin" })));
+    expect(submitCustomerIntakeAction).not.toHaveBeenCalled();
+    expect(await screen.findByText("Payment unavailable in this test.")).toBeInTheDocument();
+  });
+
+  it("explains the missing required description before any checkout action", () => {
+    render(<CustomerIntakeForm expiresAt="2026-09-27T16:38:00.000Z" initialPhotos={[]} job={{ ...job, customerName: "Customer", requiredCapability: "jump_start" }} token="token" payment={{ enabled: true, ready: true, amountIsk: 35 }} />);
+    fireEvent.click(screen.getByRole("button", { name: "Pick on map" }));
+    const description = screen.getByLabelText("Description");
+    fireEvent.invalid(description);
+    expect(screen.getByRole("alert")).toHaveTextContent("Description is required.");
+    expect(description).toHaveFocus();
+    expect(startCustomerCheckoutAction).not.toHaveBeenCalled();
+  });
+
+  it("identifies the first missing field in the customer's chosen language", () => {
+    renderForm();
+    fireEvent.click(screen.getByRole("button", { name: "Íslenska" }));
+    const name = screen.getByLabelText("Fullt nafn");
+    fireEvent.invalid(name);
+    fireEvent.invalid(screen.getByLabelText("Lýsing"));
+    expect(screen.getByRole("alert")).toHaveTextContent("Fullt nafn vantar.");
+    expect(name).toHaveFocus();
+    expect(submitCustomerIntakeAction).not.toHaveBeenCalled();
   });
 
   it("explains a GPS timeout next to the GPS button in the chosen language", async () => {

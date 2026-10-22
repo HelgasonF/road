@@ -1,5 +1,7 @@
 # WhatsApp sandbox phone audit — 13 September 2026
 
+> Historical record: this file preserves the state and evidence at its dated checkpoint. For current payments, manual WhatsApp messaging, deployment and remaining work, use [implementation status](implementation-status.md) and the [deployment runbook](deployment.md), updated 21 October 2026.
+
 Audited: approximately 10:56–11:02 UTC / Atlantic/Reykjavik.
 
 Follow-ups at 11:34–12:02 UTC: the template-language mismatch was corrected and all three operational templates reached `delivered`. A new physical phone passed availability replies and driver access/acceptance. Its customer button exposed a malformed Meta URL, corrected in place and awaiting review at 12:02 UTC. The initial observations below are retained as morning audit history.

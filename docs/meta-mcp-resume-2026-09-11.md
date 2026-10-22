@@ -1,5 +1,7 @@
 # Meta MCP / WhatsApp resume checkpoint
 
+> Historical record: this file preserves the state and evidence at its dated checkpoint. For current payments, manual WhatsApp messaging, deployment and remaining work, use [implementation status](implementation-status.md) and the [deployment runbook](deployment.md), updated 21 October 2026.
+
 **Current decision, later 26 September:** Cloud API sending is paused. Staff copy prepared messages from Iceland Road Assistance into the owner's WhatsApp Business app. See the [manual handoff](manual-whatsapp-handoff-2026-09-26.md); all API onboarding notes below are historical.
 
 Updated: 12 September 2026 (Atlantic/Reykjavik)

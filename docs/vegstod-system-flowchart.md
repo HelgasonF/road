@@ -1,27 +1,64 @@
-# Vegstoð — heildarferli kerfisins
+# Iceland Road Assistance — heildarferli kerfisins
 
-![Flæðirit Vegstoðar frá fyrstu beiðni til uppgjörs](assets/vegstod-system-flowchart.svg)
+Uppfært 21. október 2026. Flæðið hér sýnir núverandi handvirkar
+WhatsApp-sendingar og tvær aðskildar myPOS-greiðslur.
 
-[Opna flæðiritið eitt og sér](assets/vegstod-system-flowchart.svg) · [Sækja PNG-mynd](assets/vegstod-system-flowchart.png)
+```mermaid
+flowchart TD
+    A[Viðskiptavinur hringir í móttöku] --> B[Móttaka skráir símanúmer og býr til öruggan formtengil]
+    B --> C[Móttaka sendir tilbúin skilaboð handvirkt í WhatsApp Business]
+    C --> D[Viðskiptavinur fyllir út nafn, staðsetningu, bílgögn og lýsingu; myndir eru valfrjálsar]
+    D --> E[Pay and submit: upplýsingar vistast og myPOS opnast]
+    E --> F[Fyrsta greiðsla: fast upphafsgjald 10.490 ISK]
+    F --> G[Bakgrunnsvinnsla staðfestir Paid í myPOS API og skilar vistuðu upplýsingunum]
+    G --> H[Röðun og úthlutun opnast; móttaka sér staðfestingu sjálfkrafa]
+    H --> I[Móttaka kannar framboð og fær verðtilboð frá ökumanni]
+    I --> J[Móttaka slær inn aðskilda þjónustufjárhæð og lýsingu]
+    J --> K[Móttaka sendir einkatengil á greiðsluyfirlit handvirkt í WhatsApp]
+    K --> L[Viðskiptavinur greiðir hjá myPOS án þess að skrá upplýsingarnar aftur]
+    L --> M[API staðfestir seinni greiðsluna; staðan uppfærist sjálfkrafa]
+    H --> N[Móttaka stjórnar úthlutun og sendir einnota aðgangstengil ökumanns]
+    N --> O[Ökumaður samþykkir, sinnir verkinu og uppfærir stöðu]
+    O --> P[Verki lýkur og reikningsuppgjör heldur áfram í Uppgjöri]
+    P --> Q[Móttaka skráir reikning og innborgun greiðanda]
+    P --> R[Móttaka samþykkir reikning þjónustuaðila og skráir útborgun]
+    Q --> S[Báðir reikningsleggir greiddir: fulluppgert]
+    R --> S
+```
 
-## Hlutverk WhatsApp
+## WhatsApp og upplýsingar
 
-WhatsApp er samskiptaleiðin utan um Vegstoð, en ekki geymslustaður verkefnisins. Það kemur þrisvar inn í flæðið:
+Allar sendingar eru handvirkar úr WhatsApp Business-reikningi fyrirtækisins.
+Kerfið útbýr skilaboðin og örugga tengla; starfsmaður yfirfer viðtakanda og
+ýtir á **Send**. Cloud API-sendingar eru í bið. Afhendingar- og lesstaða
+handvirkra skilaboða er skoðuð í WhatsApp.
 
-1. Móttaka sendir viðskiptavininum öruggan Vegstoð-tengil í WhatsApp.
-2. Móttaka sendir hentugum ökumanni stutta, persónuverndaða fyrirspurn um framboð í WhatsApp.
-3. Eftir úthlutun sendir móttaka ökumanninum staðfestingu og einkvæman, tímabundinn innskráningartengil á Vegstoð í WhatsApp.
+Viðskiptavinurinn skráir upplýsingar og myndir í kerfið. Myndir eru í einkageymslu
+Supabase og verða aðgengilegar úthlutuðum ökumanni. Hann opnar einnota
+aðgangstengil, staðfestir **Opna ökumannsskjá** og sér aðeins heimilaðar upplýsingar.
+Hann þarf hvorki netfang né lykilorð. Móttaka ræður úthlutun og tímasetningu hennar;
+seinni greiðsla er aðskilin frá aðgangi ökumanns og framvindu verks.
 
-Viðskiptavinurinn setur staðsetningu, bílgögn, lýsingu og myndir **inn í Vegstoð**. Myndirnar eru í einkageymslu Supabase og fara ekki í gegnum WhatsApp. Úthlutaður ökumaður opnar WhatsApp-tengilinn, staðfestir að hann vilji opna ökumannsskjáinn og fær þar nákvæman kortapinna, upplýsingar um viðskiptavin, bílgögn og heimilaðar myndir. Ökumaður gefur ekki upp netfang og býr ekki til lykilorð.
+## Tvær greiðslur og uppgjör
 
-Vegstoð sendir samþykkt WhatsApp-sniðmát í gegnum Cloud API og skráir staðfesta stöðu frá Meta. Handvirk `wa.me` sending og símtal eru áfram varaleiðir ef sjálfvirk sending er ekki tiltæk. Framboðssvar birtist hjá þjónustuaðilanum og í ferli verkefnisins, en móttaka ákveður alltaf úthlutunina.
+Upphafsgjaldið er alltaf **10.490 ISK**. Seinni greiðslan er sjálfstæð fjárhæð
+sem móttaka slær inn eftir verðtilboð ökumanns; upphafsgjaldið dregst ekki frá
+henni. Viðskiptavinurinn skráir upplýsingar einu sinni og þarf ekki að snúa aftur
+af myPOS-síðunni til að þær skili sér. Leiðréttingarform eftir staðfest
+upphafsgjald notar **Send details securely** og innheimtir það ekki aftur.
 
-## Staða miðað við núverandi byggingu
+Bakgrunnsvinnsla athugar myPOS um það bil á mínútu fresti. Greiðsluspjaldið hjá
+móttöku sækir staðfesta gagnagrunnsstöðu á 15 sekúndna fresti meðan þess þarf.
+Greiðslustaðfesting lýkur ekki verkinu og merkir ekki sjálfkrafa reikninga eða
+þjónustuaðila sem uppgerða. Reikningshald og útgreiðsla til þjónustuaðila eru
+aðskilin frá þessum tveimur myPOS-greiðslum.
 
-- Viðskiptavinaflæðið byrjar á **+**: móttaka slær aðeins inn símanúmer og velur **Búa til og senda WhatsApp**. Þá verður til verkefni sem bíður upplýsinga og samþykkt sniðmát ber öruggan tengil til viðskiptavinarins. Viðskiptavinurinn velur aðstoð, skrifar lýsingu og skráir staðsetningu og bílgögn; fyrst þá opnast röðun og úthlutun. Móttaka getur líka valið að fylla allt verkefnið út sjálf.
-- Ökumannsflæðið er tengt beint við Cloud API: framboðsfyrirspurn býður **Available**/**Unavailable**, og úthlutunarsniðmátið ber einnota innskráningartengil. Nýr tengill er búinn til þegar þarf.
-- Afhendingar- og lesstaða ásamt svörum birtist í ferli verkefnisins. Gögn og myndir eru áfram inni í Vegstoð, og handvirk WhatsApp-sending er tiltæk sem varaleið.
+Sjá [myPOS-uppsetningu](MYPOS_SETUP.md), [núverandi stöðu](implementation-status.md)
+og [lokið símapróf](live-phone-audit-2026-10-21.md).
 
-## Greiðsluflæðið
+## Eldra kynningarflæðirit
 
-Greiðandinn greiðir alltaf Vegstoð. Greiðandinn getur verið viðskiptavinurinn, bílaleiga, trygginga-/aðstoðarfélag eða fyrirtæki. Þjónustuaðilinn sendir sinn reikning til Vegstoðar og Vegstoð greiðir honum sérstaklega. Málið telst **fulluppgert** fyrst þegar báðir leggir eru greiddir.
+[SVG](assets/vegstod-system-flowchart.svg) og
+[PNG](assets/vegstod-system-flowchart.png) eru varðveittar eldri kynningarmyndir.
+Þær sýna fyrra Cloud API-flæði og innihalda ekki nýja tveggja greiðslna ferlið.
+Notið uppfærða flæðið hér að ofan fyrir núverandi kerfi.

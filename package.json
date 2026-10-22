@@ -11,7 +11,10 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "mypos:check": "vitest run scripts/mypos-rest-account-check.test.mjs --reporter=verbose",
+    "mypos:test:system": "node scripts/run-mypos-system-tests.mjs",
+    "mypos:test:card": "node scripts/run-mypos-system-tests.mjs --live-card"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

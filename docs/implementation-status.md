@@ -1,6 +1,75 @@
 # Iceland Road Assistance implementation status
 
-Last updated: 26 September 2026
+Last updated: 22 October 2026
+
+The live customer site is **https://vegstod.vercel.app**, served by the Ready
+Vercel Preview deployment `vegstod-gyj57bol4-freyrs-projects-fad4047a.vercel.app`.
+The separate Vercel Production target is unused. myPOS REST v1.1 collection is
+enabled with the owner's server-only merchant credentials.
+
+- The first fee is **10,490 ISK**. One **Pay and submit** action saves the
+  customer's details and opens myPOS. The authenticated background worker verifies
+  matching Paid and submits the saved draft once, without a return visit.
+- The dispatcher enters a separate service amount/description and manually sends
+  its private payment-summary link. The customer need not enter details again.
+- WhatsApp sending remains manual in the company's Business app; Cloud API
+  sending is paused. A requested correction after the first payment does not
+  charge the first fee again.
+- Both payment migrations and the scheduler-extension migration are applied to
+  hosted `Road`. Supabase Cron calls the authenticated worker every minute;
+  actual scheduled calls returned HTTP 200 and an unauthorized call returned 401.
+  The staff payment panel polls verified database state every 15 seconds while
+  visible and awaiting intake/payment completion.
+- The latest local verification passed build, types, lint, **469 application
+  tests** and **363 database assertions**. The later hosted physical-phone audit
+  passed both payments/automatic dispatcher updates, safe service-link reissue,
+  private photo upload/access/removal and a no-charge correction. It did not
+  repeat driver login, assignment or status progression.
+- Confirmed test spend is **210 ISK across six successful 35 ISK payments**.
+  The temporary 35 ISK deployment and photo artifacts were removed; ordinary
+  pricing remains 10,490 ISK.
+- Live inventory: **zero active jobs, zero operators/drivers, three staff
+  profiles**, and one cancelled audit job retaining its two real Paid records.
+  The company owner will add the actual drivers/providers.
+- The deployed application source, migrations, tests and documentation are
+  recorded together on `chore/vercel-git-connection`. On 22 October, Freyr
+  requested committing/pushing the snapshot without a deployment. The new
+  `vercel.json` disables automatic Git deployments. Runtime application source
+  remains the tested 21 October release; the new deployment policy and updated
+  documentation do not require publishing a new app build.
+
+See the [release record](mypos-hosted-release-2026-10-21.md),
+[live phone audit](live-phone-audit-2026-10-21.md),
+[myPOS setup](MYPOS_SETUP.md) and [deployment runbook](deployment.md).
+
+Documentation review, later on 21 October: current README, architecture,
+deployment, maintenance, WhatsApp and payment guides now agree with this release.
+The flowchart includes both payments; its older SVG/PNG and September reports are
+labelled historical. All **28 project Markdown files** were checked: **135 local
+file links** resolve and fenced blocks are balanced. `git diff --check` passed.
+That review changed documentation only and preserved the verified application
+source. At the end of 21 October, the release was still in the uncommitted
+working tree; the 22 October repository checkpoint above supersedes that state.
+
+## Earlier implementation and test records
+
+The dated notes below describe the stages before the hosted release recorded above.
+
+Connected phone acceptance completed: the normal dispatcher generated a customer message sent through the USB phone's native WhatsApp self-chat. The Firefox phone form opened on temporary HTTPS, supplied GPS/details and created the first 35 ISK checkout. It was verified Paid at 21:45:21 UTC; the saved intake submitted and the untouched dispatcher screen updated automatically. The separate manually entered 35 ISK service summary was generated, safely reissued with unchanged provider references and sent through WhatsApp. It was confirmed Paid at 21:49:21 UTC, and dispatch automatically showed both paid. Total test spend across both pairs: 140 ISK. Fixed discovery of an initial checkout created after opening dispatch and silent feedback for missing required form fields. The latest full check passes 469 tests, 363 database assertions, build/typecheck/lint. Temporary test services/tunnels were removed and the phone setting restored; normal/hosted collection remains disabled. See the [completed connected-flow audit](mypos-test-audit-2026-10-21.md#connected-payment-results--complete).
+
+The acceptance review identified that the earlier card fixture alone did not exercise the complete customer/dispatcher browser journey. The subsequent connected phone run above completed that missing verification. Hosted configuration, payment migrations and scheduled reconciliation still require release work before general customer collection.
+
+Confirmed payment workflow decision, later on 21 October: staff manually send the initial form link through WhatsApp once. The customer fills in their name/details, presses **Pay and submit**, and completes myPOS checkout. The server saves the validated details first and finalizes that exact draft only after matching provider-confirmed Paid. There is no separate Submit, first-payment WhatsApp message or required return visit. The second payment has a dispatcher-entered amount/description and dispatcher-controlled send. This locally implemented flow supersedes the earlier submit-then-pay and automatic WhatsApp payment proposals. Automated WhatsApp sending remains paused.
+
+Confirmed price decision, 21 October: Freyr reported the owner agreed to a fixed **10,490 ISK** first fee, superseding the earlier EUR 75 proposal. The second payment remains a separate dispatcher-entered ISK amount. `MYPOS_INITIAL_FEE_ISK=10490` is set in `.env.example` and local `.env.local`; hosted configuration and payment enablement are unchanged. The **20:11 UTC** production read-only recheck confirmed eligible currencies **ISK only**, matching the agreed implementation. No currency conversion or EUR/USD extension is needed. See [confirmed payment delivery flow and readiness](MYPOS_SETUP.md#confirmed-payment-delivery-flow).
+
+Price configuration verification: Next.js's environment loader read `10490` from the local configuration and confirmed live payments/collection remain disabled. All **97 tests across five relevant payment configuration, provider, action and customer-form files** passed; `git diff --check` passed. No provider call, deployment or database change was needed for this configuration update.
+
+Zero-cost sandbox follow-up, 21 October at 20:45 UTC: Freyr agreed to test the myPOS protocol in EUR while keeping the application in ISK. The existing EUR 1 public-sandbox request opened the expected hosted checkout. All five published online test cards were declined as unsupported; a fresh sandbox details GET confirmed numeric **2 (Seen)**, with matching request code and EUR 1 amount. Successful sandbox checkout/Paid remains unverified pending compatible legacy test-card data or account configuration. No real card, production credential, live change or additional payment request was used. See [sandbox checkout evidence](MYPOS_SETUP.md#zero-cost-eur-sandbox-checkout-follow-up).
+
+Final local checkout verification, 21 October: build, typecheck and lint pass; **450 tests pass**, including 20 actual adapter/storage/database integration tests, six automatic-status display tests and two concurrent PostgreSQL reservation checks. The owner-account check and interactive real-card session are skipped in this zero-cost automated run. All **363 pgTAP assertions** pass. The new `npm run mypos:test:system -- --full` command reproduces the complete run with an isolated schema-only database, REST container and local HTTP payment simulator, then removes those resources and verifies that the working schema/history did not change. Payment-source coverage is **88.86% lines / 76.19% branches**. Mobile browser fixtures also show the dispatcher automatically switching from pending to Paid with simulated server data and no horizontal overflow. The automated run made no real checkout/charge, live migration, deployment or scheduler activation. The separately authorized card session is recorded below. See the [test audit](mypos-test-audit-2026-10-21.md).
+
+Latest testing decision: the vendor sandbox still rejected the test cards and returned numeric **2 (Seen)** at 21:04 UTC. Freyr authorized his own card at **35 ISK per payment**, capped at **10 attempts / 350 ISK total**. The private, isolated local card-test session completed both payment purposes (70 ISK total). Its first real **35 ISK payment is confirmed Paid** and the frozen intake automatically submitted at **21:16:04 UTC**. The separate 35 ISK service request was prepared at **21:18:06 UTC** and confirmed Paid at **21:20:04 UTC**. A temporary test-controller error was traced in Chromium to `Origin: null` on private native forms; the source now uses a session action token and passes 15 regression checks. The existing session and requests were retained through completion, its interactive assertion and all 363 SQL assertions passed, and disposable resources were then removed. The worker verifies actual myPOS status through the API; the dispatcher automatically reads verified state every 15 seconds while awaiting a result. The completed card session used a one-minute checker, while hosted scheduler activation is still required for general production use. Card details are entered by Freyr on myPOS, never stored or entered by Codex. See the [active controlled-test audit](mypos-test-audit-2026-10-21.md#completed-controlled-card-session).
 
 Current WhatsApp decision, later on 26 September: Cloud API sending is paused. The owner keeps `+354 853 7704` in the WhatsApp Business app for calls and manual messages. The dashboard prepares customer and driver text with private links for staff to copy and send in the correct chat. It does not mark a copied or opened draft as delivered. The historical Cloud API work below is retained but no longer blocks the manual workflow. See [manual handoff](manual-whatsapp-handoff-2026-09-26.md).
 
@@ -48,10 +117,21 @@ The shutdown/resume state, active repository path, uncommitted work, restart com
 - Dispatcher-managed passwordless driver links through WhatsApp, visible access status, one-time token use, immediate disable, and re-enable without deleting provider data.
 - Phone-first job creation from the **+** modal, with an immediate prepared WhatsApp handoff and an optional complete staff-entered form.
 - Dispatcher-created customer intake links with automatic rotation/revocation, a bilingual mobile form, required assistance selector and written description, common vehicle-brand selection with an “Other” fallback, optional rental-company entry, required people count, GPS or map-pin confirmation, and one-time submission.
-- Direct customer WhatsApp handoff using the registered phone number, clear English instructions, and the newly generated secure link; no copy-and-paste step is required.
+- Prepared customer WhatsApp handoff using the registered phone number, clear English instructions and the newly generated secure link; staff open a draft or copy the message and press Send manually.
 - Private job-photo upload to Supabase Storage, with access limited to staff, the currently assigned driver, and the active temporary customer link.
 - Separate staff billing workspace with payer queues, provider settlement, invoice/payment states, locked finalized amounts, financial audit history, and deep links to the operational job.
 - Staff-only unified job timeline with category filters, customer-link first-open tracking, audited driver contact attempts, assignment/status history, photo metadata, and billing events.
+
+## Completed myPOS payment slice
+
+- Merchant-issued legacy REST v1.1 credentials, isolated provider adapter and
+  strict matching of payment identity, amount, currency and status.
+- Fixed 10,490 ISK combined customer checkout with durable details and unattended
+  paid-intake finalization; independent dispatcher-entered service checkout.
+- Private bilingual summary, manual WhatsApp delivery, safe page-link rotation,
+  duplicate/ambiguous-request protection and automatic staff payment updates.
+- Applied hosted migrations, server-only configuration, Vault/Cron reconciliation
+  and completed real-card/phone acceptance without changing ordinary pricing.
 
 ## Completed driver build slice
 
@@ -181,7 +261,7 @@ A physical phone with WhatsApp installed completed the live Preview workflow wit
 
 The disposable provider, job, Auth user, photo, and billing case remain temporarily available for the owner to inspect from the staff interface. See [`docs/public-phone-audit-2026-09-06.md`](public-phone-audit-2026-09-06.md).
 
-## Hosted presentation network
+## Historical hosted presentation network — removed on 7 October
 
 Five clearly marked presentation providers are stored in the hosted Supabase project for the owner's system demonstration:
 
@@ -210,7 +290,7 @@ Each job has realistic vehicle and incident information, a visibly marked dummy 
 
 The older provider from the physical-phone audit remains retained for owner inspection. The separate Alli live demonstration added one provider and one accepted job, so the hosted dashboard currently reports seven active providers and five active jobs. The retained audit and Alli records should each be removed with their related Auth, Storage, and database rows after inspection.
 
-## WhatsApp Cloud API production slice — in progress
+## Historical WhatsApp Cloud API production slice — now paused
 
 The physical-phone audit proved the message content, secure links, and customer/driver journeys with the manual WhatsApp handoff. Production should build on that result by integrating the official Meta WhatsApp Cloud API directly where practical.
 
@@ -247,7 +327,7 @@ The existing System User has full access to the production WABA. A deployed staf
 
 The send/status/reply/idempotency backend, operational interface wiring, fallback behavior, staff timeline/reply review, and opt-out guard are complete and deployed. The approved templates and their operational paths passed on the sandbox phone on 14 September. Meta for Developers Step 2 showed only payment unchecked at the last recorded check; Step 3 business verification remains separate. Embedded Signup Builder is outside this direct single-company integration. The production slice remains open until the owner completes the applicable payment and verification work, selects a permanent sender, and the real-number cutover proves customer delivery, driver replies, assignment delivery, and one-time link use.
 
-## Full verification snapshot
+## Historical verification snapshot — 12 September
 
 The complete current working tree was rechecked on 12 September 2026:
 
@@ -263,40 +343,38 @@ The existing browser verification remains valid for the critical dispatcher → 
 
 The 7 September vehicle-form revision additionally passed the deployed HTML check for every new field and representative vehicle makes, direct visual inspection at desktop and narrow viewport sizes, active-link state verification, and a hosted migration dry run showing no pending migrations. The review deliberately stopped before submission so the retained stakeholder record was not overwritten. The later phone-first slice passed locally and on the stable hosted preview with a separate disposable job. Its hosted records were removed after direct verification, and the retained stakeholder record was untouched. The 12 September fallback pass created a phone-only job locally and on the stable hosted preview. The local missing Edge runtime and Meta's hosted `132001` pending-template rejection both preserved the link and displayed the manual action without application-console errors; both disposable jobs and the hosted failed ledger row were removed. Separate hosted transaction checks proved STOP blocks a reservation, START re-enables it, and a delayed older preference cannot replace the newer state; all check rows were removed.
 
-## Current readiness boundary
+## Current readiness and owner setup
 
-The implemented flows are complete locally, and the complete dispatcher → customer → driver → billing path has passed against the hosted Supabase Free project and public Vercel Preview on a physical phone. The product is still not declared production-ready: the owner must finish inspecting and clean the retained test data, replace the simplified administrator testing password with a unique production password, and approve the operational launch checklist. The current link is a preview environment rather than a production release.
+The customer/payment flow is live and verified. The hosted driver/billing flow
+has earlier physical-phone evidence; the 21 October audit focused on the new
+payment and customer-photo flow. The site uses Vercel's Preview target with real
+payments enabled. The owner will add the operating company's actual
+providers/drivers and manage its staff access.
 
-## Next slices
-
-1. Let the owner inspect the completed phone-audit job from the staff interface, then delete its disposable database, Storage, and Auth records.
-2. Replace the simplified administrator testing password with a unique production password before launch, and remove the linked WhatsApp Web device if it should not remain connected.
-3. On the connected test phone, verify that the dashboard copies a complete message and that its optional opener launches WhatsApp. The phone's account number can differ for this opener test.
-4. Before real customer and driver sends, use the `+354 853 7704` WhatsApp Business account and verify the sender in the app. Staff must press Send and read replies manually.
-5. Keep WABA payment, business verification, API sender registration, and coexistence onboarding paused unless the company later chooses to resume Cloud API sending.
-6. Promote a reviewed build to production only after the launch checklist is approved; upgrade the same Supabase project later when capacity, uptime, backup, or support requirements justify it.
-7. Select and integrate Iceland-compatible accounting/invoicing and payment providers only after an accountant confirms the invoice, VAT, refund/credit-note, provider-payment, and reconciliation requirements. Any customer payment link should follow the current manual WhatsApp handoff.
+The 22 October Git checkpoint preserves the tested release with its migrations,
+tests and documentation. Automatic Git deployments are disabled in `vercel.json`;
+future app releases use the explicit deployment procedure. Accounting/legal-invoice
+synchronization, refunds and provider payouts remain separate future work.
 
 ## Intended end-to-end workflow
 
 ```text
 Customer calls dispatcher on +354 853 7704
-        -> dispatcher enters the caller number and Vegstoð creates a pending job and secure customer link
-        -> dispatcher copies the prepared message into the correct WhatsApp Business chat and presses Send
-        -> customer chooses assistance, describes the issue, confirms location, and uploads photos
-        -> Vegstoð unlocks matching and assignment
-        -> dispatcher copies an availability message to suitable drivers
-        -> dispatcher reads their WhatsApp replies manually
-        -> dispatcher assigns one operator/driver and vehicle
-        -> dispatcher copies the assigned driver's secure access link into WhatsApp Business
-        -> driver accepts in the Vegstoð driver screen
-        -> driver calls/navigates and updates job status
-        -> dispatcher follows the same job through completion
-        -> completed job becomes ready in Uppgjör
-        -> Vegstoð invoices and collects from the payer
-        -> dispatcher sends any future customer payment link manually through WhatsApp Business
-        -> Vegstoð approves and pays the provider separately
-        -> both paid legs mark the case fully settled
+        -> dispatcher enters the caller number and creates a pending job and secure customer link
+        -> dispatcher manually sends the prepared message from the company's WhatsApp Business account
+        -> customer enters details, confirms location and optionally uploads photos
+        -> one Pay and submit action saves the draft and opens the fixed 10,490 ISK checkout
+        -> trusted background API verification confirms Paid and submits the saved details
+        -> matching and assignment unlock; the customer need not return
+        -> dispatcher contacts suitable drivers manually and obtains a service quote
+        -> dispatcher enters the separate service amount/description
+        -> dispatcher manually sends the private service-payment summary link
+        -> customer pays without entering their details again; verified status updates automatically
+        -> dispatcher controls assignment and sends the driver's one-time access link
+        -> driver accepts, calls/navigates and updates operational status
+        -> job completion hands off to the separate Uppgjör ledger
+        -> staff records payer invoicing/receipts and approves/pays the provider independently
+        -> both billing legs must be paid for the case to be fully settled
 ```
 
 ## Deferred deliberately
@@ -305,5 +383,5 @@ Customer calls dispatcher on +354 853 7704
 - Automatic dispatch.
 - Continuous background driver tracking.
 - Native iOS/Android applications.
-- Automated legal invoice/accounting synchronization, online payment collection, refunds/credit notes, and bank payouts.
+- Automated legal invoice/accounting synchronization, refunds/credit notes, and bank payouts. The two customer myPOS payments are implemented and live.
 - Rental-company and insurer account integrations beyond manual payer/reference capture.

@@ -2,9 +2,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { prepareCustomerPhotoUploadAction, submitCustomerIntakeAction } from "./actions";
+import { isCollectionEnabled } from "@/features/payments/collection-config";
+import { getInitialCheckoutSummary, hasPaidInitialForIntake } from "@/features/payments/checkout-queries";
 
 vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+vi.mock("@/features/payments/collection-config", () => ({ isCollectionEnabled: vi.fn(() => false) }));
+vi.mock("@/features/payments/checkout-queries", () => ({ getInitialCheckoutSummary: vi.fn(async () => null), hasPaidInitialForIntake: vi.fn(async () => false) }));
 vi.mock("@/lib/config", () => ({ hasSupabaseAdminConfig: () => true, isDemoMode: () => false }));
 vi.mock("@/lib/rate-limit", () => ({
   consumeRateLimit: vi.fn(),
@@ -39,6 +43,7 @@ const rateLimitError = "Too many requests. Please wait a few minutes and try aga
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(isCollectionEnabled).mockReturnValue(false);
 });
 
 describe("customer link rate limiting", () => {
@@ -65,5 +70,21 @@ describe("customer link rate limiting", () => {
 
     await expect(submitCustomerIntakeAction(submission)).resolves.toEqual({ ok: true });
     expect(rpc).toHaveBeenCalledWith("submit_customer_intake_v3", expect.objectContaining({ p_vehicle_registration: "AB123" }));
+  });
+
+  it("blocks the old Submit action from bypassing Pay and submit", async () => {
+    vi.mocked(isCollectionEnabled).mockReturnValue(true);
+    vi.mocked(consumeRateLimit).mockResolvedValue(true);
+    expect(await submitCustomerIntakeAction(submission)).toMatchObject({ ok: false });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("does not let a browser replace a frozen paid draft before background completion", async () => {
+    vi.mocked(isCollectionEnabled).mockReturnValue(true);
+    vi.mocked(consumeRateLimit).mockResolvedValue(true);
+    vi.mocked(getInitialCheckoutSummary).mockResolvedValueOnce({ status: "paid" } as never);
+    vi.mocked(hasPaidInitialForIntake).mockResolvedValueOnce(true);
+    expect(await submitCustomerIntakeAction(submission)).toMatchObject({ ok: false });
+    expect(rpc).not.toHaveBeenCalled();
   });
 });

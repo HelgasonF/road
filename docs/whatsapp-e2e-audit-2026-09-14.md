@@ -1,5 +1,7 @@
 # Hosted WhatsApp end-to-end audit — 14 September 2026
 
+> Historical record: this file preserves the state and evidence at its dated checkpoint. For current payments, manual WhatsApp messaging, deployment and remaining work, use [implementation status](implementation-status.md) and the [deployment runbook](deployment.md), updated 21 October 2026.
+
 User authorization: all templates were approved; test the system end to end.
 
 The hosted customer → dispatcher → driver → completed job → internal billing path **passed** on 14 September, approximately 20:38–20:58 UTC. This closes the customer-button blocker from the [13 September audit](whatsapp-sandbox-phone-audit-2026-09-13.md).

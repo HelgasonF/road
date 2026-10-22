@@ -1,0 +1,12 @@
+.git/
+.vercel/
+.next/
+node_modules/
+output/
+coverage/
+.playwright-cli/
+.env*
+supabase/.temp/
+*.tsbuildinfo
+*.pem
+*-debug.log*

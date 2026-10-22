@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 
 import { CustomerIntakeForm } from "@/features/customer-intake/customer-intake-form";
 import { getCustomerIntakePageData } from "@/features/customer-intake/queries";
+import { getCustomerPaymentSettings } from "@/features/payments/collection-config";
+import { getInitialCheckoutSummary, hasPaidInitialForIntake } from "@/features/payments/checkout-queries";
+import { PaymentSummary } from "@/features/payments/payment-summary";
 
 export const dynamic = "force-dynamic";
 
@@ -50,12 +53,26 @@ export default async function CustomerIntakePage({
     );
   }
 
+  let payment = getCustomerPaymentSettings();
+  let summary = null;
+  if (payment.enabled) {
+    try {
+      summary = await getInitialCheckoutSummary(token);
+      if (!summary && await hasPaidInitialForIntake(token)) payment = { enabled: false, ready: false, amountIsk: null };
+    } catch {
+      payment = { enabled: true, ready: false, amountIsk: null };
+    }
+  }
+
+  if (summary) return <PaymentSummary summary={summary} />;
+
   return (
     <CustomerIntakeForm
       expiresAt={intake.expiresAt}
       initialPhotos={intake.photos}
       job={intake.job}
       token={token}
+      payment={payment}
     />
   );
 }

@@ -8,6 +8,8 @@ import { hasSupabaseAdminConfig, isDemoMode } from "@/lib/config";
 import type { ActionResult } from "@/lib/domain/types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { isCollectionEnabled } from "@/features/payments/collection-config";
+import { getInitialCheckoutSummary, hasPaidInitialForIntake } from "@/features/payments/checkout-queries";
 import {
   CUSTOMER_PHOTO_LIMIT,
   customerIntakeSchema,
@@ -133,6 +135,14 @@ export async function submitCustomerIntakeAction(input: unknown): Promise<Action
     };
   }
   if (!hasSupabaseAdminConfig()) return { ok: false, error: "The service is temporarily unavailable." };
+
+  if (isCollectionEnabled()) {
+    try {
+      if (await getInitialCheckoutSummary(parsed.data.token) || !(await hasPaidInitialForIntake(parsed.data.token))) {
+        return { ok: false, error: "Please use Pay and submit to complete your request." };
+      }
+    } catch { return { ok: false, error: "Payment is temporarily unavailable. Please contact dispatch." }; }
+  }
 
   const value = parsed.data;
   const admin = createAdminClient();

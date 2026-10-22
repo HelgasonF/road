@@ -1,5 +1,7 @@
 # Hosted end-to-end audit — 6 September 2026
 
+> Historical record: this file preserves the state and evidence at its dated checkpoint. For current payments, manual WhatsApp messaging, deployment and remaining work, use [implementation status](implementation-status.md) and the [deployment runbook](deployment.md), updated 21 October 2026.
+
 > Historical record: this audit exercised the email-based driver invitation that existed in commit `5611f74`. That access path was replaced later on 6 September by passwordless, one-time driver links delivered through the registered WhatsApp number. The mailer observations below explain the old test only; SMTP is no longer a customer or driver release requirement. See [`implementation-status.md`](implementation-status.md) for the current flow.
 
 ## Result

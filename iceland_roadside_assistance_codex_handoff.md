@@ -1,10 +1,22 @@
 # Icelandic Roadside Assistance Platform — Codex Handoff
 
-> This file contains the original product brief. After the 5 September 2026 maintenance shutdown, resume with [`docs/maintenance-handoff.md`](docs/maintenance-handoff.md). For the implemented system and agreed build order, see [`docs/implementation-status.md`](docs/implementation-status.md).
+> Historical product brief. For the current implemented system and owner handoff,
+> use [implementation status](docs/implementation-status.md),
+> [maintenance handoff](docs/maintenance-handoff.md) and
+> [deployment runbook](docs/deployment.md), updated 21 October 2026.
 >
-> Current decisions that supersede early options in this brief: MapLibre/OSM plus local HMS search and map-pin reverse lookup replaced Mapbox; service provider and driver are one operator record; dispatch contacts drivers manually through normal WhatsApp/WhatsApp Web and sends a private passwordless Vegstoð access link to the registered phone after assignment; drivers do not receive email or create passwords; dispatch also sends the customer's expiring account-free Vegstoð intake link through a direct prepared WhatsApp handoff, while location, details, and private photo uploads remain inside Vegstoð; every payer pays Vegstoð and Vegstoð separately settles with the service provider through the staff-only Uppgjör workflow; each job now has a separate staff-only unified operational, contact, customer, and billing timeline.
+> The customer/payment flow is live at `https://vegstod.vercel.app`: a fixed
+> **10,490 ISK** first payment through **Pay and submit**, then a separate service
+> payment whose amount/description the dispatcher enters. API-verified Paid
+> submits the saved customer details without requiring a return visit. Both
+> payments and private photos passed the [live phone audit](docs/live-phone-audit-2026-10-21.md).
 >
-> The implementation-status document also contains the local verification record, the physical Android USB test, and the hosted Vercel Preview/Supabase Free smoke pass. The remaining boundary is a physical-phone test over that public HTTPS preview with the passwordless driver link plus launch setup. SMTP is not part of the customer or driver workflow. Use the implementation-status document as the source of truth before calling the system production-ready.
+> MapLibre/OSM and local HMS search replaced Mapbox. A provider and driver share
+> one operator record. WhatsApp sending remains manual in the company's Business
+> app; Cloud API work is paused. Driver access is passwordless through a private
+> one-time link. Customer details/photos stay in the application/private Storage.
+> myPOS collection is separate from the staff billing ledger, legal invoicing and
+> provider settlement. Older options and open tasks below are historical.
 
 ## 1. Project Purpose
 

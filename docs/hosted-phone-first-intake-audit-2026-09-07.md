@@ -1,5 +1,7 @@
 # Hosted phone-first customer-intake audit — 7 September 2026
 
+> Historical record: this file preserves the state and evidence at its dated checkpoint. For current payments, manual WhatsApp messaging, deployment and remaining work, use [implementation status](implementation-status.md) and the [deployment runbook](deployment.md), updated 21 October 2026.
+
 The stable Vercel Preview at `https://vegstod.vercel.app`, built from commit `bbc89b4`, passed the new minimum-input customer workflow against the linked Supabase Free project `abpmzqtbllszqqetuubp`.
 
 The browser audit signed in as the existing administrator, pressed **+**, entered only an Icelandic customer phone number, and selected **Búa til og opna WhatsApp**. The test intercepted the external browser handoff, so it did not send a WhatsApp message. The resulting draft contained the correct recipient and an expiring first-party customer link, and that link opened the English customer form.

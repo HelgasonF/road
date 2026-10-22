@@ -1,5 +1,7 @@
 # Public HTTPS physical-phone audit — 6 September 2026
 
+> Historical record: this file preserves the state and evidence at its dated checkpoint. For current payments, manual WhatsApp messaging, deployment and remaining work, use [implementation status](implementation-status.md) and the [deployment runbook](deployment.md), updated 21 October 2026.
+
 ## Result
 
 The stable Vercel Preview at `https://vegstod.vercel.app` completed the real customer → dispatch → driver → billing-handoff workflow on a physical phone without USB forwarding. The phone used an installed personal WhatsApp account; dispatch used the intended manual Vegstoð handoff and pressed Send in a linked WhatsApp Web session.

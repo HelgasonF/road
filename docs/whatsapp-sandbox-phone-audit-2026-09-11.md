@@ -1,5 +1,7 @@
 # WhatsApp Cloud API sandbox phone audit
 
+> Historical record: this file preserves the state and evidence at its dated checkpoint. For current payments, manual WhatsApp messaging, deployment and remaining work, use [implementation status](implementation-status.md) and the [deployment runbook](deployment.md), updated 21 October 2026.
+
 Audited: 11 September 2026, 23:48–23:54 Atlantic/Reykjavik.
 
 ## Result

@@ -1,5 +1,7 @@
 # Production audit and physical phone pass — 26 September 2026
 
+> Historical record: this file preserves the state and evidence at its dated checkpoint. For current payments, manual WhatsApp messaging, deployment and remaining work, use [implementation status](implementation-status.md) and the [deployment runbook](deployment.md), updated 21 October 2026.
+
 ## Fixes deployed
 
 Deployed to `https://vegstod.vercel.app` (alias moved to `vegstod-ifupvwfmt-freyrs-projects-fad4047a.vercel.app`, commit `520d5ca`). The hosted database received `20260926170000_add_request_rate_limits.sql`.

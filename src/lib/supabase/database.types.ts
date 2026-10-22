@@ -1,3 +1,4 @@
+import type { PaymentRow } from "@/features/payments/types";
 import type {
   AvailabilityStatus,
   BillingAction,
@@ -22,6 +23,24 @@ type WhatsAppReplyClassification = "available" | "unavailable" | "unknown";
 export type Database = {
   public: {
     Tables: {
+      customer_payment_intakes: {
+        Row: { id: string; customer_intake_link_id: string; job_id: string; payment_request_id: string; details: Json; language: string; created_at: string; completed_at: string | null; review_required: boolean };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      job_payment_pages: {
+        Row: { payment_request_id: string; token_hash: string; description: string; vehicle_registration: string | null; expires_at: string; created_at: string };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      job_payment_requests: {
+        Row: PaymentRow & { next_check_at: string };
+        Insert: Pick<PaymentRow, "job_id" | "purpose" | "environment" | "merchant_id" | "provider_api" | "amount_isk" | "reference" | "created_by"> & Partial<PaymentRow> & { next_check_at?: string };
+        Update: Partial<PaymentRow & { next_check_at: string }>;
+        Relationships: [];
+      };
       capabilities: {
         Row: { code: CapabilityCode; sort_order: number; created_at: string };
         Insert: { code: CapabilityCode; sort_order: number; created_at?: string };
@@ -553,6 +572,31 @@ export type Database = {
       };
     };
     Functions: {
+      prepare_customer_payment_intake: {
+        Args: { p_token_hash: string; p_details: Json; p_language: string; p_environment: string; p_merchant_id: string; p_provider_api: string; p_amount_isk: number };
+        Returns: Json;
+      };
+      prepare_service_payment_page: {
+        Args: { p_job_id: string; p_amount_isk: number; p_description: string; p_environment: string; p_merchant_id: string; p_provider_api: string; p_created_by: string; p_token_hash: string; p_expires_at: string };
+        Returns: Json;
+      };
+      claim_due_job_payments: {
+        Args: { p_environment: string; p_merchant_id: string; p_provider_api: string };
+        Returns: PaymentRow[];
+      };
+      finalize_paid_customer_intake: { Args: { p_payment_id: string }; Returns: string };
+      reserve_job_payment_request: {
+        Args: { p_job_id: string; p_purpose: string; p_environment: string; p_merchant_id: string; p_provider_api: string; p_amount_isk: number; p_created_by: string };
+        Returns: Json;
+      };
+      finish_job_payment_creation: {
+        Args: { p_id: string; p_provider_code: string | null; p_payment_url: string | null; p_status: string; p_error_code: string | null };
+        Returns: Json;
+      };
+      record_job_payment_status: {
+        Args: { p_id: string; p_provider_code: string; p_amount_isk: number; p_currency: string; p_reference: string; p_provider_status: string; p_status: string; p_checked_at: string };
+        Returns: Json;
+      };
       save_operator: {
         Args: {
           p_id: string | null;

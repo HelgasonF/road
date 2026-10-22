@@ -1,5 +1,7 @@
 # Hosted WhatsApp driver-access audit — 6 September 2026
 
+> Historical record: this file preserves the state and evidence at its dated checkpoint. For current payments, manual WhatsApp messaging, deployment and remaining work, use [implementation status](implementation-status.md) and the [deployment runbook](deployment.md), updated 21 October 2026.
+
 ## Result
 
 The automatic Vercel Preview built from commit `ba61a50` passed the replacement passwordless driver workflow against the linked Supabase Free project `abpmzqtbllszqqetuubp`. The stable test address `https://vegstod.vercel.app` now points to that Ready deployment; its immutable deployment URL is `https://vegstod-eu7blivuh-freyrs-projects-fad4047a.vercel.app`.

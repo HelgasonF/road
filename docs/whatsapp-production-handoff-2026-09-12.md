@@ -1,5 +1,7 @@
 # WhatsApp production handoff — 12 September 2026
 
+> Historical record: this file preserves the state and evidence at its dated checkpoint. For current payments, manual WhatsApp messaging, deployment and remaining work, use [implementation status](implementation-status.md) and the [deployment runbook](deployment.md), updated 21 October 2026.
+
 Updated: 26 September 2026, Atlantic/Reykjavik. Original handoff: 12 September 2026.
 
 **Current decision, later on 26 September:** Cloud API sending is on hold. The owner keeps `+354 853 7704` in the WhatsApp Business app. Iceland Road Assistance now prepares customer and driver messages for staff to copy and send manually from that account. Do not register a second API number or change the current phone-app account for this workflow. The dated coexistence and API cutover material below is preserved as history and is paused. See the current [manual handoff](manual-whatsapp-handoff-2026-09-26.md).

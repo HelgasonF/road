@@ -1,5 +1,7 @@
 # Hosted backend improvements — 8 September 2026
 
+> Historical record: this file preserves the state and evidence at its dated checkpoint. For current payments, manual WhatsApp messaging, deployment and remaining work, use [implementation status](implementation-status.md) and the [deployment runbook](deployment.md), updated 21 October 2026.
+
 This change prepared the existing Supabase backend for more than one authenticated client without changing the customer, dispatcher, or driver workflow.
 
 ## Applied changes

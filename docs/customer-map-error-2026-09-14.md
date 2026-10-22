@@ -1,5 +1,7 @@
 # Customer map error — 14 September 2026
 
+> Historical record: this file preserves the state and evidence at its dated checkpoint. For current payments, manual WhatsApp messaging, deployment and remaining work, use [implementation status](implementation-status.md) and the [deployment runbook](deployment.md), updated 21 October 2026.
+
 The user noticed an OpenStreetMap error during the earlier WhatsApp end-to-end test. Investigation reproduced **403 Access blocked** inside the customer map's tile image. The earlier operational-flow pass did not establish that this basemap rendered correctly and should not be read as a complete visual pass.
 
 ## Cause and reproduction
