@@ -76,4 +76,4 @@ export interface PaymentProvider {
   get(code: string): Promise<ProviderPaymentDetails>;
 }
 
-export type PaymentResult<T> = { ok: true; data: T } | { ok: false; error: string; errorCode: string };
+export type PaymentResult<T> = { ok: true; data: T } | { ok: false; error: string; errorCode: string; fieldErrors?: Record<string, string[]> };

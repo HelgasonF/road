@@ -42,7 +42,7 @@ export async function startCustomerCheckoutAction(input: unknown): Promise<Payme
   try {
     requireCollectionConfig();
     const parsed = customerCheckoutSchema.safeParse(input);
-    if (!parsed.success) throw new PaymentError("payment_invalid_input");
+    if (!parsed.success) return { ok: false, errorCode: "payment_invalid_input", error: "Please correct the highlighted fields.", fieldErrors: parsed.error.flatten().fieldErrors };
     const { token, language, ...details } = parsed.data;
     if (!(await getActiveCustomerLinkByToken(token))) throw new PaymentError("payment_link_unavailable");
     if (await hasPaidInitialForIntake(token)) throw new PaymentError("payment_already_paid");

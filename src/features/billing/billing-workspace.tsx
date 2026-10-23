@@ -1,5 +1,7 @@
 "use client";
 
+import { formatContactName } from "@/lib/phone";
+
 import {
   Banknote,
   BriefcaseBusiness,
@@ -61,6 +63,7 @@ export function BillingWorkspace({ billingCases, demoMode, events, identity, ini
     return billingCases.filter((billingCase) => {
       const textMatches = !normalized || [
         billingCase.customerName,
+        formatContactName(billingCase.customerName, billingCase.customerPhone),
         billingCase.payerName,
         billingCase.locationLabel,
         billingCase.operatorName,
@@ -119,7 +122,7 @@ export function BillingWorkspace({ billingCases, demoMode, events, identity, ini
               return (
                 <button className={`billing-case-row ${billingCase.jobId === selectedJobId ? "billing-case-row-selected" : ""}`} key={billingCase.jobId} type="button" onClick={() => setSelectedJobId(billingCase.jobId)}>
                   <span className={`billing-queue-dot billing-queue-${caseQueue}`} />
-                  <span><strong>{billingCase.customerName}</strong><small>{billingCase.payerName ?? "Greiðandi óskráður"}</small><i>{jobStatusLabels[billingCase.jobStatus]} · {caseQueue === "settled" || caseQueue === "provider_payment_due" || caseQueue === "void" ? billingQueueLabels[caseQueue] : receivableStatusLabels[billingCase.receivableStatus]}</i></span>
+                  <span><strong>{formatContactName(billingCase.customerName, billingCase.customerPhone)}</strong><small>{billingCase.payerName ?? "Greiðandi óskráður"}</small><i>{jobStatusLabels[billingCase.jobStatus]} · {caseQueue === "settled" || caseQueue === "provider_payment_due" || caseQueue === "void" ? billingQueueLabels[caseQueue] : receivableStatusLabels[billingCase.receivableStatus]}</i></span>
                   <b>{formatIsk(billingCase.payerAmountIsk)}</b>
                 </button>
               );

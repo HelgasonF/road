@@ -87,7 +87,23 @@ Invoice values are mutable while a record is incomplete or in draft. A database 
 
 MapLibre renders a raster basemap, using OpenStreetMap tiles by default. The tile URL and required attribution are configurable public build-time values, so a production operator can switch to self-hosted tiles without changing the application. No map token or geocoding API is required.
 
-Address and place searches are PostgreSQL RPC calls protected by the same staff session and RLS boundaries as operational data. `scripts/import-hms-addresses.mjs` downloads and normalizes the official weekly HMS CSV, downloads only Icelandic `place=*` objects from OpenStreetMap, loads both into temporary tables, and atomically replaces the live search indexes. The downloaded source files never enter the repository.
+Staff address/place searches are PostgreSQL RPC calls protected by the staff
+session and existing database boundaries. The approved local location update
+adds a customer action that verifies an active expiring token and rate limit
+before using server-only catalog access. Anonymous database execution remains
+blocked. Both forms resolve clear typed places, require a choice for ambiguous
+matches and preserve GPS/map coordinates. Town-level locations are explicitly
+approximate. The function migration and app release are pending; see the
+[implementation record](typed-locations-2026-10-23.md).
+
+`scripts/import-hms-addresses.mjs` downloads and normalizes the official weekly HMS CSV, downloads only Icelandic `place=*` objects from OpenStreetMap, loads both into temporary tables, and atomically replaces the live search indexes. The downloaded source files never enter the repository.
+
+Phone input/display shares `libphonenumber-js` helpers and one country picker.
+New fields start without a country; full international input and saved numbers
+infer one. Recognized numbers normalize to E.164 at existing schema boundaries,
+while legacy unrecognized values remain usable. Display formatting does not
+change communication-link builders or stored data structures. See the
+[phone record](phone-formatting-2026-10-23.md).
 
 ## Localization
 

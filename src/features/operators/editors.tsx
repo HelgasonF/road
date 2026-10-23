@@ -1,10 +1,11 @@
 "use client";
 
 import { Check, X } from "lucide-react";
-import { FormEvent, ReactNode, useState, useTransition } from "react";
+import { FormEvent, ReactNode, useRef, useState, useTransition } from "react";
+import { PhoneInput } from "@/components/phone-input";
 
 import type { Capability, CapabilityCode, Operator, Vehicle } from "@/lib/domain/types";
-import { AddressSearchField } from "@/features/location/address-search-field";
+import { AddressSearchField, type AddressSearchFieldHandle } from "@/features/location/address-search-field";
 import {
   availabilityLabels,
   capabilityLabels,
@@ -93,6 +94,7 @@ interface OperatorEditorProps {
 }
 
 export function OperatorEditor({ capabilities, operator, onClose, onSaved }: OperatorEditorProps) {
+  const locationRef = useRef<AddressSearchFieldHandle>(null);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [selectedCapabilities, setSelectedCapabilities] = useState<CapabilityCode[]>(
@@ -105,6 +107,8 @@ export function OperatorEditor({ capabilities, operator, onClose, onSaved }: Ope
     const form = new FormData(event.currentTarget);
 
     startTransition(async () => {
+      const location = await locationRef.current?.resolve();
+      if (!location) return;
       const result = await saveOperatorAction({
         id: operator?.id ?? null,
         name: String(form.get("name") ?? ""),
@@ -112,9 +116,9 @@ export function OperatorEditor({ capabilities, operator, onClose, onSaved }: Ope
         companyName: String(form.get("companyName") ?? ""),
         isActive: form.get("isActive") === "on",
         availabilityStatus: String(form.get("availabilityStatus")) as Operator["availabilityStatus"],
-        baseAddress: String(form.get("baseAddress") ?? ""),
-        baseLatitude: Number(form.get("baseLatitude")),
-        baseLongitude: Number(form.get("baseLongitude")),
+        baseAddress: location.label,
+        baseLatitude: location.latitude,
+        baseLongitude: location.longitude,
         currentLatitude: operator?.currentLatitude ?? null,
         currentLongitude: operator?.currentLongitude ?? null,
         serviceRadiusKm: toNullableNumber(String(form.get("serviceRadiusKm") ?? "")),
@@ -145,10 +149,7 @@ export function OperatorEditor({ capabilities, operator, onClose, onSaved }: Ope
             <span>{is.name}</span>
             <input name="name" defaultValue={operator?.name ?? ""} minLength={2} required />
           </label>
-          <label className="field">
-            <span>{is.phone}</span>
-            <input name="phone" defaultValue={operator?.phone ?? ""} type="tel" inputMode="tel" autoComplete="tel" placeholder="+354 555 0000 eða erlent númer með landskóða" required />
-          </label>
+          <PhoneInput label={is.phone} name="phone" defaultValue={operator?.phone ?? ""} required />
           <label className="field">
             <span>{is.companyName}</span>
             <input name="companyName" defaultValue={operator?.companyName ?? ""} />
@@ -169,6 +170,7 @@ export function OperatorEditor({ capabilities, operator, onClose, onSaved }: Ope
             <span>Leitaðu að heimilisfangi, bæ eða staðarheiti á Íslandi.</span>
           </div>
           <AddressSearchField
+            ref={locationRef}
             defaultLabel={operator?.baseAddress}
             defaultLatitude={operator?.baseLatitude}
             defaultLongitude={operator?.baseLongitude}

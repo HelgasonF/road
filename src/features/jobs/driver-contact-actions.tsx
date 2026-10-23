@@ -1,5 +1,7 @@
 "use client";
 
+import { formatPhoneNumber } from "@/lib/phone";
+
 import { PhoneCall, Send } from "lucide-react";
 import { useState, useTransition } from "react";
 
@@ -51,7 +53,7 @@ function DriverCallLink({
       className="driver-job-contact driver-job-contact-call"
       href={callHref}
       onClick={() => recordContact(jobId, operatorId, "phone", purpose)}
-      aria-label={`Hringja í ${driverName}: ${phone}`}
+      aria-label={`Hringja í ${driverName}: ${formatPhoneNumber(phone)}`}
     >
       <PhoneCall size={14} /> Hringja
     </a>

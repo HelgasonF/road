@@ -4,6 +4,7 @@ import { Check, Copy, MessageCircle } from "lucide-react";
 import { useState } from "react";
 
 import { buildWhatsAppHref } from "@/lib/contact-links";
+import { formatContactName } from "@/lib/phone";
 
 interface ManualMessageProps {
   message: string;
@@ -15,6 +16,7 @@ interface ManualMessageProps {
 export function ManualWhatsAppMessage({ message, onOpen, phone, recipientName }: ManualMessageProps) {
   const [copyResult, setCopyResult] = useState<{ message: string; error: boolean } | null>(null);
   const whatsappHref = buildWhatsAppHref(phone, message);
+  const recipientLabel = recipientName ? formatContactName(recipientName, phone) : undefined;
 
   async function copyMessage() {
     try {
@@ -29,12 +31,12 @@ export function ManualWhatsAppMessage({ message, onOpen, phone, recipientName }:
     <div className="manual-whatsapp-message">
       <p>Skilaboðin eru tilbúin. Opnaðu WhatsApp eða afritaðu þau og límdu í spjallið við viðtakandann. Ýttu sjálf/ur á Senda.</p>
       <div className="manual-whatsapp-actions">
-        <button aria-label={recipientName ? `Afrita skilaboð til ${recipientName}` : undefined} className="customer-whatsapp-send" type="button" onClick={copyMessage}>
+        <button aria-label={recipientLabel ? `Afrita skilaboð til ${recipientLabel}` : undefined} className="customer-whatsapp-send" type="button" onClick={copyMessage}>
           {copyResult?.message === message && !copyResult.error ? <Check size={16} /> : <Copy size={16} />}
           Afrita skilaboð
         </button>
         {whatsappHref ? (
-          <a aria-label={recipientName ? `Opna WhatsApp fyrir ${recipientName}` : undefined} className="customer-whatsapp-send" href={whatsappHref} onClick={onOpen} target="_blank" rel="noopener noreferrer">
+          <a aria-label={recipientLabel ? `Opna WhatsApp fyrir ${recipientLabel}` : undefined} className="customer-whatsapp-send" href={whatsappHref} onClick={onOpen} target="_blank" rel="noopener noreferrer">
             <MessageCircle size={16} /> Opna WhatsApp
           </a>
         ) : null}

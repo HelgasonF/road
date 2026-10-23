@@ -36,6 +36,16 @@ beforeEach(() => {
 });
 
 describe("checkout action authorization", () => {
+  it("accepts a resolved search location without changing the payment flow", async () => {
+    expect(await startCustomerCheckoutAction({ ...input, locationSource: "search", locationLabel: "Keflavík · Bær · Approximate location" })).toMatchObject({ ok: true });
+    expect(startInitial).toHaveBeenCalledWith(expect.objectContaining({ amountIsk: 5000, details: expect.objectContaining({ locationSource: "search" }) }));
+  });
+
+  it("returns field validation details before starting any payment request", async () => {
+    expect(await startCustomerCheckoutAction({ ...input, peopleCount: 0 })).toMatchObject({ ok: false, errorCode: "payment_invalid_input", fieldErrors: { peopleCount: expect.any(Array) } });
+    expect(startInitial).not.toHaveBeenCalled();
+  });
+
   it("derives the fixed amount on the server and removes the raw intake token from the stored draft", async () => {
     expect(await startCustomerCheckoutAction({ ...input, amountIsk: 1, paid: true })).toEqual({ ok: true, data: { checkoutUrl: "https://demo.mypos.eu/pr/B123" } });
     expect(startInitial).toHaveBeenCalledWith(expect.objectContaining({ amountIsk: 5000, language: "is", tokenHash: expect.stringMatching(/^[a-f0-9]{64}$/) }));

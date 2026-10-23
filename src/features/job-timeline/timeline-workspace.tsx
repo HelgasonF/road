@@ -1,5 +1,7 @@
 "use client";
 
+import { formatContactName } from "@/lib/phone";
+
 import {
   Activity,
   ArrowLeft,
@@ -88,7 +90,7 @@ export function TimelineWorkspace({ data, identity }: TimelineWorkspaceProps) {
             <Link className="timeline-back-link" href={`/?job=${data.job.id}`}><ArrowLeft size={15} /> Til baka í verkefni</Link>
             <p className="eyebrow"><Activity size={13} /> Sameinaður ferill</p>
             <div className="timeline-title-row">
-              <h1>{data.job.customerName}</h1>
+              <h1>{formatContactName(data.job.customerName, data.job.customerPhone)}</h1>
               <span className={`status-pill job-status-${data.job.status}`}>{jobStatusLabels[data.job.status]}</span>
             </div>
             <p className="timeline-location"><MapPin size={15} /> {data.job.locationLabel}</p>

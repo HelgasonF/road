@@ -25,6 +25,11 @@ const validOperator = {
 };
 
 describe("operatorInputSchema", () => {
+  it("normalizes provider phones while preserving existing short contacts", () => {
+    expect(operatorInputSchema.parse(validOperator).phone).toBe("+3545550190");
+    expect(operatorInputSchema.parse({ ...validOperator, phone: "112" }).phone).toBe("112");
+  });
+
   it("accepts multiple capabilities and normalizes empty optional text", () => {
     const result = operatorInputSchema.parse(validOperator);
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { normalizePhoneNumberOrOriginal } from "@/lib/phone";
 
 import {
   billingActions,
@@ -32,7 +33,7 @@ export const billingDetailsSchema = z.object({
   payerName: optionalPayerName,
   payerKennitala: optionalText(32),
   payerEmail: optionalEmail,
-  payerPhone: optionalText(40),
+  payerPhone: optionalText(40).transform((value) => value ? normalizePhoneNumberOrOriginal(value) : null),
   payerAddress: optionalText(500),
   authorizationReference: optionalText(120),
   billingReference: optionalText(120),

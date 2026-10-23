@@ -1,6 +1,7 @@
 import { MessageCircle, PhoneCall } from "lucide-react";
 
 import { buildContactLinks } from "@/lib/contact-links";
+import { formatPhoneNumber } from "@/lib/phone";
 import { is } from "@/lib/i18n/is";
 
 interface ContactActionsProps {
@@ -10,18 +11,19 @@ interface ContactActionsProps {
 
 export function ContactActions({ personName, phone }: ContactActionsProps) {
   const { callHref, whatsappHref } = buildContactLinks(phone);
+  const displayPhone = formatPhoneNumber(phone);
 
-  if (!callHref) return <p className="muted-copy">{phone}</p>;
+  if (!callHref) return <p className="muted-copy">{displayPhone}</p>;
 
   return (
     <div className="contact-actions" aria-label={`${is.contact}: ${personName}`}>
       <a
         className="contact-action contact-action-call"
         href={callHref}
-        aria-label={`${is.call} í ${personName}: ${phone}`}
+        aria-label={`${is.call} í ${personName}: ${displayPhone}`}
       >
         <PhoneCall size={17} />
-        <span><small>{is.call}</small><strong>{phone}</strong></span>
+        <span><small>{is.call}</small><strong>{displayPhone}</strong></span>
       </a>
       {whatsappHref ? (
         <a

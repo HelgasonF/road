@@ -1,6 +1,25 @@
 # Road / Iceland Road Assistance maintenance handoff
 
-Last updated: 22 October 2026 (Atlantic/Reykjavik)
+Last updated: 23 October 2026 (Atlantic/Reykjavik)
+
+Local work after the Git checkpoint below: the shared international phone
+input/display update is complete, with **no default country** for new fields.
+Freyr then approved the reviewed typed-location/field-error fix, which is also
+complete locally. Both forms resolve clear towns/addresses and explain invalid
+fields; ambiguous places require a choice and town coordinates are marked
+approximate. GPS/map and existing payment/messaging workflows remain available.
+Final build/types/lint and **534 application tests** pass, plus **22 isolated
+integration tests / 379 SQL assertions** and browser checks at 320/390/1280px.
+Both features are **uncommitted and not deployed**. See the
+[phone record](phone-formatting-2026-10-23.md) and
+[location record](typed-locations-2026-10-23.md).
+
+The pending `20261023171927_support_typed_customer_locations.sql` migration
+extends existing service-only customer functions to accept `search` and grants
+server-only catalog access. It changes no table/enum structure. It passed in a
+disposable clone and has **not** been applied to hosted or the original local
+database. Apply it before an authorized manual app release; inspect other pending
+local migrations first. No live payment, message or deployment was created.
 
 ## Current resume point
 
@@ -35,7 +54,7 @@ Last updated: 22 October 2026 (Atlantic/Reykjavik)
 - Temporary 35 ISK deployment, phone fixture, hosted photo and owned verification
   sessions were removed. The phone display setting was restored. Private audit
   ledgers, credentials and ignored evidence remain outside versioned source.
-- Latest code verification: build/typecheck/lint, **469 application tests** and
+- Deployed-source verification: build/typecheck/lint, **469 application tests** and
   **363 pgTAP assertions** passed. Runtime application source is unchanged from
   the 22:04 UTC deployment on 21 October. The 22 October checkpoint adds the
   Git deployment control and documentation updates, preserving private evidence,

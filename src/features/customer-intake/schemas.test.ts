@@ -46,7 +46,7 @@ describe("customerIntakeSchema", () => {
 
     expect(result.vehicleRegistration).toBe("AB-123-CD");
     expect(result.rentalCompany).toBeNull();
-    expect(result.customerPhone).toBe(valid.customerPhone);
+    expect(result.customerPhone).toBe("+33612345678");
   });
 
   it("requires a valid number of people", () => {
@@ -71,6 +71,11 @@ describe("customerIntakeSchema", () => {
 });
 
 describe("quickCustomerIntakeJobSchema", () => {
+  it("submits canonical international destinations for local and formatted numbers", () => {
+    expect(quickCustomerIntakeJobSchema.parse({ customerPhone: "6597003" }).customerPhone).toBe("+3546597003");
+    expect(quickCustomerIntakeJobSchema.parse({ customerPhone: "+1 (702) 219-6679" }).customerPhone).toBe("+17022196679");
+  });
+
   it("accepts Icelandic and international telephone numbers", () => {
     expect(quickCustomerIntakeJobSchema.safeParse({ customerPhone: "6597003" }).success).toBe(true);
     expect(quickCustomerIntakeJobSchema.safeParse({ customerPhone: "+44 7700 900123" }).success).toBe(true);

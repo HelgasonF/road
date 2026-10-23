@@ -8,10 +8,13 @@ import {
 } from "./actions";
 import { CustomerIntakeForm } from "./customer-intake-form";
 import { startCustomerCheckoutAction } from "@/features/payments/checkout-actions";
+import { searchCustomerLocationsAction } from "./location-actions";
 import type { ActiveCustomerIntake } from "./queries";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("@/features/payments/checkout-actions", () => ({ startCustomerCheckoutAction: vi.fn() }));
+vi.mock("./location-actions", () => ({ searchCustomerLocationsAction: vi.fn(async () => ({ ok: true, data: [] })) }));
+vi.mock("@/features/location/actions", () => ({ searchIcelandLocationsAction: vi.fn(), findNearestIcelandAddressAction: vi.fn() }));
 vi.mock("./actions", () => ({
   finalizeCustomerPhotoUploadAction: vi.fn(),
   prepareCustomerPhotoUploadAction: vi.fn(),
@@ -62,6 +65,36 @@ afterEach(() => {
 });
 
 describe("CustomerIntakeForm", () => {
+  it("preserves an existing map location and description when confirming a correction form", async () => {
+    vi.mocked(submitCustomerIntakeAction).mockResolvedValueOnce({ ok: true });
+    render(<CustomerIntakeForm expiresAt="2026-09-27T16:38:00.000Z" initialPhotos={[]} job={{ ...job, customerName: "Customer", requiredCapability: "jump_start", customerNotes: "Battery is flat.", latitude: 64.14, longitude: -21.9, locationLabel: "Next to the Olís station", locationSource: "map_pin" }} token="token" />);
+    fireEvent.click(screen.getByRole("button", { name: "Confirm the location shown on the map" }));
+    fireEvent.submit(screen.getByRole("button", { name: "Send details securely" }).closest("form")!);
+    await waitFor(() => expect(submitCustomerIntakeAction).toHaveBeenCalledWith(expect.objectContaining({ locationLabel: "Next to the Olís station", latitude: 64.14, longitude: -21.9 })));
+    expect(searchCustomerLocationsAction).not.toHaveBeenCalled();
+  });
+
+  it("resolves a typed town and submits the details without using GPS or the map", async () => {
+    vi.mocked(searchCustomerLocationsAction).mockResolvedValueOnce({ ok: true, data: [{ id: "osm:node:1", label: "Keflavík · Bær", latitude: 64, longitude: -22.56 }] });
+    vi.mocked(submitCustomerIntakeAction).mockResolvedValueOnce({ ok: true });
+    render(<CustomerIntakeForm expiresAt="2026-09-27T16:38:00.000Z" initialPhotos={[]} job={{ ...job, customerName: "Customer", requiredCapability: "jump_start", customerNotes: "Battery is flat." }} token="token" />);
+    fireEvent.change(screen.getByRole("textbox", { name: "Town or address" }), { target: { value: "í Keflavik" } });
+    fireEvent.submit(screen.getByRole("button", { name: "Send details securely" }).closest("form")!);
+    await waitFor(() => expect(submitCustomerIntakeAction).toHaveBeenCalledWith(expect.objectContaining({ locationSource: "search", latitude: 64, longitude: -22.56, locationLabel: "Keflavík · Bær · Approximate location" })));
+    expect(searchCustomerLocationsAction).toHaveBeenCalledWith({ token: "token", query: "Keflavik" });
+  });
+
+  it("shows returned checkout field errors without losing the form details", async () => {
+    vi.mocked(startCustomerCheckoutAction).mockResolvedValueOnce({ ok: false, errorCode: "payment_invalid_input", error: "Check the form", fieldErrors: { customerName: ["Too short"] } });
+    render(<CustomerIntakeForm expiresAt="2026-09-27T16:38:00.000Z" initialPhotos={[]} job={{ ...job, customerName: "Customer", requiredCapability: "jump_start", customerNotes: "Battery is flat." }} token="token" payment={{ enabled: true, ready: true, amountIsk: 10490 }} />);
+    fireEvent.click(screen.getByRole("button", { name: "Pick on map" }));
+    fireEvent.submit(screen.getByRole("button", { name: "Pay and submit" }).closest("form")!);
+    expect(await screen.findByRole("alert")).toHaveTextContent("Enter a full name");
+    expect(screen.getByDisplayValue("Customer")).toHaveFocus();
+    expect(screen.getByDisplayValue("Battery is flat.")).toBeInTheDocument();
+    expect(submitCustomerIntakeAction).not.toHaveBeenCalled();
+  });
+
   it("labels the link expiry time", () => {
     renderForm();
 
@@ -88,7 +121,7 @@ describe("CustomerIntakeForm", () => {
     render(<CustomerIntakeForm expiresAt="2026-09-27T16:38:00.000Z" initialPhotos={[]} job={{ ...job, customerName: "Customer", requiredCapability: "jump_start", customerNotes: "Battery is flat." }} token="token" payment={{ enabled: true, ready: true, amountIsk: 5000 }} />);
     fireEvent.click(screen.getByRole("button", { name: "Pick on map" }));
     fireEvent.submit(screen.getByRole("button", { name: "Pay and submit" }).closest("form")!);
-    await waitFor(() => expect(startCustomerCheckoutAction).toHaveBeenCalledWith(expect.objectContaining({ token: "token", customerName: "Customer", language: "en", locationSource: "map_pin" })));
+    await waitFor(() => expect(startCustomerCheckoutAction).toHaveBeenCalledWith(expect.objectContaining({ token: "token", customerName: "Customer", customerPhone: "+3546597003", language: "en", locationSource: "map_pin" })));
     expect(submitCustomerIntakeAction).not.toHaveBeenCalled();
     expect(await screen.findByText("Payment unavailable in this test.")).toBeInTheDocument();
   });
@@ -134,12 +167,12 @@ describe("CustomerIntakeForm", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Pick on map" }));
 
-    expect(screen.getByLabelText("Location description")).toHaveValue("Map pin · 64.14000, -21.90000");
+    expect(screen.getByLabelText("Town or address")).toHaveValue("Map pin · 64.14000, -21.90000");
   });
 
   it("keeps a location description the customer typed when the pin moves", () => {
     renderForm();
-    const description = screen.getByLabelText("Location description");
+    const description = screen.getByLabelText("Town or address");
 
     fireEvent.change(description, { target: { value: "Next to the Olís station" } });
     fireEvent.click(screen.getByRole("button", { name: "Pick on map" }));

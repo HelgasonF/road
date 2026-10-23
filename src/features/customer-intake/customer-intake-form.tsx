@@ -11,15 +11,21 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { FormEvent, useState, useTransition } from "react";
+import { FormEvent, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
-import type { CapabilityCode, LocationSource } from "@/lib/domain/types";
+import type { CapabilityCode } from "@/lib/domain/types";
 import { capabilityCodes } from "@/lib/domain/types";
 import { OTHER_VEHICLE_MAKE, vehicleMakes } from "@/lib/domain/vehicle-makes";
 import { capabilityLabels } from "@/lib/i18n/is";
 import { createClient } from "@/lib/supabase/client";
 import { startCustomerCheckoutAction } from "@/features/payments/checkout-actions";
+import { PhoneInput } from "@/components/phone-input";
+import { FieldError, FormErrorSummary } from "@/components/form-errors";
+import { focusFormField, formFieldKey, localizeFieldErrors, nativeFormErrors, type FormErrors } from "@/lib/form-errors";
+import { AddressSearchField, type AddressSearchFieldHandle } from "@/features/location/address-search-field";
+import type { ResolvedLocation } from "@/features/location/typed-location";
+import { searchCustomerLocationsAction } from "./location-actions";
 import {
   finalizeCustomerPhotoUploadAction,
   prepareCustomerPhotoUploadAction,
@@ -35,7 +41,9 @@ import {
   gpsFailureMessages,
   requestCustomerPosition,
 } from "./geolocation";
-import { CUSTOMER_PHOTO_LIMIT } from "./schemas";
+import { CUSTOMER_PHOTO_LIMIT, customerIntakeSchema } from "./schemas";
+
+const editableDetailsSchema = customerIntakeSchema.omit({ token: true });
 
 type Language = "en" | "is";
 
@@ -63,8 +71,8 @@ const copy = {
     confirming: "Finding your location…",
     confirmMap: "Confirm the location shown on the map",
     confirmed: "Location confirmed",
-    locationLabel: "Location description",
-    mapHelp: "Tap the map or drag the pin to correct the location.",
+    locationLabel: "Town or address",
+    mapHelp: "Type a town/address, use GPS, or choose a point on the map.",
     problem: "What happened?",
     assistance: "Type of assistance",
     chooseAssistance: "Choose the assistance you need",
@@ -105,8 +113,8 @@ const copy = {
     confirming: "Finn staðsetningu…",
     confirmMap: "Staðfesta staðinn sem sést á kortinu",
     confirmed: "Staðsetning staðfest",
-    locationLabel: "Lýsing á staðsetningu",
-    mapHelp: "Snertu kortið eða dragðu pinnann til að leiðrétta staðsetninguna.",
+    locationLabel: "Bær eða heimilisfang",
+    mapHelp: "Skrifaðu bæ eða heimilisfang, notaðu GPS eða veldu punkt á kortinu.",
     problem: "Hvað gerðist?",
     assistance: "Tegund aðstoðar",
     chooseAssistance: "Veldu aðstoðina sem þú þarft",
@@ -161,7 +169,6 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token, payme
   const [latitude, setLatitude] = useState(job.latitude);
   const [longitude, setLongitude] = useState(job.longitude);
   const [locationLabel, setLocationLabel] = useState(job.locationLabel);
-  const [locationSource, setLocationSource] = useState<Extract<LocationSource, "gps" | "map_pin">>("map_pin");
   const [locationConfirmed, setLocationConfirmed] = useState(false);
   const [locating, setLocating] = useState(false);
   const [gpsFailure, setGpsFailure] = useState<GpsFailureReason | null>(null);
@@ -171,13 +178,35 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token, payme
   const [photos, setPhotos] = useState(initialPhotos);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FormErrors>({});
+  const formRef = useRef<HTMLFormElement>(null);
+  const locationRef = useRef<AddressSearchFieldHandle>(null);
   const [pending, startTransition] = useTransition();
   const t = copy[language];
+
+  function showFieldErrors(errors: FormErrors) {
+    setFieldErrors(errors);
+    if (Object.keys(errors)[0]) focusFormField(formRef.current, Object.keys(errors)[0]);
+  }
+
+  function fieldProps(name: string) {
+    const key = formFieldKey(name);
+    return { "data-field": key, "aria-labelledby": `customer-${name}-label`, "aria-invalid": Boolean(fieldErrors[key]) || undefined, "aria-describedby": fieldErrors[key] ? `customer-${key}-error` : undefined };
+  }
+
+  function fieldError(name: string) { return <FieldError id={`customer-${name}-error`} message={fieldErrors[name]} />; }
+
+  function resolvedLocationChanged(location: ResolvedLocation | null) {
+    if (!location) { setLocationConfirmed(false); return; }
+    setLatitude(location.latitude); setLongitude(location.longitude); setLocationLabel(location.label);
+    setLocationConfirmed(true); setGpsFailure(null);
+    if (location.source === "search") setLabelEdited(false);
+    setFieldErrors((current) => Object.fromEntries(Object.entries(current).filter(([key]) => key !== "locationLabel")));
+  }
 
   function applyLocation(source: "gps" | "map_pin", nextLatitude: number, nextLongitude: number) {
     setLatitude(nextLatitude);
     setLongitude(nextLongitude);
-    setLocationSource(source);
     if (!labelEdited) {
       const prefix = source === "gps" ? "GPS" : "Map pin";
       setLocationLabel(`${prefix} · ${nextLatitude.toFixed(5)}, ${nextLongitude.toFixed(5)}`);
@@ -185,6 +214,9 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token, payme
     setLocationConfirmed(true);
     setGpsFailure(null);
     setError(null);
+    const prefix = source === "gps" ? "GPS" : "Map pin";
+    locationRef.current?.setLocation({ id: source, source, latitude: nextLatitude, longitude: nextLongitude,
+      label: labelEdited ? locationLabel : `${prefix} · ${nextLatitude.toFixed(5)}, ${nextLongitude.toFixed(5)}` });
   }
 
   function chooseMapLocation(nextLatitude: number, nextLongitude: number) {
@@ -268,16 +300,17 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token, payme
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!locationConfirmed) {
-      setError(t.confirmFirst);
-      return;
-    }
     const form = new FormData(event.currentTarget);
     const vehicleMake = vehicleMakeSelection === OTHER_VEHICLE_MAKE
       ? String(form.get("vehicleMakeOther") ?? "")
       : vehicleMakeSelection;
     setError(null);
     startTransition(async () => {
+      const location = await locationRef.current?.resolve();
+      if (!location) {
+        showFieldErrors({ locationLabel: language === "en" ? "Enter a town/address and choose a result if several places match." : "Skrifaðu bæ eða heimilisfang og veldu úr niðurstöðum ef fleiri en einn staður finnst." });
+        return;
+      }
       const details = {
         token,
         customerName: String(form.get("customerName") ?? ""),
@@ -287,12 +320,15 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token, payme
         rentalCompany: String(form.get("rentalCompany") ?? ""),
         peopleCount: Number(form.get("peopleCount")),
         requiredCapability: String(form.get("requiredCapability") ?? ""),
-        latitude,
-        longitude,
-        locationLabel,
-        locationSource,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        locationLabel: location.label,
+        locationSource: location.source,
         customerNotes: String(form.get("customerNotes") ?? ""),
       };
+      const parsed = editableDetailsSchema.safeParse(details);
+      if (!parsed.success) { showFieldErrors(localizeFieldErrors(parsed.error.flatten().fieldErrors, language)); return; }
+      setFieldErrors({});
       if (payment?.enabled) {
         try {
           const checkout = await startCustomerCheckoutAction({ ...details, language });
@@ -300,6 +336,7 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token, payme
             window.location.assign(checkout.data.checkoutUrl);
             return;
           }
+          if (checkout.fieldErrors) { showFieldErrors(localizeFieldErrors(checkout.fieldErrors, language)); return; }
           setError(checkout.error);
         } catch {
           setError(language === "is" ? "Upplýsingarnar gætu verið vistaðar. Hafðu samband við aðgerðastjórn áður en þú reynir aftur." : "Your details may have been saved. Please contact dispatch before trying again.");
@@ -309,6 +346,7 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token, payme
       }
       const result = await submitCustomerIntakeAction(details);
       if (!result.ok) {
+        if (result.fieldErrors) { showFieldErrors(localizeFieldErrors(result.fieldErrors, language)); return; }
         setError(result.error ?? "The information could not be sent.");
         return;
       }
@@ -317,21 +355,7 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token, payme
   }
 
   function explainInvalidField(event: FormEvent<HTMLFormElement>) {
-    const field = event.target;
-    if (!(field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement)) return;
-    // Native validation can reject a mobile submit without a visible bubble.
-    // Keep the first invalid field focused and explain it in the form too.
-    const firstInvalid = Array.from(event.currentTarget.elements).find((control) =>
-      (control instanceof HTMLInputElement || control instanceof HTMLSelectElement || control instanceof HTMLTextAreaElement)
-      && !control.validity.valid);
-    if (field !== firstInvalid) return;
-    const label = field.closest("label")?.querySelector("span")?.textContent?.trim()
-      || (language === "is" ? "Reitinn" : "this field");
-    setError(field.validity.valueMissing
-      ? language === "is" ? `${label} vantar.` : `${label} is required.`
-      : language === "is" ? `Athugaðu ${label.toLocaleLowerCase("is")}: ${field.validationMessage}` : `Please check ${label}: ${field.validationMessage}`);
-    field.focus();
-    field.scrollIntoView?.({ block: "center", behavior: "smooth" });
+    showFieldErrors(nativeFormErrors(event.currentTarget, language));
   }
 
   return (
@@ -344,7 +368,9 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token, payme
         </div>
       </header>
 
-      <form className="customer-intake-form" onSubmit={submit} onInvalidCapture={explainInvalidField}>
+      <form ref={formRef} className="customer-intake-form" onSubmit={submit} onInvalidCapture={explainInvalidField}
+        onChange={(event) => { const control = event.target; if (!(control instanceof HTMLInputElement || control instanceof HTMLSelectElement || control instanceof HTMLTextAreaElement)) return; const key = formFieldKey(control.dataset.field ?? control.name); setFieldErrors((current) => Object.fromEntries(Object.entries(current).filter(([name]) => name !== key))); }}>
+        <FormErrorSummary errors={fieldErrors} formRef={formRef} language={language} />
         <section className="customer-intake-intro">
           <div><p className="eyebrow"><LockKeyhole size={14} /> {t.eyebrow}</p><h1>{t.title}</h1><p>{t.intro}</p></div>
           <span><ShieldCheck size={20} /> {t.expires} {formatCustomerLinkExpiry(expiresAt, language)}</span>
@@ -353,33 +379,41 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token, payme
         <section className="customer-form-card">
           <div className="customer-card-heading"><span>1</span><div><h2>{t.contact}</h2><p>{language === "en" ? "So dispatch can contact you." : "Svo aðgerðastjórn geti haft samband."}</p></div></div>
           <div className="customer-fields-two">
-            <label><span>{t.name}</span><input name="customerName" defaultValue={job.customerName} autoComplete="name" required maxLength={120} /></label>
-            <label><span>{t.phone}</span><input name="customerPhone" defaultValue={job.customerPhone} autoComplete="tel" inputMode="tel" type="tel" required maxLength={40} /></label>
+            <label><span id="customer-customerName-label">{t.name}</span><input {...fieldProps("customerName")} name="customerName" defaultValue={job.customerName} autoComplete="name" required maxLength={120} />{fieldError("customerName")}</label>
+            <PhoneInput label={t.phone} name="customerPhone" defaultValue={job.customerPhone} language={language} error={fieldErrors.customerPhone} required />
           </div>
         </section>
 
         <section className="customer-form-card">
           <div className="customer-card-heading"><span>2</span><div><h2>{t.vehicle}</h2><p>{t.vehicleHelp}</p></div></div>
           <div className="customer-fields-two">
-            <label><span>{t.registration}</span><input name="vehicleRegistration" defaultValue={job.vehicleRegistration ?? ""} autoCapitalize="characters" maxLength={24} /></label>
+            <label><span id="customer-vehicleRegistration-label">{t.registration}</span><input {...fieldProps("vehicleRegistration")} name="vehicleRegistration" defaultValue={job.vehicleRegistration ?? ""} autoCapitalize="characters" maxLength={24} />{fieldError("vehicleRegistration")}</label>
             <label>
-              <span>{t.make}</span>
-              <select value={vehicleMakeSelection} onChange={(event) => setVehicleMakeSelection(event.target.value)}>
+              <span id="customer-vehicleMake-label">{t.make}</span>
+              <select {...fieldProps("vehicleMake")} value={vehicleMakeSelection} onChange={(event) => setVehicleMakeSelection(event.target.value)}>
                 <option value="">{t.chooseMake}</option>
                 {vehicleMakes.map((make) => <option key={make} value={make}>{make}</option>)}
                 <option value={OTHER_VEHICLE_MAKE}>{t.otherMake}</option>
               </select>
             </label>
             {vehicleMakeSelection === OTHER_VEHICLE_MAKE ? (
-              <label className="customer-field-wide"><span>{t.writeMake}</span><input name="vehicleMakeOther" defaultValue={knownInitialVehicleMake ? "" : initialVehicleMake} maxLength={120} required /></label>
+              <label className="customer-field-wide"><span id="customer-vehicleMakeOther-label">{t.writeMake}</span><input {...fieldProps("vehicleMakeOther")} name="vehicleMakeOther" defaultValue={knownInitialVehicleMake ? "" : initialVehicleMake} maxLength={120} required />{fieldError("vehicleMake")}</label>
             ) : null}
-            <label><span>{t.rentalCompany}</span><input name="rentalCompany" defaultValue={job.rentalCompany ?? ""} placeholder={t.rentalPlaceholder} maxLength={120} /></label>
-            <label><span>{t.peopleCount}</span><input name="peopleCount" defaultValue={job.peopleCount ?? 1} aria-describedby="people-count-help" inputMode="numeric" min={1} max={99} required type="number" /><small id="people-count-help" className="customer-field-help">{t.peopleHelp}</small></label>
+            <label><span id="customer-rentalCompany-label">{t.rentalCompany}</span><input {...fieldProps("rentalCompany")} name="rentalCompany" defaultValue={job.rentalCompany ?? ""} placeholder={t.rentalPlaceholder} maxLength={120} />{fieldError("rentalCompany")}</label>
+            <label><span id="customer-peopleCount-label">{t.peopleCount}</span><input {...fieldProps("peopleCount")} name="peopleCount" defaultValue={job.peopleCount ?? 1} aria-describedby={fieldErrors.peopleCount ? "customer-peopleCount-error people-count-help" : "people-count-help"} inputMode="numeric" min={1} max={99} required type="number" /><small id="people-count-help" className="customer-field-help">{t.peopleHelp}</small>{fieldError("peopleCount")}</label>
           </div>
         </section>
 
         <section className="customer-form-card customer-location-card">
           <div className="customer-card-heading"><span>3</span><div><h2>{t.location}</h2><p>{t.mapHelp}</p></div></div>
+          <AddressSearchField ref={locationRef} label={t.locationLabel} defaultLabel={job.locationLabel}
+            defaultLatitude={job.locationLabel && job.locationSource !== "manual" ? job.latitude : undefined}
+            defaultLongitude={job.locationLabel && job.locationSource !== "manual" ? job.longitude : undefined}
+            defaultSource={job.locationSource}
+            language={language} showMap={false} error={fieldErrors.locationLabel}
+            searchAction={(query) => searchCustomerLocationsAction({ token, query })}
+            onQueryChange={(query) => { setLocationLabel(query); setLabelEdited(true); }}
+            onLocationChange={resolvedLocationChanged} />
           <div className="customer-location-actions">
             <button type="button" className="customer-gps-button" disabled={locating} onClick={() => void locateWithGps()}>
               {locating ? <LoaderCircle className="spin" size={18} /> : <Crosshair size={18} />} {locating ? t.confirming : t.gps}
@@ -388,11 +422,15 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token, payme
           </div>
           {gpsFailure ? <p className="customer-form-error customer-location-error" role="alert">{gpsFailureMessages[language][gpsFailure]}</p> : null}
           <CustomerLocationMap latitude={latitude} longitude={longitude} onPick={chooseMapLocation} />
-          <label className="customer-location-label"><span>{t.locationLabel}</span><input value={locationLabel} onChange={(event) => { setLocationLabel(event.target.value); setLabelEdited(true); }} maxLength={300} required /></label>
           <button
             className={`customer-confirm-location ${locationConfirmed ? "confirmed" : ""}`}
             type="button"
-            onClick={() => { setLocationConfirmed(true); setLocationSource("map_pin"); setError(null); }}
+            onClick={() => {
+              if (locationConfirmed) return;
+              if (labelEdited && locationLabel.trim()) { void locationRef.current?.resolve(); return; }
+              locationRef.current?.setLocation({ id: "map-pin", source: "map_pin", latitude, longitude,
+                label: locationLabel || `Map pin · ${latitude.toFixed(5)}, ${longitude.toFixed(5)}` });
+            }}
           >
             {locationConfirmed ? <Check size={17} /> : <MapPin size={17} />} {locationConfirmed ? t.confirmed : t.confirmMap}
           </button>
@@ -402,8 +440,8 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token, payme
           <div className="customer-card-heading"><span>4</span><div><h2>{t.problem}</h2><p>{language === "en" ? "Include anything the driver should know before arriving." : "Skráðu allt sem ökumaður þarf að vita áður en hann kemur."}</p></div></div>
           <div className="customer-problem-fields">
             <label>
-              <span>{t.assistance}</span>
-              <select name="requiredCapability" defaultValue={job.requiredCapability ?? ""} required>
+              <span id="customer-requiredCapability-label">{t.assistance}</span>
+              <select {...fieldProps("requiredCapability")} name="requiredCapability" defaultValue={job.requiredCapability ?? ""} required>
                 <option value="" disabled>{t.chooseAssistance}</option>
                 {capabilityCodes.map((capability) => (
                   <option key={capability} value={capability}>
@@ -411,10 +449,12 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token, payme
                   </option>
                 ))}
               </select>
+              {fieldError("requiredCapability")}
             </label>
             <label className="customer-description">
-              <span>{t.description}</span>
-              <textarea name="customerNotes" defaultValue={job.customerNotes ?? ""} placeholder={t.problemPlaceholder} minLength={5} maxLength={4000} required />
+              <span id="customer-customerNotes-label">{t.description}</span>
+              <textarea {...fieldProps("customerNotes")} name="customerNotes" defaultValue={job.customerNotes ?? ""} placeholder={t.problemPlaceholder} minLength={5} maxLength={4000} required />
+              {fieldError("customerNotes")}
             </label>
           </div>
         </section>
@@ -460,7 +500,7 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token, payme
           {!payment.ready ? <p className="customer-form-error" role="alert">{language === "is" ? "Greiðsla er ekki tiltæk í augnablikinu. Hafðu samband við aðgerðastjórn." : "Payment is currently unavailable. Please contact dispatch."}</p> : null}
         </section> : null}
         {error ? <p className="customer-form-error" role="alert">{error}</p> : null}
-        <button className="customer-submit-button" type="submit" disabled={pending || uploading || !locationConfirmed || Boolean(payment?.enabled && !payment.ready)}>
+        <button className="customer-submit-button" type="submit" disabled={pending || uploading || Boolean(payment?.enabled && !payment.ready)}>
           {pending ? <LoaderCircle className="spin" size={19} /> : <Upload size={19} />} {pending ? t.sending : payment?.enabled ? language === "is" ? "Greiða og senda" : "Pay and submit" : t.submit}
         </button>
       </form>

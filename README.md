@@ -2,6 +2,12 @@
 
 Map-centric operations software for an Icelandic roadside-assistance network. The public name is Iceland Road Assistance; Vegstoð remains the internal project name and part of existing technical identifiers. Internal identifiers are English; the dispatcher UI is Icelandic.
 
+Local work completed on 23 October: international phone formatting with no
+default country, typed town/address lookup in both job forms and clear field
+errors. These changes are **not deployed**. The location function migration must
+precede a manual release; see the [implementation record](docs/typed-locations-2026-10-23.md)
+and [phone record](docs/phone-formatting-2026-10-23.md).
+
 ## Local setup
 
 Requirements: Node.js 20.9+, npm, Docker for the local Supabase stack, and the Supabase CLI.

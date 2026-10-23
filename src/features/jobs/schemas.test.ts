@@ -20,6 +20,12 @@ const validJob = {
 };
 
 describe("jobInputSchema", () => {
+  it("stores recognized customer numbers as E.164 and retains legacy short contacts", () => {
+    expect(jobInputSchema.parse(validJob).customerPhone).toBe("+3545550123");
+    expect(jobInputSchema.parse({ ...validJob, customerPhone: "+1 (702) 219-6679" }).customerPhone).toBe("+17022196679");
+    expect(jobInputSchema.parse({ ...validJob, customerPhone: "112" }).customerPhone).toBe("112");
+  });
+
   it("accepts an address-backed job with multiple capabilities", () => {
     const result = jobInputSchema.parse({
       ...validJob,

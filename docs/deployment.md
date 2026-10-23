@@ -1,6 +1,16 @@
 # Hosted preview and Supabase operations
 
-Last updated: 22 October 2026
+Last updated: 23 October 2026
+
+Local changes awaiting release: international phone input/display with no default
+country and the approved typed-location/actionable-error fix. The current live
+environment below is unchanged. The location fix needs
+`20261023171927_support_typed_customer_locations.sql` applied **before** the new
+app deployment. This function/permission update has passed in a disposable clone;
+it has not been applied to hosted or the original local database. Inspect pending
+history before any database update, then use the authorized manual Preview and
+alias process below. Phone formatting itself needs no migration. See the
+[local release record](typed-locations-2026-10-23.md).
 
 ## Current hosted environment
 

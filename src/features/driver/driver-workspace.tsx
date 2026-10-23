@@ -1,5 +1,7 @@
 "use client";
 
+import { formatPhoneNumber } from "@/lib/phone";
+
 import {
   ArrowRight,
   BriefcaseBusiness,
@@ -132,7 +134,7 @@ export function DriverWorkspace({ demoMode, jobs, operator }: DriverWorkspacePro
         </div>
         <div className="driver-topbar-actions">
           {demoMode ? <span className="demo-badge">Sýnishamur</span> : null}
-          <span className="driver-identity"><CircleUserRound size={23} /><span><strong>{operator.name}</strong><small>{operator.phone}</small></span></span>
+          <span className="driver-identity"><CircleUserRound size={23} /><span><strong>{operator.name}</strong><small>{formatPhoneNumber(operator.phone)}</small></span></span>
           <form action={logoutAction}><button className="icon-button" type="submit" aria-label="Skrá út"><LogOut size={18} /></button></form>
         </div>
       </header>

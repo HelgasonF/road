@@ -1,5 +1,7 @@
 "use client";
 
+import { formatPhoneNumber } from "@/lib/phone";
+
 import {
   Link2,
   MessageCircle,
@@ -94,7 +96,7 @@ export function DriverAccessPanel({ demoMode, operator }: DriverAccessPanelProps
         <div className="info-row">
           <MessageCircle size={18} />
           <div>
-            <strong>{operator.phone}</strong>
+            <strong>{formatPhoneNumber(operator.phone)}</strong>
             <span>
               {!access
                 ? "Enginn ökumannsaðgangur hefur verið stofnaður"

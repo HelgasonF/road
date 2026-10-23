@@ -19,6 +19,7 @@
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.3",
+    "libphonenumber-js": "^1.13.15",
     "lucide-react": "^1.33.0",
     "maplibre-gl": "^6.4.1",
     "next": "16.3.5",

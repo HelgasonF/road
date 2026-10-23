@@ -2,11 +2,18 @@
 
 import { Check, MapPin, MousePointer2, Search } from "lucide-react";
 import * as maplibregl from "maplibre-gl";
-import { KeyboardEvent, useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useId, useImperativeHandle, useRef, useState, useTransition, type KeyboardEvent, type Ref } from "react";
 
-import type { LocationSource, LocationSuggestion } from "@/lib/domain/types";
+import type { ActionResult, LocationSource, LocationSuggestion } from "@/lib/domain/types";
 import { findNearestIcelandAddressAction, searchIcelandLocationsAction } from "./actions";
 import { createIcelandMapStyle, ICELAND_CENTER, ICELAND_MAX_BOUNDS } from "./map-style";
+import { automaticLocation, normalizeLocationQuery, resolvedSearchLocation, type ResolvedLocation } from "./typed-location";
+
+export interface AddressSearchFieldHandle {
+  resolve: () => Promise<ResolvedLocation | null>;
+  setLocation: (location: ResolvedLocation) => void;
+  focus: () => void;
+}
 
 interface AddressSearchFieldProps {
   defaultLabel?: string;
@@ -18,144 +25,152 @@ interface AddressSearchFieldProps {
   locationSourceName?: string;
   longitudeName?: string;
   locationLabelName?: string;
+  language?: "is" | "en";
+  showMap?: boolean;
+  error?: string;
+  searchAction?: (query: string) => Promise<ActionResult<LocationSuggestion[]>>;
+  onLocationChange?: (location: ResolvedLocation | null) => void;
+  onQueryChange?: (query: string) => void;
+  ref?: Ref<AddressSearchFieldHandle>;
 }
 
 export function AddressSearchField({
-  defaultLabel = "",
-  defaultLatitude,
-  defaultLongitude,
-  defaultSource = "search",
-  label,
-  latitudeName = "latitude",
-  locationSourceName,
-  longitudeName = "longitude",
-  locationLabelName = "locationLabel",
+  defaultLabel = "", defaultLatitude, defaultLongitude, defaultSource = "search", label,
+  latitudeName = "latitude", locationSourceName, longitudeName = "longitude", locationLabelName = "locationLabel",
+  language = "is", showMap = true, error: externalError, searchAction = searchIcelandLocationsAction,
+  onLocationChange, onQueryChange, ref,
 }: AddressSearchFieldProps) {
+  const id = useId();
   const hasDefault = defaultLatitude !== undefined && defaultLongitude !== undefined && Boolean(defaultLabel);
+  const initial: ResolvedLocation | null = hasDefault ? {
+    id: "saved-location", label: defaultLabel, latitude: defaultLatitude!, longitude: defaultLongitude!, source: defaultSource,
+  } : null;
   const [query, setQuery] = useState(defaultLabel);
-  const [selected, setSelected] = useState<LocationSuggestion | null>(hasDefault ? {
-    id: "saved-location",
-    label: defaultLabel,
-    latitude: defaultLatitude!,
-    longitude: defaultLongitude!,
-  } : null);
-  const [source, setSource] = useState<LocationSource>(defaultSource);
+  const queryRef = useRef(defaultLabel);
+  const [selected, setSelected] = useState<ResolvedLocation | null>(initial);
+  const selectedRef = useRef(initial);
   const [showMapPicker, setShowMapPicker] = useState(false);
   const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+  const [pending, setPending] = useState(false);
   const [pinLookupPending, startPinLookupTransition] = useTransition();
+  const inputRef = useRef<HTMLInputElement>(null);
   const interactionIdRef = useRef(0);
+  useEffect(() => () => { interactionIdRef.current++; }, []);
+  const requestRef = useRef<{ query: string; promise: Promise<ActionResult<LocationSuggestion[]>> } | null>(null);
+  const isEnglish = language === "en";
+  const unavailable = isEnglish ? "Location search is unavailable. Try again, use GPS or choose a point on the map." : "Staðaleit er ekki tiltæk. Reyndu aftur, notaðu GPS eða veldu punkt á kortinu.";
 
-  function search() {
+  function accept(location: ResolvedLocation) {
+    interactionIdRef.current++;
+    selectedRef.current = location;
+    queryRef.current = location.label;
+    setSelected(location);
+    setQuery(location.label);
+    setSuggestions([]);
+    setError(null);
+    setPending(false);
+    onLocationChange?.(location);
+  }
+
+  async function resolve(focusError = true): Promise<ResolvedLocation | null> {
+    if (selectedRef.current) return selectedRef.current;
+    const currentQuery = queryRef.current;
+    const normalized = normalizeLocationQuery(currentQuery);
     const interactionId = ++interactionIdRef.current;
+    if (normalized.length < 2) {
+      setError(isEnglish ? "Enter a town or street address, or use GPS/the map." : "Skrifaðu bæ eða heimilisfang, eða notaðu GPS/kortið.");
+      if (focusError) inputRef.current?.focus();
+      return null;
+    }
+    setPending(true);
     setError(null);
-    setSuggestions([]);
-    startTransition(async () => {
-      const result = await searchIcelandLocationsAction(query);
-      if (interactionId !== interactionIdRef.current) return;
+    try {
+      if (requestRef.current?.query !== normalized) requestRef.current = { query: normalized, promise: searchAction(normalized) };
+      const result = await requestRef.current.promise;
+      if (interactionId !== interactionIdRef.current) return null;
       if (!result.ok || !result.data) {
-        setError(result.error ?? "Staður fannst ekki.");
-        return;
+        setError(unavailable);
+      } else {
+        const automatic = automaticLocation(normalized, result.data);
+        if (automatic) {
+          const location = resolvedSearchLocation(automatic, language);
+          accept(location);
+          return location;
+        }
+        setSuggestions(result.data);
+        setError(result.data.length
+          ? isEnglish ? "Choose one of the matching places below." : "Veldu einn af stöðunum sem fundust hér fyrir neðan."
+          : isEnglish ? "No location found. Check the town/address or use GPS/the map." : "Staðsetning fannst ekki. Athugaðu bæ eða heimilisfang, eða notaðu GPS/kortið.");
       }
-      setSuggestions(result.data);
-    });
+      if (focusError) inputRef.current?.focus();
+      return null;
+    } catch {
+      if (interactionId === interactionIdRef.current) {
+        setError(unavailable);
+        if (focusError) inputRef.current?.focus();
+      }
+      return null;
+    } finally {
+      if (interactionId === interactionIdRef.current) { setPending(false); requestRef.current = null; }
+    }
   }
 
-  function selectSuggestion(suggestion: LocationSuggestion) {
-    interactionIdRef.current += 1;
-    setSelected(suggestion);
-    setQuery(suggestion.label);
-    setSuggestions([]);
-    setError(null);
-    setSource("search");
-  }
+  useImperativeHandle(ref, () => ({ resolve: () => resolve(), setLocation: accept, focus: () => inputRef.current?.focus() }));
 
   function selectMapPin(latitude: number, longitude: number) {
-    const interactionId = ++interactionIdRef.current;
-    const pinLabel = `Pinni á korti · ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
-    setSelected({ id: "map-pin", label: pinLabel, latitude, longitude });
-    setQuery(pinLabel);
-    setSource("map_pin");
-    setSuggestions([]);
-    setError(null);
-
+    const location: ResolvedLocation = { id: "map-pin", label: `Pinni á korti · ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`, latitude, longitude, source: "map_pin" };
+    accept(location);
+    const interactionId = interactionIdRef.current;
     startPinLookupTransition(async () => {
       const result = await findNearestIcelandAddressAction({ latitude, longitude });
       if (interactionId !== interactionIdRef.current || !result.ok || !result.data) return;
-
-      setSelected({ id: "map-pin", label: result.data.label, latitude, longitude });
-      setQuery(result.data.label);
+      accept({ ...location, label: result.data.label });
     });
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      search();
-    }
+    if (event.key === "Enter") { event.preventDefault(); void resolve(); }
   }
 
+  const visibleError = error ?? externalError;
+  const approximate = selected?.source === "search" && selected.id.startsWith("osm:");
   return (
     <div className="address-search">
-      <label className="field">
-        <span>{label}</span>
-        <span className="address-search-input">
-          <MapPin size={16} aria-hidden="true" />
-          <input
-            autoComplete="street-address"
-            value={query}
-            placeholder="T.d. Hella, Bústaðavegur 151 eða Ísafjörður"
-            onChange={(event) => {
-              interactionIdRef.current += 1;
-              setQuery(event.target.value);
-              setSelected(null);
-              setSuggestions([]);
-            }}
-            onKeyDown={handleKeyDown}
-          />
-          <button type="button" onClick={search} disabled={pending || query.trim().length < 2}>
-            <Search size={15} /> {pending ? "Leita…" : "Finna"}
-          </button>
-        </span>
-      </label>
-
-      {suggestions.length > 0 ? (
-        <div className="address-results" role="listbox" aria-label="Niðurstöður staðaleitar">
-          {suggestions.map((suggestion) => (
-            <button key={suggestion.id} type="button" onClick={() => selectSuggestion(suggestion)}>
-              <MapPin size={14} />
-              <span>{suggestion.label}</span>
-            </button>
-          ))}
-        </div>
-      ) : null}
-
-      {selected ? (
-        <p className="address-confirmed">
-          <Check size={14} /> Staðsetning staðfest {source === "map_pin" ? "með pinna" : "í leit"}
-          {pinLookupPending ? " · leita að heimilisfangi…" : ""}
-        </p>
-      ) : null}
-      {error ? <p className="compact-error" role="alert">{error}</p> : null}
-
-      <div className="map-picker-section">
-        <button className="map-picker-toggle" type="button" onClick={() => setShowMapPicker((visible) => !visible)}>
-          <MousePointer2 size={14} /> {showMapPicker ? "Loka kortavali" : "Eða velja nákvæman stað á korti"}
+      <label className="field" htmlFor={id}><span>{label}</span></label>
+      <span className="address-search-input">
+        <MapPin size={16} aria-hidden="true" />
+        <input id={id} ref={inputRef} data-field={locationLabelName} autoComplete="street-address" value={query} required maxLength={256}
+          placeholder={isEnglish ? "Town or address, e.g. Keflavík" : "Bær eða heimilisfang, t.d. í Keflavík"}
+          aria-invalid={visibleError ? true : undefined} aria-describedby={visibleError ? `${id}-error` : undefined}
+          onChange={(event) => {
+            interactionIdRef.current++;
+            queryRef.current = event.target.value;
+            selectedRef.current = null;
+            setQuery(event.target.value); setSelected(null); setSuggestions([]); setError(null); setPending(false);
+            onQueryChange?.(event.target.value); onLocationChange?.(null);
+          }}
+          onBlur={() => { if (!selectedRef.current && queryRef.current.trim().length >= 2) void resolve(false); }}
+          onKeyDown={handleKeyDown} />
+        <button type="button" onClick={() => void resolve()} disabled={pending || query.trim().length < 2}>
+          <Search size={15} /> {pending ? isEnglish ? "Finding…" : "Leita…" : isEnglish ? "Find" : "Finna"}
         </button>
-        {showMapPicker ? (
-          <LocationPinMap
-            latitude={selected?.latitude}
-            longitude={selected?.longitude}
-            onPick={selectMapPin}
-          />
-        ) : null}
-      </div>
-
-      <input name={locationLabelName} type="hidden" value={selected?.label ?? ""} readOnly required />
-      <input name={latitudeName} type="hidden" value={selected?.latitude ?? ""} readOnly required />
-      <input name={longitudeName} type="hidden" value={selected?.longitude ?? ""} readOnly required />
-      {locationSourceName ? <input name={locationSourceName} type="hidden" value={source} readOnly /> : null}
+      </span>
+      {suggestions.length > 0 ? <div className="address-results" role="group" aria-label={isEnglish ? "Matching locations" : "Niðurstöður staðaleitar"}>
+        {suggestions.map((suggestion) => <button key={suggestion.id} type="button" onClick={() => accept(resolvedSearchLocation(suggestion, language))}><MapPin size={14} /><span>{suggestion.label}</span></button>)}
+      </div> : null}
+      {selected ? <p className="address-confirmed" role="status"><Check size={14} />{approximate
+        ? isEnglish ? "Town found · approximate location" : "Staður fannst · áætluð staðsetning"
+        : isEnglish ? "Location confirmed" : "Staðsetning staðfest"}{pinLookupPending ? " · …" : ""}</p> : null}
+      {visibleError ? <p className="compact-error" id={`${id}-error`} role={error ? "alert" : undefined}>{visibleError}</p> : null}
+      {showMap ? <div className="map-picker-section">
+        <button className="map-picker-toggle" type="button" onClick={() => setShowMapPicker((visible) => !visible)}><MousePointer2 size={14} />{showMapPicker ? "Loka kortavali" : "Eða velja nákvæman stað á korti"}</button>
+        {showMapPicker ? <LocationPinMap latitude={selected?.latitude} longitude={selected?.longitude} onPick={selectMapPin} /> : null}
+      </div> : null}
+      <input name={locationLabelName} type="hidden" value={selected?.label ?? ""} readOnly />
+      <input name={latitudeName} type="hidden" value={selected?.latitude ?? ""} readOnly />
+      <input name={longitudeName} type="hidden" value={selected?.longitude ?? ""} readOnly />
+      {locationSourceName ? <input name={locationSourceName} type="hidden" value={selected?.source ?? "search"} readOnly /> : null}
     </div>
   );
 }

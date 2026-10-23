@@ -7,6 +7,7 @@ import {
   locationSources,
 } from "@/lib/domain/types";
 import { buildContactLinks } from "@/lib/contact-links";
+import { normalizePhoneNumberOrOriginal } from "@/lib/phone";
 
 const optionalTrimmedString = z
   .string()
@@ -19,7 +20,7 @@ export const jobInputSchema = z.object({
   customerPhone: z.string().trim().min(3).max(40).refine(
     (value) => buildContactLinks(value).callHref !== null,
     "Phone number must contain dialable digits.",
-  ),
+  ).transform(normalizePhoneNumberOrOriginal),
   vehicleRegistration: optionalTrimmedString.pipe(z.string().max(40).nullable()),
   vehicleMake: optionalTrimmedString.pipe(z.string().max(120).nullable()),
   rentalCompany: optionalTrimmedString.pipe(z.string().max(120).nullable()),

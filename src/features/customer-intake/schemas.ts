@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { capabilityCodes } from "@/lib/domain/types";
 import { buildContactLinks } from "@/lib/contact-links";
+import { normalizePhoneNumberOrOriginal } from "@/lib/phone";
 
 export const customerTokenSchema = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
 
@@ -11,7 +12,7 @@ const optionalText = (maximum: number) => z.string().trim().max(maximum)
 const phoneSchema = z.string().trim().min(3).max(40).refine(
   (value) => value.replace(/\D/g, "").length >= 3,
   "Enter a valid telephone number.",
-);
+).transform(normalizePhoneNumberOrOriginal);
 
 export const customerIntakeSchema = z.object({
   token: customerTokenSchema,
@@ -25,7 +26,7 @@ export const customerIntakeSchema = z.object({
   latitude: z.number().min(62.5).max(67.5),
   longitude: z.number().min(-25.5).max(-12),
   locationLabel: z.string().trim().min(2).max(300),
-  locationSource: z.enum(["gps", "map_pin"]),
+  locationSource: z.enum(["gps", "map_pin", "search"]),
   customerNotes: z.string().trim().min(5).max(4000),
 });
 

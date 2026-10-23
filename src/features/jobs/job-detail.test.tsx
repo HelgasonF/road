@@ -33,6 +33,11 @@ function renderJob(overrides: Partial<(typeof demoJobs)[number]>) {
 }
 
 describe("JobDetail layout", () => {
+  it("formats a pending customer's number in the job heading", () => {
+    renderJob({ intakePending: true, customerPhone: "+17022196679", assignment: null });
+    expect(screen.getByRole("heading", { name: "+1 (702) 219-6679" })).toBeInTheDocument();
+  });
+
   it("shows the provider ranking before the assignment controls", () => {
     renderJob({ status: "new", intakePending: false, assignment: null });
 

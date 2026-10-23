@@ -1,6 +1,25 @@
 # Iceland Road Assistance implementation status
 
-Last updated: 22 October 2026
+Last updated: 23 October 2026
+
+Local phone formatting update: `libphonenumber-js`, a shared country-code picker
+with **no default country**, formatting while typing, E.164 submissions and
+readable international display are implemented and tested locally. Existing
+contacts and call/WhatsApp behavior remain compatible; the phone work requires
+no database or workflow change. See the
+[phone formatting record](phone-formatting-2026-10-23.md).
+
+Freyr subsequently approved the reviewed location fix. Customer and dispatcher
+forms now resolve typed towns/addresses, mark approximate places, require a
+choice for ambiguous matches and explain invalid fields with inline errors,
+a summary and focus. GPS/map selection and the existing payment flow remain.
+Final build/typecheck/lint and **534 tests** pass, plus **22 isolated integration
+tests / 379 SQL assertions** and browser checks at 320/390/1280px. Both features
+are **local, uncommitted and not deployed**. The location function migration
+`20261023171927` must precede an authorized manual app release; it is not applied
+to the hosted or original working database. See the
+[location implementation and release record](typed-locations-2026-10-23.md).
+The live environment below remains unchanged.
 
 The live customer site is **https://vegstod.vercel.app**, served by the Ready
 Vercel Preview deployment `vegstod-gyj57bol4-freyrs-projects-fad4047a.vercel.app`.

@@ -25,6 +25,7 @@ describe("billingDetailsSchema", () => {
     expect(result.payerType).toBe("rental_company");
     expect(result.payerAmountIsk).toBe(42_900);
     expect(result.providerAmountIsk).toBe(31_000);
+    expect(result.payerPhone).toBe("+3545550100");
   });
 
   it("allows an incomplete record so it can stay in the missing-information queue", () => {
@@ -46,6 +47,7 @@ describe("billingDetailsSchema", () => {
 
     expect(result.payerName).toBeNull();
     expect(result.payerEmail).toBeNull();
+    expect(result.payerPhone).toBeNull();
     expect(result.notes).toBeNull();
   });
 

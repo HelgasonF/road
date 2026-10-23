@@ -1,5 +1,7 @@
 "use client";
 
+import { formatPhoneNumber } from "@/lib/phone";
+
 import { Building2, CheckCircle2, Clock3, History, IdCard, MapPin, MessageCircle, Pencil, ReceiptText, Route, Truck, UserRound, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
@@ -126,7 +128,7 @@ export function JobDetail({ customerLink, demoMode, job, matches, operators, onC
         <span className={`job-avatar job-priority-${job.priority}`}><Route size={22} /></span>
         <div className="detail-title">
           <span className={`status-pill ${job.intakePending ? "job-status-pending-intake" : `job-status-${job.status}`}`}>{job.intakePending ? "Bíður viðskiptavinar" : jobStatusLabels[job.status]}</span>
-          <h2>{job.intakePending ? job.customerPhone : job.customerName}</h2>
+          <h2>{job.intakePending ? formatPhoneNumber(job.customerPhone) : job.customerName}</h2>
           <p>{job.intakePending ? "Upplýsingatengill hefur verið búinn til" : job.locationLabel}</p>
         </div>
         <button className="icon-button" type="button" disabled={demoMode} onClick={onEdit} aria-label={is.editJob}><Pencil size={16} /></button>

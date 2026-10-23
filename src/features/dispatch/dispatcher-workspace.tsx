@@ -1,5 +1,7 @@
 "use client";
 
+import { formatPhoneNumber } from "@/lib/phone";
+
 import {
   BriefcaseBusiness,
   CircleUserRound,
@@ -90,7 +92,7 @@ export function DispatcherWorkspace({
     const normalizedQuery = query.trim().toLocaleLowerCase("is");
     return operators.filter((operator) => {
       const statusMatches = statusFilter === "all" || operator.availabilityStatus === statusFilter;
-      const textMatches = !normalizedQuery || [operator.name, operator.companyName, operator.phone, operator.baseAddress]
+      const textMatches = !normalizedQuery || [operator.name, operator.companyName, operator.phone, formatPhoneNumber(operator.phone), operator.baseAddress]
         .filter(Boolean)
         .some((value) => value!.toLocaleLowerCase("is").includes(normalizedQuery));
       return statusMatches && textMatches;
@@ -104,7 +106,7 @@ export function DispatcherWorkspace({
         || (jobFilter === "active" && job.status !== "completed" && job.status !== "cancelled")
         || (jobFilter === "unassigned" && !job.assignment && job.status !== "completed" && job.status !== "cancelled")
         || (jobFilter === "completed" && (job.status === "completed" || job.status === "cancelled"));
-      const textMatches = !normalizedQuery || [job.customerName, job.customerPhone, job.locationLabel, job.vehicleRegistration]
+      const textMatches = !normalizedQuery || [job.customerName, job.customerPhone, formatPhoneNumber(job.customerPhone), job.locationLabel, job.vehicleRegistration]
         .filter(Boolean)
         .some((value) => value!.toLocaleLowerCase("is").includes(normalizedQuery));
       return filterMatches && textMatches;
@@ -185,7 +187,7 @@ export function DispatcherWorkspace({
               <div className="operator-list">
                 {filteredOperators.map((operator) => (
                   <button className={`operator-row ${selectedOperatorId === operator.id ? "operator-row-selected" : ""}`} key={operator.id} type="button" onClick={() => selectOperator(operator.id)}>
-                    <span className="operator-avatar">{operator.name.charAt(0)}</span><span className="operator-row-copy"><strong>{operator.name}</strong><small>{operator.companyName ?? operator.phone}</small><span><i className={`status-dot status-dot-${operator.availabilityStatus}`} />{availabilityLabels[operator.availabilityStatus]}<b>·</b>{operator.vehicles.length} ökutæki</span></span>
+                    <span className="operator-avatar">{operator.name.charAt(0)}</span><span className="operator-row-copy"><strong>{operator.name}</strong><small>{operator.companyName ?? formatPhoneNumber(operator.phone)}</small><span><i className={`status-dot status-dot-${operator.availabilityStatus}`} />{availabilityLabels[operator.availabilityStatus]}<b>·</b>{operator.vehicles.length} ökutæki</span></span>
                   </button>
                 ))}
                 {filteredOperators.length === 0 ? <p className="list-empty">{is.noOperators}</p> : null}
@@ -199,7 +201,7 @@ export function DispatcherWorkspace({
                   <button className={`job-row ${selectedJobId === job.id ? "job-row-selected" : ""}`} key={job.id} type="button" onClick={() => selectJob(job.id)}>
                     <span className={`job-row-icon job-priority-${job.priority}`}><BriefcaseBusiness size={16} /></span>
                     <span className="operator-row-copy">
-                      <strong>{job.intakePending ? job.customerPhone : job.customerName}</strong>
+                      <strong>{job.intakePending ? formatPhoneNumber(job.customerPhone) : job.customerName}</strong>
                       <small>{job.intakePending ? "Bíður eftir upplýsingum viðskiptavinar" : job.locationLabel}</small>
                       <span><i className={`job-status-dot ${job.intakePending ? "job-status-pending-intake" : `job-status-${job.status}`}`} />{job.intakePending ? "Bíður viðskiptavinar" : jobStatusLabels[job.status]}<b>·</b>{jobPriorityLabels[job.priority]}</span>
                     </span>

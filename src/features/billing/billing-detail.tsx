@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { FormEvent, useState, useTransition } from "react";
+import { PhoneInput } from "@/components/phone-input";
+import { formatContactName } from "@/lib/phone";
 
 import { billingPayerTypes } from "@/lib/domain/types";
 import { jobStatusLabels } from "@/lib/i18n/is";
@@ -208,10 +210,10 @@ function BillingDetailsForm({ billingCase, demoMode, onChanged }: Omit<BillingDe
 
       <fieldset className="billing-form-grid billing-fieldset" disabled={demoMode || payerLocked}>
         <label className="field"><span>Tegund greiðanda</span><select name="payerType" defaultValue={billingCase.payerType ?? ""}><option value="">Veldu greiðanda</option>{billingPayerTypes.map((type) => <option key={type} value={type}>{payerTypeLabels[type]}</option>)}</select></label>
-        <label className="field"><span>Nafn greiðanda</span><input name="payerName" defaultValue={billingCase.payerName ?? ""} maxLength={160} placeholder={billingCase.customerName} /></label>
+        <label className="field"><span>Nafn greiðanda</span><input name="payerName" defaultValue={billingCase.payerName ?? ""} maxLength={160} placeholder={formatContactName(billingCase.customerName, billingCase.customerPhone)} /></label>
         <label className="field"><span>Kennitala / auðkenni</span><input name="payerKennitala" defaultValue={billingCase.payerKennitala ?? ""} maxLength={32} /></label>
         <label className="field"><span>Netfang reikninga</span><input name="payerEmail" defaultValue={billingCase.payerEmail ?? ""} type="email" maxLength={254} /></label>
-        <label className="field"><span>Sími greiðanda</span><input name="payerPhone" defaultValue={billingCase.payerPhone ?? ""} type="tel" maxLength={40} /></label>
+        <PhoneInput label="Sími greiðanda" name="payerPhone" defaultValue={billingCase.payerPhone ?? ""} />
         <label className="field billing-field-wide"><span>Heimilisfang</span><input name="payerAddress" defaultValue={billingCase.payerAddress ?? ""} maxLength={500} /></label>
         <label className="field"><span>Heimild / tjónsnúmer</span><input name="authorizationReference" defaultValue={billingCase.authorizationReference ?? ""} maxLength={120} /></label>
         <label className="field"><span>Tilvísun / innkaupanúmer</span><input name="billingReference" defaultValue={billingCase.billingReference ?? ""} maxLength={120} /></label>
@@ -310,7 +312,7 @@ export function BillingDetail({ billingCase, demoMode, events, onChanged }: Bill
             <Link href={`/jobs/${billingCase.jobId}/history`}><History size={15} /> Allur ferill</Link>
           </div>
           <span className={`status-pill job-status-${billingCase.jobStatus}`}>{jobStatusLabels[billingCase.jobStatus]}</span>
-          <h2>{billingCase.customerName}</h2>
+          <h2>{formatContactName(billingCase.customerName, billingCase.customerPhone)}</h2>
           <p><MapPin size={15} /> {billingCase.locationLabel}</p>
         </div>
         <div className="billing-case-id"><small>Verkefni</small><code>{billingCase.jobId.slice(0, 8)}</code></div>

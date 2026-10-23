@@ -6,6 +6,7 @@ import { getVerifiedStaffSession } from "@/lib/auth/session";
 import type { ActionResult, LocationSuggestion } from "@/lib/domain/types";
 import { createClient } from "@/lib/supabase/server";
 import { toLocationSuggestion, toMapPinAddress, type MapPinAddress } from "./hms";
+import { normalizeLocationQuery } from "./typed-location";
 
 const querySchema = z.string().trim().min(2).max(256);
 const mapPinSchema = z.object({
@@ -27,7 +28,7 @@ export async function searchIcelandLocationsAction(
   try {
     const client = await createClient();
     const { data, error } = await client.rpc("search_iceland_addresses", {
-      p_query: parsed.data,
+      p_query: normalizeLocationQuery(parsed.data),
       p_limit: 8,
     });
 
@@ -39,10 +40,6 @@ export async function searchIcelandLocationsAction(
     const suggestions = (data ?? [])
       .map(toLocationSuggestion)
       .filter((suggestion): suggestion is LocationSuggestion => suggestion !== null);
-
-    if (suggestions.length === 0) {
-      return { ok: false, error: "Ekkert staðfang fannst. Prófaðu nákvæmara heiti eða veldu stað á kortinu." };
-    }
 
     return { ok: true, data: suggestions };
   } catch {
