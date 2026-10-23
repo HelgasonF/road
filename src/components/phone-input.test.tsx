@@ -1,9 +1,13 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { renderToString } from "react-dom/server";
+import { hydrateRoot } from "react-dom/client";
+import { getCountries } from "libphonenumber-js";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { PhoneInput } from "./phone-input";
+import { phoneCountryOptions } from "@/lib/phone-countries";
 
-afterEach(cleanup);
+afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
 function renderPhone(defaultValue = "", required = true) {
   render(<form><PhoneInput label="Phone" name="phone" defaultValue={defaultValue} language="en" required={required} /></form>);
@@ -14,6 +18,32 @@ function renderPhone(defaultValue = "", required = true) {
 }
 
 describe("PhoneInput", () => {
+  it("includes every supported phone country exactly once in both translations", () => {
+    for (const language of ["en", "is"] as const) {
+      expect(phoneCountryOptions[language].map(({ code }) => code).sort()).toEqual(getCountries().sort());
+    }
+  });
+
+  it("hydrates consistently when the browser has different country translations from the server", async () => {
+    const element = <PhoneInput label="Phone" name="phone" language="is" />;
+    const container = document.createElement("div");
+    container.innerHTML = renderToString(element);
+    document.body.append(container);
+    vi.spyOn(Intl, "DisplayNames").mockImplementation(function () {
+      return { of: (country: string) => `Different browser translation ${country}` } as Intl.DisplayNames;
+    });
+    const onRecoverableError = vi.fn();
+    let root!: ReturnType<typeof hydrateRoot>;
+    try {
+      await act(async () => { root = hydrateRoot(container, element, { onRecoverableError }); });
+      expect(onRecoverableError).not.toHaveBeenCalled();
+      expect(container.querySelector('option[value="IS"]')).toHaveTextContent("Ísland (+354)");
+    } finally {
+      if (root) await act(() => root.unmount());
+      container.remove();
+    }
+  });
+
   it("starts with no country selected, then formats the chosen country and submits E.164", () => {
     const { input, country, submitted } = renderPhone();
     expect(country).toHaveValue("");

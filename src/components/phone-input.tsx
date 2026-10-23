@@ -4,6 +4,7 @@ import { AsYouType, getCountries, getCountryCallingCode, type CountryCode } from
 import { useId, useLayoutEffect, useRef, useState, type ChangeEvent } from "react";
 
 import { isValidPhoneNumber, normalizePhoneNumber, parsePhoneNumber } from "@/lib/phone";
+import { phoneCountryOptions } from "@/lib/phone-countries";
 
 type Country = CountryCode | "international" | "";
 
@@ -68,7 +69,6 @@ export function PhoneInput({ label, name, defaultValue = "", required = false, d
     ? language === "is" ? "Veldu landsnúmer eða límdu inn fullt alþjóðlegt símanúmer." : "Choose a country code or paste a full international number."
     : language === "is" ? "Sláðu inn gilt símanúmer fyrir valið land." : "Enter a valid phone number for the selected country.";
   const serialized = (canParse ? normalizePhoneNumber(state.text, country) : null) ?? state.text.trim();
-  const countryNames = new Intl.DisplayNames([language], { type: "region" });
   const visibleError = error || (showError && !valid ? message : undefined);
 
   useLayoutEffect(() => {
@@ -123,9 +123,8 @@ export function PhoneInput({ label, name, defaultValue = "", required = false, d
       <div className="phone-input-controls">
         <select data-field={name} aria-label={language === "is" ? `Landsnúmer fyrir ${label}` : `Country code for ${label}`} autoComplete="tel-country-code" disabled={disabled} required={required || Boolean(state.text)} value={state.country} onChange={(event) => changeCountry(event.target.value as Country)} onInvalid={() => setShowError(true)}>
           <option value="">{language === "is" ? "Veldu land" : "Country code"}</option>
-          {[...countries].sort((a, b) => (countryNames.of(a) ?? a).localeCompare(countryNames.of(b) ?? b, language))
-            .map((code) => <option key={code} value={code} label={state.country === code ? `${code} (+${getCountryCallingCode(code)})` : undefined}
-              aria-label={`${countryNames.of(code)} (+${getCountryCallingCode(code)})`}>{countryNames.of(code)} (+{getCountryCallingCode(code)})</option>)}
+          {phoneCountryOptions[language].map(({ code, name }) => <option key={code} value={code} label={state.country === code ? `${code} (+${getCountryCallingCode(code)})` : undefined}
+              aria-label={`${name} (+${getCountryCallingCode(code)})`}>{name} (+{getCountryCallingCode(code)})</option>)}
           <option value="international">{language === "is" ? "Alþjóðlegt (+)" : "International (+)"}</option>
         </select>
         <input id={id} ref={inputRef} data-field={name} type="tel" inputMode="tel" autoComplete="tel" dir="ltr" maxLength={40} placeholder={state.country === "IS" ? "659 7003" : undefined}

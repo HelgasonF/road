@@ -14,6 +14,12 @@ target, not the unused Production target.
   normalization. A regression test failed before the fix and passes afterward.
 - The earlier implementation review also fixed shared provider-location saving
   before lookup completion and distinguished an empty search from an outage.
+- The first hosted browser pass found React hydration error #418 in the country
+  picker. Browser and server `Intl.DisplayNames`/collation data differed (the
+  browser also fell back from Icelandic country names). A shared static
+  English/Icelandic country list now gives both renders identical names/order.
+  A simulated cross-runtime hydration regression failed before the fix and
+  passes afterward; a separate check covers every library-supported country.
 - Reviewed phone formatting/normalization, no-default country behavior, untouched
   legacy phones, call/WhatsApp destinations, both form submission paths, stale
   lookups, error focus, customer token/rate checks and database privileges.
@@ -50,10 +56,18 @@ target, not the unused Production target.
 
 ## Release progress
 
-Audit complete; release in progress. Planned sequence: commit tested source,
-apply the single migration, verify catalog/function permissions, deploy once to
-Preview, set the stable alias, check the live forms without collecting a
-payment, clean up only owned fixtures, record the result and push final notes.
+Initial source commit `c37e9eb` was pushed. The single migration is applied and
+remote migration history is current. Catalog lookup works as `service_role`;
+anonymous catalog/customer writes and authenticated draft preparation remain
+blocked. Security advisors match the pre-release baseline.
+
+The initial Preview `vegstod-khwjxchb6-freyrs-projects-fad4047a.vercel.app`
+(`dpl_HdUy8sesfujtQG94ps7rJAPqQRq2`) is Ready and the alias was updated.
+Its hosted staff/customer checks passed typed-place ambiguity, approximate town
+labels, blank optional fields, E.164/display, localized errors/focus, preserved
+data, 10,490 ISK pricing and widths 320/390/1280px. No checkout or message was
+sent. That browser pass exposed the hydration issue above, so a corrected
+release and repeat console check are in progress before completion.
 
 Previous deployment: `dpl_FwCDqd93y9rmEnRmgono7VQUqebB`,
 `vegstod-gyj57bol4-freyrs-projects-fad4047a.vercel.app`.
