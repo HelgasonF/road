@@ -2,15 +2,15 @@
 
 Last updated: 23 October 2026
 
-Local changes awaiting release: international phone input/display with no default
-country and the approved typed-location/actionable-error fix. The current live
-environment below is unchanged. The location fix needs
-`20261023171927_support_typed_customer_locations.sql` applied **before** the new
-app deployment. This function/permission update has passed in a disposable clone;
-it has not been applied to hosted or the original local database. Inspect pending
-history before any database update, then use the authorized manual Preview and
-alias process below. Phone formatting itself needs no migration. See the
-[local release record](typed-locations-2026-10-23.md).
+Released 23 October: international phone input/display with no default country
+and the approved typed-location/actionable-error fix. Migration
+`20261023171927_support_typed_customer_locations.sql` was applied before the app
+release; remote migration history is current. The final Ready deployment is
+`dpl_BXLYy4f24SEWz8dSyHTohgN4jpjX`,
+`vegstod-vr1npotdf-freyrs-projects-fad4047a.vercel.app`, from source `88f1e1c`.
+The stable alias points to it. Phone formatting itself needs no migration;
+the original local database remains unmigrated. See the
+[audit/release record](phone-location-release-2026-10-23.md).
 
 ## Current hosted environment
 
@@ -27,7 +27,7 @@ The live customer site uses Vercel's **Preview** target; the separate Production
 
 The hosted database contains the complete migration history and the official Icelandic address/place search data. On 7 October 2026 all test jobs, drivers (operators, vehicles and their driver logins), customer links, billing records, timeline events, job photos and WhatsApp sandbox logs were deleted at the owner's request; a data-only backup taken just before is kept outside the repository in `~/vegstod-backups/`. The only accounts left are the three admins (Freyr, Daldís and Alli), who create further staff on the in-app **Aðgangur** page. At the last check the database used about 94 MB of the Free plan's 500 MB allowance. The imported reference data comprised 139,346 HMS addresses and 2,970 Icelandic place names.
 
-Current inventory after the 21 October live phone audit: **zero active jobs, zero operators/drivers and three staff profiles**. One cancelled audit job and its two real Paid 35 ISK requests are retained as financial history. The audit photo and temporary 35 ISK deployment were removed. Overall controlled-test spend is **210 ISK across six payments**; ordinary first pricing remains **10,490 ISK**. The company owner will add the actual drivers/providers. See the [completed phone audit](live-phone-audit-2026-10-21.md).
+Inventory checked after 23 October release cleanup: **two jobs (one active), zero operators/drivers and three staff profiles**. Existing customer work is preserved; the cancelled audit job and its two real Paid 35 ISK requests remain financial history. Only the new unpaid release fixture was removed. Overall controlled-test spend remains **210 ISK across six payments**; ordinary first pricing remains **10,490 ISK**. No payment or message was created by this release. The company owner will add the actual drivers/providers. See the [completed payment phone audit](live-phone-audit-2026-10-21.md) and [23 October release](phone-location-release-2026-10-23.md).
 
 Customer intake stores the selected or customer-entered vehicle make, optional rental-company name, number of people involved, required assistance, and written description. The default new-job path creates a pending job from only the phone number and prepares a private customer link and WhatsApp message for staff to copy and send in the Business app. Staff can switch to the complete manual form, which uses the same registration, brand, rental-company, and people-count fields. With collection enabled, **Pay and submit** freezes the details before myPOS checkout, and the trusted worker finalizes the draft after matching Paid; the customer need not return. A requested correction after the first payment uses **Send details securely** without charging again. The unpaid submission path remains available with collection disabled. See [myPOS setup](MYPOS_SETUP.md) and the current [manual WhatsApp handoff](manual-whatsapp-handoff-2026-09-26.md).
 
@@ -48,15 +48,18 @@ DEMO_MODE=false
 
 On 21 October, Freyr authorized myPOS collection on the existing public Preview.
 `vegstod.vercel.app` now points to
-`vegstod-gyj57bol4-freyrs-projects-fad4047a.vercel.app`. Payment configuration is
+`vegstod-vr1npotdf-freyrs-projects-fad4047a.vercel.app` after the 23 October
+phone/location release. Payment configuration is
 installed in **Preview**; the unused Production target remains unchanged.
 Server-only sensitive variables hold the merchant Client ID/Secret and
 `PAYMENT_WORKER_SECRET`. Collection and production API creation are enabled,
 the initial fee is `10490` ISK, and `WHATSAPP_API_ENABLED=false` preserves manual
 messaging. Local defaults remain disabled.
 
-Hosted migrations `20261020223002`, `20261021201000` and `20261021220248` are
-applied. The last enables pg_cron and pg_net; it creates no schedule or secret.
+Hosted migrations `20261020223002`, `20261021201000`, `20261021220248` and
+`20261023171927` are applied. The third enables pg_cron and pg_net; it creates no
+schedule or secret. The fourth permits searched customer locations and grants
+server-only catalog access, preserving existing table structures and payment flow.
 The separately applied `supabase/ops/schedule-payment-reconciliation.sql` invokes
 the worker every minute using the HTTPS origin and matching secret in Supabase
 Vault. Scheduled HTTP 200 results, rejection without the secret, browser checks
@@ -84,8 +87,10 @@ Do not use `--prod` until the external phone workflow and the production checkli
 
 Freyr requested a clean Git checkpoint and push on 22 October **without another
 deployment**. This checkpoint records the tested live source, payment migrations,
-tests and documentation together on `chore/vercel-git-connection`. The live
-deployment remains `dpl_FwCDqd93y9rmEnRmgono7VQUqebB` from 21 October.
+tests and documentation together on `chore/vercel-git-connection`. On 23 October,
+Freyr explicitly authorized auditing, deploying and synchronizing the new
+phone/location work. Source `88f1e1c` is deployed manually as
+`dpl_BXLYy4f24SEWz8dSyHTohgN4jpjX`; Git deployment remains disabled.
 
 Vercel remains connected to the private GitHub repository `HelgasonF/road`.
 The repository's [vercel.json](../vercel.json) sets

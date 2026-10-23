@@ -7,6 +7,12 @@ extensions are applied to hosted `Road`; credentials are server-only in Vercel
 Preview, and the authenticated worker runs every minute using Supabase Cron and
 Vault. Local defaults remain disabled. See the [hosted release record](mypos-hosted-release-2026-10-21.md).
 
+23 October update: the audited phone/typed-location release is live. The existing
+customer functions now also accept a catalog-resolved `search` location; the
+two-payment flow, fixed fee, merchant configuration and worker are unchanged.
+No new checkout or charge was used for that release. See the
+[phone/location audit](phone-location-release-2026-10-23.md).
+
 The subsequent [live phone audit](live-phone-audit-2026-10-21.md) also passed
 against the hosted database and actual scheduled worker. Its two controlled
 35 ISK payments bring confirmed testing to **210 ISK across six payments**.
@@ -19,7 +25,7 @@ second details form in the normal customer workflow.
 
 21 October 2026: the replacement REST handoff supersedes the previous Gateway implementation. This provider uses the owner's merchant-issued **Client ID and Client Secret**. No Partner Portal registration, Partner/Application IDs, merchant-session token or Gateway request is part of this integration.
 
-The existing backend already had a provider boundary, staff-only payment actions and a pending billing-linked collection migration. Those parts have been reused. The adapter/authentication/configuration have been replaced; legacy numeric status mapping now happens inside the adapter. The service and database consume normalized payment observations, preserving the raw provider code separately. No myPOS package or other dependency was added.
+The existing backend already had a provider boundary, staff-only payment actions and a pending billing-linked collection migration. Those parts have been reused. The adapter/authentication/configuration have been replaced; legacy numeric status mapping now happens inside the adapter. The service and database consume normalized payment observations, preserving the raw provider code separately. No myPOS package was added.
 
 There are two independent purposes per job: `initial_fee` uses the owner-confirmed fixed **10,490 ISK** amount, and `service` uses the dispatcher's explicitly supplied whole-ISK amount. Neither payment is a deposit or a deduction from the other. Freyr confirmed the owner's first-fee decision on 21 October 2026; both payments remain in ISK.
 

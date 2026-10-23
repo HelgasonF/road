@@ -61,8 +61,12 @@ The compact selected country label keeps its calling code visible on phones.
   sender or operational transition was changed. No hosted records, deployment or
   messages were created. The Git automatic-deployment guard remains unchanged.
 
-These changes are local and uncommitted. The live deployment still serves the
-earlier release until an explicit manual deployment.
+The initial implementation above was local and uncommitted. Freyr subsequently
+authorized an audit, deployment and Git synchronization; the phone/location
+features are now live on `https://vegstod.vercel.app`. The audit also replaced
+runtime country translation/sorting with a shared English/Icelandic list after
+a real-browser hydration mismatch, and added hydration/completeness regressions.
+See the [audit/release record](phone-location-release-2026-10-23.md).
 
 ## Separate location review and subsequent approval
 
@@ -84,9 +88,10 @@ a narrow follow-up migration; no new tables or coordinate-free job model were
 proposed. No location behavior changed during that initial review.
 
 Freyr then approved implementation (“ok sounds good do it”). That separate fix
-is now complete and tested locally, preserving this phone work. Final combined
-checks pass build/types/lint, **534 application tests**, **22 integration tests**
-and **379 SQL assertions**, plus customer/dispatcher browser fixtures. Neither
-feature is deployed; the location function migration has not been applied to
-hosted or the original local database. See the
+is complete and released, preserving this phone work. Final combined checks pass
+build/types/lint, **536 application tests**, **22 integration tests** and **379
+SQL assertions**, plus customer/dispatcher fixtures and hosted browser checks.
+The location function migration is applied to hosted Road; the original local
+database remains unchanged. Source and release notes are tracked on
+`chore/vercel-git-connection`. See the
 [location implementation and release record](typed-locations-2026-10-23.md).

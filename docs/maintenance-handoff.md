@@ -2,40 +2,45 @@
 
 Last updated: 23 October 2026 (Atlantic/Reykjavik)
 
-Local work after the Git checkpoint below: the shared international phone
+Released on 23 October: the shared international phone
 input/display update is complete, with **no default country** for new fields.
 Freyr then approved the reviewed typed-location/field-error fix, which is also
-complete locally. Both forms resolve clear towns/addresses and explain invalid
+complete and deployed. Both forms resolve clear towns/addresses and explain invalid
 fields; ambiguous places require a choice and town coordinates are marked
 approximate. GPS/map and existing payment/messaging workflows remain available.
-Final build/types/lint and **534 application tests** pass, plus **22 isolated
+Final build/types/lint and **536 application tests** pass, plus **22 isolated
 integration tests / 379 SQL assertions** and browser checks at 320/390/1280px.
-Both features are **uncommitted and not deployed**. See the
+Both features are **committed, pushed and deployed**. The audit fixed optional
+dispatcher fields and country-picker hydration; final hosted checks pass with
+no console errors/warnings. See the
 [phone record](phone-formatting-2026-10-23.md) and
-[location record](typed-locations-2026-10-23.md).
+[location record](typed-locations-2026-10-23.md) and
+[release record](phone-location-release-2026-10-23.md).
 
-The pending `20261023171927_support_typed_customer_locations.sql` migration
+The applied `20261023171927_support_typed_customer_locations.sql` migration
 extends existing service-only customer functions to accept `search` and grants
 server-only catalog access. It changes no table/enum structure. It passed in a
-disposable clone and has **not** been applied to hosted or the original local
-database. Apply it before an authorized manual app release; inspect other pending
-local migrations first. No live payment, message or deployment was created.
+disposable clone and is applied to hosted Road; the remote dry run has no pending
+migrations. The original local database remains unchanged; inspect pending local
+migrations before using it. No live payment or message was created by this release.
 
 ## Current resume point
 
 - Repository: `/mnt/ssd4tb/web-apps/Road`; branch
   `chore/vercel-git-connection`, remote `git@github.com:HelgasonF/road.git`.
-  This Git checkpoint records the tested release, migrations, tests and current
-  documentation together. Freyr authorized committing/pushing without another
-  deployment. `vercel.json` sets `git.deploymentEnabled=false`; pushes containing
+  Source commits `c37e9eb` and `88f1e1c` record the audited release. Freyr
+  authorized deployment and Git synchronization on 23 October. The earlier
+  22 October checkpoint disabled Git deployment. `vercel.json` still sets
+  `git.deploymentEnabled=false`; pushes containing
   that file do not auto-deploy. Keep it on future branches. Check
   `git status --short` before any new work.
 - Live customer site: `https://vegstod.vercel.app` points to Ready deployment
-  `vegstod-gyj57bol4-freyrs-projects-fad4047a.vercel.app`
-  (`dpl_FwCDqd93y9rmEnRmgono7VQUqebB`). It uses Vercel's Preview target with real
+  `vegstod-vr1npotdf-freyrs-projects-fad4047a.vercel.app`
+  (`dpl_BXLYy4f24SEWz8dSyHTohgN4jpjX`). It uses Vercel's Preview target with real
   myPOS payments enabled; the separate Production target is unused.
 - Linked hosted Supabase: `Road` / `abpmzqtbllszqqetuubp`. Both payment migrations
-  and `20261021220248_enable_payment_reconciliation_extensions.sql` are applied.
+  and `20261021220248_enable_payment_reconciliation_extensions.sql` are applied,
+  as is the typed-location function migration `20261023171927`.
   The minute reconciliation schedule is active, using Vault-managed origin and
   worker secret. Merchant credentials remain server-only in Vercel Preview.
 - First fee: **10,490 ISK**. One **Pay and submit** saves the details before
@@ -48,26 +53,27 @@ local migrations first. No live payment, message or deployment was created.
   updates, link reissue, private photos and no-charge correction. Driver
   assignment/progression was not repeated in this audit. Confirmed overall test
   spend is **210 ISK across six 35 ISK payments**; no more payment test is planned.
-- Live inventory: **zero active jobs, zero operators/drivers, three staff
-  profiles**. The single cancelled owned audit job and its two Paid payment
-  records remain as history. The company owner will add their actual providers.
+- Live inventory checked after 23 October cleanup: **two jobs, one active,
+  zero operators/drivers, three staff profiles**. The cancelled owned audit job
+  and its two Paid records remain as history. Only the new unpaid release fixture
+  and its links were removed, using exact identity/no-activity guards.
 - Temporary 35 ISK deployment, phone fixture, hosted photo and owned verification
   sessions were removed. The phone display setting was restored. Private audit
   ledgers, credentials and ignored evidence remain outside versioned source.
-- Deployed-source verification: build/typecheck/lint, **469 application tests** and
-  **363 pgTAP assertions** passed. Runtime application source is unchanged from
-  the 22:04 UTC deployment on 21 October. The 22 October checkpoint adds the
-  Git deployment control and documentation updates, preserving private evidence,
-  credentials and local build artifacts outside Git. The preceding Markdown
-  audit passed all 28 files and 135 local links; historical notes remain labelled.
+- Deployed-source verification: build/typecheck/lint, **536 application tests**,
+  **22 isolated integration tests and 379 pgTAP assertions** passed. Hosted
+  staff/customer checks covered actual catalog lookup, manual save with empty
+  optional fields, error focus, stable bilingual countries, E.164/display and
+  responsive layouts. No new paid checkout, driver assignment or physical-phone
+  audit was run. Credentials and local evidence remain outside Git.
 - Repository checkpoint validation on 22 October: the 81 commit-candidate files
   contain no matching private merchant/worker/admin credential values or private
   runtime artifacts. The `vercel.json` fields pass the official configuration
   schema, `git.deploymentEnabled` is false, all 28 Markdown files pass their
   140 relative links/fenced-block checks, and `git diff --check` passes. The
   existing application test results above were retained because runtime source
-  was unchanged. Verify the remote branch, clean tree and unchanged Vercel
-  deployment list/live alias after pushing this checkpoint.
+  was unchanged. That historical checkpoint was pushed; the 23 October source
+  and release-note checkpoints supersede it.
 
 See [implementation status](implementation-status.md),
 [myPOS setup](MYPOS_SETUP.md), [deployment runbook](deployment.md),

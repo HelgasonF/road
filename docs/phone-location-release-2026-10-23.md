@@ -31,7 +31,7 @@ target, not the unused Production target.
 
 ## Verified before release
 
-- Build, typecheck and lint passed; **534 application tests** passed, 24 opt-in
+- Final build, typecheck and lint passed; **536 application tests** passed, 24 opt-in
   tests skipped across 67 passing files and four skipped files.
 - Earlier zero-cost disposable-clone verification passed **22 integration /
   concurrency tests and 379 SQL assertions**. The original working database was
@@ -66,8 +66,38 @@ The initial Preview `vegstod-khwjxchb6-freyrs-projects-fad4047a.vercel.app`
 Its hosted staff/customer checks passed typed-place ambiguity, approximate town
 labels, blank optional fields, E.164/display, localized errors/focus, preserved
 data, 10,490 ISK pricing and widths 320/390/1280px. No checkout or message was
-sent. That browser pass exposed the hydration issue above, so a corrected
-release and repeat console check are in progress before completion.
+sent. That browser pass exposed the hydration issue above. The corrected source
+`88f1e1c` was committed/pushed, rechecked and deployed manually.
+
+**Completed release:** Ready deployment `dpl_BXLYy4f24SEWz8dSyHTohgN4jpjX`,
+`https://vegstod-vr1npotdf-freyrs-projects-fad4047a.vercel.app`, created at
+17:52 UTC. `https://vegstod.vercel.app` points to this corrected deployment.
+
+- Repeated the actual hosted customer flow with browser error capture: active
+  token-protected catalog lookup, same-name Keflavík choices, approximate labels,
+  unknown-place rejection, name error/focus, retained description, saved country,
+  bilingual labels and 320/390/1280px all pass. Icelandic country labels remain
+  Icelandic even on a browser whose Intl locale data falls back. **Zero hydration
+  errors; final browser console has zero errors and warnings.**
+- Confirmed the corrected staff picker starts without a country and still sends
+  E.164. The earlier real staff save also proved empty optional values persist
+  as null and the searched coordinates/approximate label are correct.
+- Revoked both owned customer links and verified the first revoked URL is
+  unavailable. Deleted only the exact new unpaid audit job, guarded by its ID,
+  name, phone, creation window, status, revoked links and absence of payments,
+  assignments or photos. Final inventory matches baseline: **two jobs, one
+  active, zero operators, three staff, two payment requests, one frozen intake
+  and one service page**. No real customer work was modified.
+- The active reconciliation schedule still succeeds; the checked worker response
+  was HTTP 200. Pricing remains 10,490 ISK and WhatsApp remains manual. No paid
+  checkout, real card transaction or message was created. No new physical-phone,
+  driver-assignment or paid end-to-end audit is claimed.
+- Source commits and final documentation are kept on
+  `chore/vercel-git-connection`; the automatic Git deployment guard is unchanged.
+  Updating release notes does not publish another app build.
+- Documentation verification passed 29 Markdown files, 153 local links and
+  balanced fences. `git diff --check` passes. Only release-note/documentation
+  files changed after the final verified app source.
 
 Previous deployment: `dpl_FwCDqd93y9rmEnRmgono7VQUqebB`,
 `vegstod-gyj57bol4-freyrs-projects-fad4047a.vercel.app`.

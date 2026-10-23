@@ -2,9 +2,9 @@
 
 Last updated: 23 October 2026
 
-Local phone formatting update: `libphonenumber-js`, a shared country-code picker
+Released phone formatting update: `libphonenumber-js`, a shared country-code picker
 with **no default country**, formatting while typing, E.164 submissions and
-readable international display are implemented and tested locally. Existing
+readable international display are implemented, audited and deployed. Existing
 contacts and call/WhatsApp behavior remain compatible; the phone work requires
 no database or workflow change. See the
 [phone formatting record](phone-formatting-2026-10-23.md).
@@ -13,16 +13,17 @@ Freyr subsequently approved the reviewed location fix. Customer and dispatcher
 forms now resolve typed towns/addresses, mark approximate places, require a
 choice for ambiguous matches and explain invalid fields with inline errors,
 a summary and focus. GPS/map selection and the existing payment flow remain.
-Final build/typecheck/lint and **534 tests** pass, plus **22 isolated integration
+Final build/typecheck/lint and **536 tests** pass, plus **22 isolated integration
 tests / 379 SQL assertions** and browser checks at 320/390/1280px. Both features
-are **local, uncommitted and not deployed**. The location function migration
-`20261023171927` must precede an authorized manual app release; it is not applied
-to the hosted or original working database. See the
-[location implementation and release record](typed-locations-2026-10-23.md).
-The live environment below remains unchanged.
+are **committed, pushed and deployed** after Freyr authorized the audit/release.
+Migration `20261023171927` is applied to hosted Road; remote history is current.
+The original local database remains unmigrated. The audit fixed dispatcher
+optional-field serialization and country-picker hydration; final hosted browser
+checks pass with no console errors/warnings and no new charge or message. See the
+[audit/release record](phone-location-release-2026-10-23.md).
 
 The live customer site is **https://vegstod.vercel.app**, served by the Ready
-Vercel Preview deployment `vegstod-gyj57bol4-freyrs-projects-fad4047a.vercel.app`.
+Vercel Preview deployment `vegstod-vr1npotdf-freyrs-projects-fad4047a.vercel.app`.
 The separate Vercel Production target is unused. myPOS REST v1.1 collection is
 enabled with the owner's server-only merchant credentials.
 
@@ -39,7 +40,7 @@ enabled with the owner's server-only merchant credentials.
   actual scheduled calls returned HTTP 200 and an unauthorized call returned 401.
   The staff payment panel polls verified database state every 15 seconds while
   visible and awaiting intake/payment completion.
-- The latest local verification passed build, types, lint, **469 application
+- The 21 October payment-release verification passed build, types, lint, **469 application
   tests** and **363 database assertions**. The later hosted physical-phone audit
   passed both payments/automatic dispatcher updates, safe service-link reissue,
   private photo upload/access/removal and a no-charge correction. It did not
@@ -47,15 +48,17 @@ enabled with the owner's server-only merchant credentials.
 - Confirmed test spend is **210 ISK across six successful 35 ISK payments**.
   The temporary 35 ISK deployment and photo artifacts were removed; ordinary
   pricing remains 10,490 ISK.
-- Live inventory: **zero active jobs, zero operators/drivers, three staff
-  profiles**, and one cancelled audit job retaining its two real Paid records.
+- Live inventory checked 23 October after cleanup: **two jobs (one active),
+  zero operators/drivers, three staff profiles**. The cancelled audit job retains
+  its two real Paid records; existing customer work was preserved.
   The company owner will add the actual drivers/providers.
 - The deployed application source, migrations, tests and documentation are
   recorded together on `chore/vercel-git-connection`. On 22 October, Freyr
   requested committing/pushing the snapshot without a deployment. The new
-  `vercel.json` disables automatic Git deployments. Runtime application source
-  remains the tested 21 October release; the new deployment policy and updated
-  documentation do not require publishing a new app build.
+  `vercel.json` disables automatic Git deployments. On 23 October, Freyr
+  explicitly authorized releasing the phone/location changes; source commits
+  `c37e9eb` and `88f1e1c` were pushed and deployed manually. Documentation-only
+  follow-up commits do not trigger another deployment.
 
 See the [release record](mypos-hosted-release-2026-10-21.md),
 [live phone audit](live-phone-audit-2026-10-21.md),

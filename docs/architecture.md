@@ -93,13 +93,15 @@ adds a customer action that verifies an active expiring token and rate limit
 before using server-only catalog access. Anonymous database execution remains
 blocked. Both forms resolve clear typed places, require a choice for ambiguous
 matches and preserve GPS/map coordinates. Town-level locations are explicitly
-approximate. The function migration and app release are pending; see the
-[implementation record](typed-locations-2026-10-23.md).
+approximate. The function migration and app were released on 23 October; see the
+[audit/release record](phone-location-release-2026-10-23.md).
 
 `scripts/import-hms-addresses.mjs` downloads and normalizes the official weekly HMS CSV, downloads only Icelandic `place=*` objects from OpenStreetMap, loads both into temporary tables, and atomically replaces the live search indexes. The downloaded source files never enter the repository.
 
 Phone input/display shares `libphonenumber-js` helpers and one country picker.
-New fields start without a country; full international input and saved numbers
+Country labels/order come from shared English/Icelandic data so server/browser
+locale differences cannot break hydration. New fields start without a country;
+full international input and saved numbers
 infer one. Recognized numbers normalize to E.164 at existing schema boundaries,
 while legacy unrecognized values remain usable. Display formatting does not
 change communication-link builders or stored data structures. See the

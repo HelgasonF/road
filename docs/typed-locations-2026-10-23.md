@@ -25,8 +25,9 @@ received only “Farðu yfir innsláttinn.” Preserve the completed local phone
 ## Completed implementation
 
 The customer and dispatcher forms use the shared location input. Typing
-`í Keflavik` resolves the catalog's Keflavík result on blur or submission; an
-explicit Find button remains available. An exact/unambiguous result supplies
+`í Keflavik` searches the catalog on blur or submission; an explicit Find button
+remains available. The real catalog has several places named Keflavík, so it
+asks the user to choose the town result. An exact/unambiguous result supplies
 coordinates without a map click. Multiple matches require a choice, and an
 unknown place explains how to correct it or use GPS/the map. Place-level results
 carry an approximate-location suffix and visible status; HMS street addresses
@@ -49,7 +50,7 @@ execution and direct customer writes remain blocked.
 
 ## Verification
 
-- Final build, typecheck and lint pass. Full Vitest: **534 passed**, 24 skipped
+- Final audited build, typecheck and lint pass. Full Vitest: **536 passed**, 24 skipped
   across 67 passing files and four opt-in skipped files. The earlier phone-only
   checkpoint was 501 passing tests.
 - `npm run mypos:test:system`: **22 integration/concurrency tests** and **379
@@ -67,21 +68,28 @@ execution and direct customer writes remain blocked.
   do not claim a new hosted or physical-phone end-to-end audit.
 - Browser fixtures/evidence remain ignored under
   `output/typed-locations-20261023/` and `output/playwright/typed-location-*`.
-  No real provider request, charge, message, hosted mutation or deployment was
-  made. Existing live controlled-test spend remains 210 ISK.
+  During local implementation no provider request, charge, message, hosted
+  mutation or deployment was made. The subsequently authorized release below
+  made no new charge or message; controlled-test spend remains 210 ISK.
 
 ## Release status
 
-Implementation and documentation are local and uncommitted. Hosted data,
-database functions and deployment are unchanged. Phone formatting requires no
-database change; this separately approved location fix requires
+Freyr authorized audit, deployment and Git synchronization. The audited source
+is committed/pushed as `c37e9eb` and `88f1e1c` and live at
+`https://vegstod.vercel.app`, Ready deployment
+`vegstod-vr1npotdf-freyrs-projects-fad4047a.vercel.app`
+(`dpl_BXLYy4f24SEWz8dSyHTohgN4jpjX`). Phone formatting requires no database
+change; the separately approved location fix applied
 [`20261023171927_support_typed_customer_locations.sql`](../supabase/migrations/20261023171927_support_typed_customer_locations.sql).
 It adds service-role catalog access and permits the existing `search` source in
 the service-only customer submission/checkout functions. It adds no tables,
 columns, enums or payment transitions.
 
-For an authorized release, inspect pending migration history, apply this function
-update before publishing the new app, then use the manual Preview deployment
-and stable-alias steps in the [deployment runbook](deployment.md). The tracked
-`git.deploymentEnabled=false` guard is unchanged; a Git backup does not release
-these features.
+Hosted migration history is current. Existing work/payments were preserved and
+only the guarded unpaid audit fixture was removed. The original local database
+remains unchanged. Final hosted customer/staff checks passed actual catalog
+lookup, optional-field saving, localized validation and stable country hydration
+with no console errors/warnings at mobile/desktop widths. No real checkout was
+started. See the [audit/release record](phone-location-release-2026-10-23.md).
+The tracked `git.deploymentEnabled=false` guard remains unchanged; later source
+backups use Git and releases use the manual [deployment runbook](deployment.md).

@@ -2,11 +2,12 @@
 
 Map-centric operations software for an Icelandic roadside-assistance network. The public name is Iceland Road Assistance; Vegstoð remains the internal project name and part of existing technical identifiers. Internal identifiers are English; the dispatcher UI is Icelandic.
 
-Local work completed on 23 October: international phone formatting with no
+Released on 23 October: international phone formatting with no
 default country, typed town/address lookup in both job forms and clear field
-errors. These changes are **not deployed**. The location function migration must
-precede a manual release; see the [implementation record](docs/typed-locations-2026-10-23.md)
-and [phone record](docs/phone-formatting-2026-10-23.md).
+errors. The location function migration is applied and the audited changes are
+live at **https://vegstod.vercel.app**. See the
+[audit/release record](docs/phone-location-release-2026-10-23.md) and
+[phone record](docs/phone-formatting-2026-10-23.md).
 
 ## Local setup
 
@@ -67,7 +68,7 @@ Customer intake starts from the **+** button in the job list:
 1. Enter only the caller's phone number and press **Búa til WhatsApp-tengil**. Staff can switch to the full form when they want to enter every field themselves; its vehicle section uses the same registration, brand dropdown/free-text fallback, rental-company, and people-count fields as the customer form.
 2. Iceland Road Assistance atomically creates a pending job and 24-hour link, then shows a complete message to copy into the customer's WhatsApp Business chat. Staff press Send in WhatsApp. The raw token is available only at creation time and only its SHA-256 hash is stored.
 3. The pending job remains visible in the list, but is omitted from the map and driver matching and cannot be assigned.
-4. The customer uses the bilingual, account-free form to enter their name, confirm GPS/map location, choose the required assistance, describe the problem, add vehicle/rental/people details, and optionally upload up to six 10 MiB photos.
+4. The customer uses the bilingual, account-free form to enter their name, type a town/address or use GPS/the map, choose the required assistance, describe the problem, add vehicle/rental/people details, and optionally upload up to six 10 MiB photos. Ambiguous place names require a choice; town coordinates are marked approximate. Invalid fields are explained and focused.
 5. The customer presses **Pay and submit** once to save their details and open the fixed **10,490 ISK** myPOS checkout. The background worker verifies payment and submits those saved details once, unlocking matching and assignment even if the customer never returns. Private photos become visible to the assigned driver only after assignment.
 6. After the driver's quote, dispatch enters the separate service amount and description and manually sends a second WhatsApp link to a private payment summary. The customer pays without entering their details again. A later correction form, when requested, does not charge the initial fee again.
 
@@ -97,7 +98,7 @@ Demo mode is read-only and must never be enabled in deployment.
 
 The myPOS REST v1.1 integration includes the combined **Pay and submit** customer flow, durable drafts, background paid-intake completion, automatic dispatcher status updates, dispatcher-entered second amount/description, and a private payment summary page with manual WhatsApp handoff. It uses the owner's merchant-issued credentials. The fixed first fee is **10,490 ISK** (`MYPOS_INITIAL_FEE_ISK=10490`); dispatch enters the separate second amount in ISK. Payments are enabled on the existing online site after successful controlled phone acceptance; migrations, server credentials and minute reconciliation are configured there. Local defaults remain disabled. See [docs/MYPOS_SETUP.md](docs/MYPOS_SETUP.md) and the [hosted release record](docs/mypos-hosted-release-2026-10-21.md). Run `npm run mypos:test:system -- --full` for the repeatable zero-cost integration/regression/database suite against a disposable local clone; it never uses merchant credentials or real money.
 
-The [21 October live phone audit](docs/live-phone-audit-2026-10-21.md) passed both payments, automatic confirmation, private photos and correction submission. The live database has no active jobs or operators; three staff accounts and one cancelled audit job with its two Paid records remain. The company owner will add their drivers/providers. The release source, migrations, tests and documentation are recorded together on `chore/vercel-git-connection`. Automatic Git deployments are disabled by `git.deploymentEnabled=false` in [vercel.json](vercel.json), so pushing this snapshot does not redeploy the app. Future releases use the manual commands in the [deployment runbook](docs/deployment.md).
+The [21 October live phone audit](docs/live-phone-audit-2026-10-21.md) passed both payments, automatic confirmation, private photos and correction submission. The 23 October release preserved the current inventory: two jobs (one active), zero operators and three staff accounts, with the cancelled audit job's two Paid records retained. Its temporary audit job was removed without creating a payment or sending a message. The company owner will add their drivers/providers. Release source, migrations, tests and documentation are recorded on `chore/vercel-git-connection`. Automatic Git deployments remain disabled by `git.deploymentEnabled=false` in [vercel.json](vercel.json); future releases use the manual commands in the [deployment runbook](docs/deployment.md).
 
 ## Verification
 
