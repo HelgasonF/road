@@ -2,12 +2,15 @@
 
 Last updated: 26 October 2026
 
-Reusable driver assignment links: Freyr approved reopening the same link across
-browsers until completion/cancellation/reassignment. Implementation is verified
-in an isolated release: 585 application tests, 24 integration tests, 431 SQL
-assertions and actual two-browser Auth/job-completion acceptance pass. Migration
-`20261026174440` and deployment are pending; unrelated local map/editor edits are
-excluded. See the [driver-link record](reusable-driver-links-2026-10-26.md).
+Released reusable driver assignment links: the same new assignment link reopens
+across browsers until completion/cancellation/reassignment or disabled access.
+585 application tests, 24 integration tests, 431 SQL assertions and actual
+two-browser Auth/job-completion acceptance pass. Migration `20261026174440` is
+applied; source `2b764af` is live on Ready Preview
+`vegstod-bx65py2a8-freyrs-projects-fad4047a.vercel.app`. Legacy onboarding links
+remain one-time; generate/send **Búa til verkefnistengil** from the assigned job
+once. Unrelated local map/editor edits are excluded. See the
+[driver-link record](reusable-driver-links-2026-10-26.md).
 
 Released payment fix: controlled unpaid comparisons isolated the legacy myPOS
 rejection to accented customer names; the `is` language code works. The provider
@@ -16,8 +19,9 @@ Explicit recovery of definite creation failures retains history and safe
 diagnostics, supports replacement links, and fences stale attempt results.
 Uncertain/Paid attempts cannot be reclaimed. Build/types/lint, the full suite
 (576 tests), real unpaid checks in both languages and 404 SQL assertions passed.
-Hosted migration `20261026115922` is applied; the stable alias points to Ready
-Preview `vegstod-q8hdb4e0f-freyrs-projects-fad4047a.vercel.app`. See the
+Hosted migration `20261026115922` is applied. That payment release used Ready
+Preview `vegstod-q8hdb4e0f-freyrs-projects-fad4047a.vercel.app`, now superseded by
+the driver-link deployment above. See the
 [investigation/release record](payment-failure-investigation-2026-10-26.md).
 The payment fix is also recorded in the user-requested Git checkpoint on
 `chore/vercel-git-connection`; existing job/location edits remain outside it.
@@ -43,7 +47,7 @@ checks pass with no console errors/warnings and no new charge or message. See th
 [audit/release record](phone-location-release-2026-10-23.md).
 
 The live customer site is **https://vegstod.vercel.app**, served by the Ready
-Vercel Preview deployment `vegstod-q8hdb4e0f-freyrs-projects-fad4047a.vercel.app`.
+Vercel Preview deployment `vegstod-bx65py2a8-freyrs-projects-fad4047a.vercel.app`.
 The separate Vercel Production target is unused. myPOS REST v1.1 collection is
 enabled with the owner's server-only merchant credentials.
 

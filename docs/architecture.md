@@ -47,6 +47,10 @@ The route layer stays thin. Server Components read through feature queries; inte
 - `whatsapp_webhook_events` keeps the deduplicated raw envelope for every Meta-signed callback. `whatsapp_delivery_events` and `whatsapp_inbound_messages` hold the normalized status and reply records used by Vegstoð.
 - `whatsapp_outbound_messages` is the idempotent Cloud API send ledger. It stores business references, recipient, template metadata, state, and a payload fingerprint; template parameters and bearer links are never retained in plaintext.
 - `job_billing` is a one-to-one financial record created automatically for every job. It stores payer identity and authorization, the amount owed to Vegstoð, the amount Vegstoð owes the assigned provider, and separate receivable/payable lifecycle fields.
+- `driver_assignment_links` stores only hashes of reusable assignment credentials,
+  bound to the exact assignment/provider/account. Staff issue/replace links;
+  resolution is service-only. Closing/reassigning a job, disabling a provider or
+  changing its account permanently revokes the relevant credentials.
 - `job_billing_events` is the append-only staff audit trail for detail changes, invoice actions, payments, disputes, reopenings, refunds, and voids.
 - `job_payment_requests` holds two independent myPOS collection requests per job/environment, linked to the existing billing row. Server-only mutations reserve a request before any creation POST and record normalized verified results plus raw provider status. The REST adapter owns numeric status mapping and checks customer name, ISK settlement eligibility and caller locale before reservation. Staff can read these records; drivers and anonymous users cannot. These records do not issue invoices, settle the billing ledger or advance job status. See [myPOS setup](MYPOS_SETUP.md) for merchant credentials and configuration.
 - `customer_payment_intakes` freezes validated form details and associates the payment atomically before checkout. The authenticated background worker verifies myPOS status and finalizes the exact paid draft once without requiring the customer to return. `job_payment_pages` stores only hashes of random 24-hour second-payment page tokens and frozen service/vehicle summary data. Both tables are service-only. The first fee is fixed at the owner-confirmed 10,490 ISK; the second is dispatcher-entered in ISK. The hosted Preview has these migrations, credentials and payment controls enabled, with Supabase Cron calling the authenticated worker every minute through Vault-managed configuration. Local defaults remain disabled. See the [hosted release record](mypos-hosted-release-2026-10-21.md).
@@ -61,7 +65,20 @@ Operator and vehicle saves touch a base row plus capability links. PostgreSQL fu
 
 The public client only receives the Supabase publishable key. Supabase cookie sessions are refreshed by `proxy.ts`, but every query and Server Action verifies the session again. RLS denies anonymous access. Staff can access the dispatch data; a driver can read only their own operator/vehicle data and jobs with a current assignment to that operator. Driver mutations use narrowly scoped RPCs that verify the linked operator and allowed workflow transition.
 
-The `driver-access-v1` Supabase Edge Function performs driver Auth administration. It first checks `is_staff()` with a caller-scoped client, then uses a service-role client only for `auth.admin` calls; its versioned response returns a first-party Vegstoð path and never an internal Auth address or Supabase verification URL. Vercel's server-only Supabase secret supports validated account-free customer-link/Storage operations and narrow payment persistence/reconciliation RPCs. Customer-link calls validate the hashed, unexpired, unrevoked token before returning job fields or creating signed upload/download access. Payment entry points separately validate the customer token, staff session or worker credential; the secret is never serialized to a Client Component.
+The `driver-access-v1` Supabase Edge Function performs staff-authorized driver
+provisioning and access management. It first checks `is_staff()` with a
+caller-scoped client before using `auth.admin`. Reusable assignment sign-in also
+uses Vercel's server-only client for Auth administration, but only after checking
+the credential hash, current assignment/job, enabled provider and driver role.
+It verifies account identity, immediately redeems a fresh internal OTP and
+rechecks assignment state before redirecting. New sessions are removed if the
+job closes during sign-in; matching existing sessions need no fresh login.
+
+Vercel's server-only secret also supports validated customer-link/Storage and
+payment persistence/reconciliation RPCs. Customer-link calls validate the hashed,
+unexpired, unrevoked token before accessing job fields or signed uploads/downloads.
+Payment entry points validate the customer token, staff session or worker
+credential; no secret or internal Auth OTP is serialized to a Client Component.
 
 The public `whatsapp-webhook-v1` Edge Function is the inbound trust boundary for Meta. Its Supabase JWT check is disabled because Meta cannot supply a user session, so the function validates the setup token for GET challenges and the app-secret `X-Hub-Signature-256` HMAC over the raw POST body. One database RPC atomically retains the deduplicated envelope, normalizes `sent`/`delivered`/`read`/`failed` updates, advances a linked outbound record, and stores inbound replies. A **Laus** or **Ekki laus** reply is only a dispatcher-visible classification; it never assigns a job or changes an operator automatically. RLS permits staff reads and denies drivers and anonymous users.
 
@@ -73,7 +90,15 @@ Phone-first creation is atomic in PostgreSQL: a staff-only function creates the 
 
 Driver login disabling also changes the RLS-visible operator state, so an already-issued driver token loses operational access immediately rather than waiting to expire.
 
-Driver access is passwordless and currently delivered in a staff-copied WhatsApp Business message with a private URL. The staff-only Server Action calls the versioned Auth Edge Function with the staff member's Supabase access token. The function repeats staff authorization before generating an Auth link for an internal, non-routable driver identifier. Opening the link displays a confirmation button instead of immediately consuming the token, so link-preview requests do not sign in or invalidate the link. The confirmed one-time token creates the normal Supabase cookie session, after which all driver reads and mutations remain constrained by the existing driver RLS policies. The internal Auth identifier is never requested from or shown to the driver.
+Driver access is passwordless and delivered in a staff-copied WhatsApp Business
+message. New assignment links are reusable across browsers until that assignment
+closes. Opening the URL displays a confirmation button and does not authenticate
+or consume anything, so link previews cannot sign in. After confirmation, a valid
+credential reuses a matching session or creates a normal restricted Supabase
+driver session, then opens the intended authorized job. Driver reads/mutations
+remain constrained by existing RLS. No email/SMS is sent. Legacy onboarding and
+paused Cloud API button-code links retain their one-time behavior. See the
+[driver-link release](reusable-driver-links-2026-10-26.md).
 
 `jobs`, `job_assignments`, and `operators` are the only application tables in the `supabase_realtime` publication. Existing web screens refresh through Server Actions and `router.refresh()`; the publication is an inert backend capability until a client subscribes. The payment panel additionally polls verified database state every 15 seconds while visible and awaiting intake/payment completion, refreshing the job when its paid draft submits. It does not call myPOS; the authenticated background worker checks that API about once per minute. General driver/status updates still use the existing refresh behavior. Financial, contact, customer-token, and photo-metadata tables are intentionally excluded from Realtime.
 

@@ -71,12 +71,32 @@ The ordinary driver role/RLS and availability/status controls remain unchanged.
 
 ## Release progress
 
-Implementation is ready for the authorized release; no hosted schema, data or
-deployment has changed yet. Migration dry run contains only
-`20261026174440_reusable_driver_assignment_links.sql`.
+**Released:** source `2b764af` is committed/pushed and deployed as Ready Preview
+`vegstod-bx65py2a8-freyrs-projects-fad4047a.vercel.app`
+(`dpl_CEeCgGDaE4r6DugtjRJbru5jW7M3`, created 18:07 UTC).
+`https://vegstod.vercel.app` points to this deployment. The isolated checkout
+matches that commit exactly; unrelated map/editor work remains local.
+
+Migration `20261026174440_reusable_driver_assignment_links.sql` is applied to
+hosted Road. The dry run identified only that migration and the final dry run is
+current. Table read/issuer privileges remain closed to anonymous callers;
+resolution is service-only. Security advisors add one expected informational
+RLS/no-policy finding for the service-only credential table, with no new warning.
+
+Hosted browser checks passed the new form, server rejection of an unknown
+credential, legacy confirmation compatibility and 320/390/1280px without console
+errors/warnings. No real driver sign-in, job mutation, payment or message was
+performed against hosted data. Successful two-browser sign-in and completion
+were verified against the separate real Auth/database copy described above.
+Owned test browser sessions, containers/database and temporary Auth state were
+removed; the original local database remains unmigrated.
+Documentation checks pass 31 Markdown files and 163 local links with balanced
+fences; `git diff --check` passes. Payment reconciliation remains active with
+HTTP 200. Final notes are a Git-only checkpoint; automatic deployment stays off.
 
 Hosted baseline: five jobs (two active), one operator/driver, three staff, one
-assignment and six payment requests. Preserve all existing records. Previous
+assignment and six payment requests. These counts are unchanged after release;
+the new credential table is empty until staff generate the first real link. Previous
 Ready deployment is `vegstod-q8hdb4e0f-freyrs-projects-fad4047a.vercel.app`
 (`dpl_2LXeT3SEcfstuoAX8Vckk6umgJeq`). Git automatic deployment remains disabled.
 

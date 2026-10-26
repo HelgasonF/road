@@ -2,13 +2,24 @@
 
 Last updated: 26 October 2026
 
+Released reusable driver assignment links: source `2b764af`, migration
+`20261026174440`, Ready Preview `dpl_CEeCgGDaE4r6DugtjRJbru5jW7M3`,
+`vegstod-bx65py2a8-freyrs-projects-fad4047a.vercel.app`. The stable
+`https://vegstod.vercel.app` alias serves this release. The isolated checkout
+preserves the payment fix below and excludes unfinished map/editor changes.
+New assignment links reopen across browsers until completion, cancellation,
+reassignment or disabled access; legacy onboarding links remain one-time. Staff
+must generate/send **Búa til verkefnistengil** once. Remote migration history is
+current. See the [driver-link release](reusable-driver-links-2026-10-26.md).
+
 Released 26 October: myPOS customer-name compatibility and guarded recovery of
 definitively rejected creations. Both `en` and `is` passed real unpaid provider
 creation checks after adapting only the provider's display name to Latin text.
 The customer's actual name remains in Vegstoð. Migration `20261026115922` is
-applied. The stable alias now points to Ready Preview deployment
+applied. That payment release used Ready Preview deployment
 `dpl_2LXeT3SEcfstuoAX8Vckk6umgJeq`,
-`vegstod-q8hdb4e0f-freyrs-projects-fad4047a.vercel.app`. Payment source was released
+`vegstod-q8hdb4e0f-freyrs-projects-fad4047a.vercel.app`, superseded by the driver
+release above. Payment source was released
 from an isolated `111ae22` checkout plus the fix, excluding existing local
 job/location edits. The subsequent user-requested Git checkpoint records the
 payment changes on `chore/vercel-git-connection`; pushing does not redeploy.
@@ -21,7 +32,7 @@ and the approved typed-location/actionable-error fix. Migration
 release; remote migration history is current. The final Ready deployment is
 `dpl_BXLYy4f24SEWz8dSyHTohgN4jpjX`,
 `vegstod-vr1npotdf-freyrs-projects-fad4047a.vercel.app`, from source `88f1e1c`.
-The stable alias points to it. Phone formatting itself needs no migration;
+That was the 23 October alias target. Phone formatting itself needs no migration;
 the original local database remains unmigrated. See the
 [audit/release record](phone-location-release-2026-10-23.md).
 
@@ -61,8 +72,8 @@ DEMO_MODE=false
 
 On 21 October, Freyr authorized myPOS collection on the existing public Preview.
 `vegstod.vercel.app` now points to
-`vegstod-q8hdb4e0f-freyrs-projects-fad4047a.vercel.app` after the 26 October
-payment fix. Payment configuration is
+`vegstod-bx65py2a8-freyrs-projects-fad4047a.vercel.app` after the 26 October
+driver-link release, preserving that day's payment fix. Payment configuration is
 installed in **Preview**; the unused Production target remains unchanged.
 Server-only sensitive variables hold the merchant Client ID/Secret and
 `PAYMENT_WORKER_SECRET`. Collection and production API creation are enabled,
@@ -70,7 +81,9 @@ the initial fee is `10490` ISK, and `WHATSAPP_API_ENABLED=false` preserves manua
 messaging. Local defaults remain disabled.
 
 Hosted migrations `20261020223002`, `20261021201000`, `20261021220248`,
-`20261023171927` and `20261026115922` are applied. The third enables pg_cron and pg_net; it creates no
+`20261023171927`, `20261026115922` and `20261026174440` are applied. The last
+adds reusable assignment credentials and revocation triggers. The third enables
+pg_cron and pg_net; it creates no
 schedule or secret. The fourth permits searched customer locations and grants
 server-only catalog access, preserving existing table structures and payment flow.
 The separately applied `supabase/ops/schedule-payment-reconciliation.sql` invokes
@@ -78,7 +91,7 @@ the worker every minute using the HTTPS origin and matching secret in Supabase
 Vault. Scheduled HTTP 200 results, rejection without the secret, browser checks
 and fixture cleanup are recorded in the [hosted release record](mypos-hosted-release-2026-10-21.md).
 
-`SUPABASE_SECRET_KEY` must remain server-only and must never use a `NEXT_PUBLIC_` prefix. It performs narrowly scoped, validated customer-link/Storage operations and payment persistence/reconciliation RPCs. Driver Auth administration runs inside Supabase's `driver-access-v1` Edge Function and does not read this key from Vercel. The local `.vercel/` link metadata is ignored by Git.
+`SUPABASE_SECRET_KEY` must remain server-only and must never use a `NEXT_PUBLIC_` prefix. It performs validated customer-link/Storage and payment operations, plus reusable assignment sign-in after hashed-credential/state validation. Staff driver provisioning/access management remains in `driver-access-v1`. No server credential or fresh internal OTP is sent to browser code. The local `.vercel/` metadata is ignored by Git.
 
 On 11 September 2026, the local environment and both Vercel targets were refreshed to the current hosted Supabase publishable and server keys after an older retired publishable key was detected. A new Vercel deployment is required whenever these values change because public Next.js variables are embedded at build time.
 
@@ -102,8 +115,10 @@ Freyr requested a clean Git checkpoint and push on 22 October **without another
 deployment**. This checkpoint records the tested live source, payment migrations,
 tests and documentation together on `chore/vercel-git-connection`. On 23 October,
 Freyr explicitly authorized auditing, deploying and synchronizing the new
-phone/location work. Source `88f1e1c` is deployed manually as
-`dpl_BXLYy4f24SEWz8dSyHTohgN4jpjX`; Git deployment remains disabled.
+phone/location work. Source `88f1e1c` was deployed manually as
+`dpl_BXLYy4f24SEWz8dSyHTohgN4jpjX`. The current 26 October driver-link source
+is `2b764af`, deployed manually as `dpl_CEeCgGDaE4r6DugtjRJbru5jW7M3`.
+Git deployment remains disabled.
 
 Vercel remains connected to the private GitHub repository `HelgasonF/road`.
 The repository's [vercel.json](../vercel.json) sets
@@ -141,7 +156,15 @@ npx supabase functions deploy whatsapp-send-v1
 
 The hosted Auth Site URL is `https://vegstod.vercel.app`. Its allowed redirect URLs also include that address plus local `127.0.0.1:3000` and `localhost:3000` development URLs. Email/password authentication and TOTP remain available for staff accounts. Public self-signup is disabled, staff passwords require at least 10 characters with letters and digits, and public users do not receive database function execution privileges. Hosted PostgreSQL rejects non-SSL external connections.
 
-Drivers do not receive email and do not create passwords. An authenticated staff action calls the versioned `driver-access-v1` Edge Function with the caller's access token. The function confirms the caller is staff before using its built-in service-role credential for Auth administration, then returns only a first-party `/driver/access` URL. Dispatch manually sends that private path in the prepared WhatsApp Business message. The driver must press **Opna ökumannsskjá** before the token is consumed; successful confirmation creates the ordinary Supabase cookie session used by the existing driver RLS policies. A later assignment can generate a fresh link, and disabling the operator immediately removes access from an existing session. SMTP is not part of the customer or driver workflow.
+Drivers do not receive email or create passwords. Staff provisioning uses
+`driver-access-v1` with the caller's token and an explicit staff check. New
+assignment links store only a random credential's hash in `driver_assignment_links`.
+Dispatch manually sends the first-party path. **Opna ökumannsskjá** validates
+current state before reusing/creating the ordinary restricted driver session.
+The same link works after closing/changing browsers or losing login. Completion,
+cancellation, reassignment and disabled provider access permanently revoke it.
+Old onboarding tokens remain one-time. No SMTP or global Auth-expiry change is
+needed. Payment/operational functions and existing account permissions remain.
 
 The Realtime publication contains only `jobs`, `job_assignments`, and `operators`. RLS still filters future subscribers. The Next.js app does not subscribe. The payment panel polls verified database state every 15 seconds while visible and awaiting intake/payment completion; the separate worker checks myPOS about once per minute. Other operational changes retain the existing request/refresh behavior.
 
@@ -204,7 +227,7 @@ npx supabase test db
 npx supabase db lint --local --schema public
 ```
 
-For future operational changes, repeat the relevant customer/driver workflow on a physical phone over the public site: staff sign-in, **+**, phone-only creation, manual customer WhatsApp handoff, details/location/photos, **Pay and submit**, trusted Paid confirmation and matching unlock, dispatcher receipt, a separate dispatcher-entered service summary/payment, assignment, driver WhatsApp access-link confirmation, private-photo access, status changes, timeline and billing handoff. Confirm a used driver link fails in a clean session and disabling the driver removes existing access immediately. Use the zero-cost test suite for repeatable payment checks; additional real-card tests require authorization within the remaining budget. Remove owned disposable records, users and Storage objects afterward while retaining actual financial records. The completed 21 October audit covered customer/payments/photos; it did not repeat driver assignment and progression.
+For future operational changes, repeat the relevant customer/driver workflow on a physical phone over the public site: staff sign-in, **+**, phone-only creation, manual customer WhatsApp handoff, details/location/photos, **Pay and submit**, trusted Paid confirmation and matching unlock, dispatcher receipt, a separate dispatcher-entered service summary/payment, assignment, driver WhatsApp access-link confirmation, private-photo access, status changes, timeline and billing handoff. Confirm an active assignment link reopens in a clean browser, fails after completion/cancellation/reassignment, and disabling the driver removes existing access immediately. Legacy onboarding links should still reject reuse in a clean session. Use the zero-cost test suite for repeatable payment checks; additional real-card tests require authorization within the remaining budget. Remove owned disposable records, users and Storage objects afterward while retaining actual financial records. The completed 21 October audit covered customer/payments/photos; it did not repeat driver assignment and progression.
 
 ## Moving from Free to paid Supabase
 

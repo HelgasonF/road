@@ -2,15 +2,21 @@
 
 Last updated: 26 October 2026 (Atlantic/Reykjavik)
 
-Current driver-link work: reusable assignment links are implemented and verified
-locally, including actual fresh-browser sign-in, repeat access, target selection
+Current driver-link release: reusable assignment links are implemented and live,
+including verified fresh-browser sign-in, repeat access, target selection
 and closure through the normal driver completion action. The isolated candidate
 passes build/types/lint, 585 application tests, 24 integration tests and 431 SQL
-assertions. Migration `20261026174440` and release are pending. Preserve unrelated
+assertions. Migration `20261026174440` is applied; source `2b764af` is deployed on
+Ready Preview `vegstod-bx65py2a8-freyrs-projects-fad4047a.vercel.app`
+(`dpl_CEeCgGDaE4r6DugtjRJbru5jW7M3`), serving `https://vegstod.vercel.app`.
+Preserve unrelated
 job-editor/address-map edits; the candidate excludes them. See the
-[driver-link record](reusable-driver-links-2026-10-26.md). The payment fix from
-`e13d642` is already live on `vegstod-q8hdb4e0f-freyrs-projects-fad4047a.vercel.app`;
-the 23 October release notes below are an earlier checkpoint.
+[driver-link record](reusable-driver-links-2026-10-26.md). It preserves the payment
+fix from `e13d642`. Staff must generate/send the new assignment link once from
+**Búa til verkefnistengil**; old onboarding tokens remain one-time. The release
+preserved all five jobs (two active), one provider/driver, three staff, one
+assignment and six payment requests. No live test account/job/payment was added.
+The 23 October release notes below are an earlier checkpoint.
 
 Released on 23 October: the shared international phone
 input/display update is complete, with **no default country** for new fields.
@@ -34,7 +40,7 @@ disposable clone and is applied to hosted Road; the remote dry run has no pendin
 migrations. The original local database remains unchanged; inspect pending local
 migrations before using it. No live payment or message was created by this release.
 
-## Current resume point
+## Earlier resume point — 23 October 2026
 
 - Repository: `/mnt/ssd4tb/web-apps/Road`; branch
   `chore/vercel-git-connection`, remote `git@github.com:HelgasonF/road.git`.

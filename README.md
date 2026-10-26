@@ -54,12 +54,12 @@ New Auth users receive the non-operational `pending` role by default, so acciden
 Driver access is managed from the selected service provider in the dispatcher interface:
 
 1. Create the service provider, vehicles, and capabilities normally.
-2. Assign a job to the provider and press **Búa til tengil** in the assignment panel.
-3. Iceland Road Assistance creates a private one-time access link and prepares a complete WhatsApp message. Copy it into the driver's chat in the company's WhatsApp Business app and press Send.
-4. The driver opens the link, confirms **Opna ökumannsskjá**, and lands on `/driver` without an email account or password.
-5. Dispatch can generate another short-lived link when needed, disable access immediately, or re-enable the same account without deleting operational data.
+2. Assign a job to the provider and press **Búa til verkefnistengil** in the assignment panel.
+3. Iceland Road Assistance creates a reusable private assignment link and prepares a complete WhatsApp message. Copy it into the driver's chat in the company's WhatsApp Business app and press Send.
+4. The driver opens the link, confirms **Opna ökumannsskjá**, and lands on the intended job without an email account or password. The same link works after closing/changing browsers or losing the login.
+5. Completion, cancellation, reassignment and disabled provider access permanently close the link. Dispatch can generate a replacement, which revokes the previous link. Existing provider-onboarding links remain one-time; use a newly generated assignment link for this behavior. See the [driver-link release](docs/reusable-driver-links-2026-10-26.md).
 
-Driver contact is manual in the current workflow. The dashboard prepares an availability message containing only the operational area, assistance, priority, and estimated distance. Staff copy it into WhatsApp Business, read replies there, and make the assignment in Iceland Road Assistance. After assignment, staff create and copy a private one-time Supabase Auth link for that driver. The app can open a prefilled `wa.me` draft, but opening or copying it does not prove it was sent.
+Driver contact is manual in the current workflow. The dashboard prepares an availability message containing only the operational area, assistance and priority. Staff copy it into WhatsApp Business, read replies there, and make the assignment in Iceland Road Assistance. After assignment, staff create and copy the reusable private assignment link. The app can open a prefilled `wa.me` draft, but opening or copying it does not prove it was sent.
 
 The earlier Meta Cloud API functions, webhook, templates, and sandbox test evidence remain in the project for possible future use. The current dashboard does not call the API sender, and its server-side send client is paused by default. No API phone-number onboarding is needed for manual WhatsApp Business messages. See the [manual WhatsApp handoff](docs/manual-whatsapp-handoff-2026-09-26.md).
 
@@ -86,7 +86,7 @@ The billing workspace records invoices and settlement independently of the myPOS
 
 Local customer photos are stored in the private `job-photos` Supabase Storage bucket. Uploads use short-lived signed upload tokens. Authenticated staff and the currently assigned driver request five-minute signed read URLs directly from Storage; a `storage.objects` policy ties each object path to the existing RLS-protected `job_photos` metadata. Do not make this bucket public in hosted Supabase.
 
-The hosted Free-plan Supabase project and public Vercel Preview are configured as described in [docs/deployment.md](docs/deployment.md). Customer and driver links are delivered through WhatsApp, so the operational workflow has no SMTP dependency. Staff accounts still use administrator-managed Supabase email/password login. Passwordless driver Auth administration runs in the versioned `driver-access-v1` Supabase Edge Function after an explicit staff authorization check. Vercel uses `SUPABASE_SECRET_KEY` for validated customer-link/Storage operations and narrow payment persistence/reconciliation RPCs; it must never reach browser code.
+The hosted Free-plan Supabase project and public Vercel Preview are configured as described in [docs/deployment.md](docs/deployment.md). Customer and driver links are delivered through WhatsApp, so the operational workflow has no SMTP dependency. Staff accounts still use administrator-managed Supabase email/password login. Driver provisioning/access management uses the staff-authorized `driver-access-v1` Edge Function. Reusable assignment sign-in additionally uses server-only Auth administration after checking the hashed credential and current assignment/account state. Vercel's `SUPABASE_SECRET_KEY` also supports validated customer-link/Storage and payment operations; it must never reach browser code.
 
 For a UI-only preview without Docker or credentials, run:
 
