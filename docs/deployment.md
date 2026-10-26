@@ -2,10 +2,18 @@
 
 Last updated: 26 October 2026
 
+Latest copy-only release: section 4 of customer intake uses **þjónustuaðili** /
+**service provider**. Source `2716c4b`, Ready Preview
+`dpl_BhHDSAkCi881RKdohFyatvZMQeE8`,
+`vegstod-h6qg4fqqc-freyrs-projects-fad4047a.vercel.app`, serves the stable alias.
+All 13 customer-form tests and the hosted build/type check passed. No database,
+business flow or other local editor/map changes were included.
+
 Released reusable driver assignment links: source `2b764af`, migration
 `20261026174440`, Ready Preview `dpl_CEeCgGDaE4r6DugtjRJbru5jW7M3`,
 `vegstod-bx65py2a8-freyrs-projects-fad4047a.vercel.app`. The stable
-`https://vegstod.vercel.app` alias serves this release. The isolated checkout
+`https://vegstod.vercel.app` alias now serves the copy follow-up above, preserving
+this driver-link release. The isolated checkout
 preserves the payment fix below and excludes unfinished map/editor changes.
 New assignment links reopen across browsers until completion, cancellation,
 reassignment or disabled access; legacy onboarding links remain one-time. Staff
@@ -72,8 +80,8 @@ DEMO_MODE=false
 
 On 21 October, Freyr authorized myPOS collection on the existing public Preview.
 `vegstod.vercel.app` now points to
-`vegstod-bx65py2a8-freyrs-projects-fad4047a.vercel.app` after the 26 October
-driver-link release, preserving that day's payment fix. Payment configuration is
+`vegstod-h6qg4fqqc-freyrs-projects-fad4047a.vercel.app` after the 26 October
+copy follow-up, preserving the driver-link and payment fixes. Payment configuration is
 installed in **Preview**; the unused Production target remains unchanged.
 Server-only sensitive variables hold the merchant Client ID/Secret and
 `PAYMENT_WORKER_SECRET`. Collection and production API creation are enabled,

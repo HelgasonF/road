@@ -2,12 +2,21 @@
 
 Last updated: 26 October 2026
 
+Customer-form copy follow-up: section 4 now says **þjónustuaðili** in Icelandic
+and **service provider** in English. Source `2716c4b` passed all 13 customer-form
+tests and the Vercel build/type check. Ready Preview
+`vegstod-h6qg4fqqc-freyrs-projects-fad4047a.vercel.app`
+(`dpl_BhHDSAkCi881RKdohFyatvZMQeE8`) now serves the stable site. This release
+changes only that bilingual sentence; unfinished local map/editor edits remain
+excluded. No database or workflow change was made.
+
 Released reusable driver assignment links: the same new assignment link reopens
 across browsers until completion/cancellation/reassignment or disabled access.
 585 application tests, 24 integration tests, 431 SQL assertions and actual
 two-browser Auth/job-completion acceptance pass. Migration `20261026174440` is
-applied; source `2b764af` is live on Ready Preview
-`vegstod-bx65py2a8-freyrs-projects-fad4047a.vercel.app`. Legacy onboarding links
+applied; source `2b764af` was first deployed on Ready Preview
+`vegstod-bx65py2a8-freyrs-projects-fad4047a.vercel.app` and is preserved by the
+copy follow-up above. Legacy onboarding links
 remain one-time; generate/send **Búa til verkefnistengil** from the assigned job
 once. Unrelated local map/editor edits are excluded. See the
 [driver-link record](reusable-driver-links-2026-10-26.md).
@@ -47,7 +56,7 @@ checks pass with no console errors/warnings and no new charge or message. See th
 [audit/release record](phone-location-release-2026-10-23.md).
 
 The live customer site is **https://vegstod.vercel.app**, served by the Ready
-Vercel Preview deployment `vegstod-bx65py2a8-freyrs-projects-fad4047a.vercel.app`.
+Vercel Preview deployment `vegstod-h6qg4fqqc-freyrs-projects-fad4047a.vercel.app`.
 The separate Vercel Production target is unused. myPOS REST v1.1 collection is
 enabled with the owner's server-only merchant credentials.
 

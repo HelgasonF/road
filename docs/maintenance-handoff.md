@@ -2,13 +2,20 @@
 
 Last updated: 26 October 2026 (Atlantic/Reykjavik)
 
-Current driver-link release: reusable assignment links are implemented and live,
+Latest live source: `2716c4b`, a copy-only customer-form section 4 update using
+**þjónustuaðili** / **service provider**. All 13 customer-form tests and the hosted
+build/type check pass. The stable alias serves Ready Preview
+`vegstod-h6qg4fqqc-freyrs-projects-fad4047a.vercel.app`
+(`dpl_BhHDSAkCi881RKdohFyatvZMQeE8`). It preserves the driver/payment releases
+below and excludes the existing uncommitted map/editor work.
+
+Driver-link release: reusable assignment links are implemented and live,
 including verified fresh-browser sign-in, repeat access, target selection
 and closure through the normal driver completion action. The isolated candidate
 passes build/types/lint, 585 application tests, 24 integration tests and 431 SQL
-assertions. Migration `20261026174440` is applied; source `2b764af` is deployed on
+assertions. Migration `20261026174440` is applied; source `2b764af` was deployed on
 Ready Preview `vegstod-bx65py2a8-freyrs-projects-fad4047a.vercel.app`
-(`dpl_CEeCgGDaE4r6DugtjRJbru5jW7M3`), serving `https://vegstod.vercel.app`.
+(`dpl_CEeCgGDaE4r6DugtjRJbru5jW7M3`), followed by the copy-only release above.
 Preserve unrelated
 job-editor/address-map edits; the candidate excludes them. See the
 [driver-link record](reusable-driver-links-2026-10-26.md). It preserves the payment
