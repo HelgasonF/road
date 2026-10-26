@@ -437,7 +437,7 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token, payme
         </section>
 
         <section className="customer-form-card">
-          <div className="customer-card-heading"><span>4</span><div><h2>{t.problem}</h2><p>{language === "en" ? "Include anything the driver should know before arriving." : "Skráðu allt sem ökumaður þarf að vita áður en hann kemur."}</p></div></div>
+          <div className="customer-card-heading"><span>4</span><div><h2>{t.problem}</h2><p>{language === "en" ? "Include anything the service provider should know before arriving." : "Skráðu allt sem þjónustuaðili þarf að vita áður en hann kemur."}</p></div></div>
           <div className="customer-problem-fields">
             <label>
               <span id="customer-requiredCapability-label">{t.assistance}</span>
