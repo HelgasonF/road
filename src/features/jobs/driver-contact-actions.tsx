@@ -6,7 +6,7 @@ import { PhoneCall, Send } from "lucide-react";
 import { useState, useTransition } from "react";
 
 import { recordJobContactAction } from "@/features/job-timeline/actions";
-import { createDriverAccessLinkAction } from "@/features/operators/actions";
+import { createDriverAssignmentAccessLinkAction } from "@/features/operators/assignment-access-actions";
 import { ManualWhatsAppMessage } from "@/features/whatsapp/manual-message";
 import type { JobContactPurpose } from "@/lib/domain/types";
 import type { DriverAccessStatus } from "@/lib/domain/types";
@@ -101,7 +101,7 @@ export function DriverAssignmentContactActions({
   function createAssignmentLink() {
     setError(null);
     startTransition(async () => {
-      const result = await createDriverAccessLinkAction({ operatorId });
+      const result = await createDriverAssignmentAccessLinkAction({ jobId, operatorId });
       if (!result.ok || !result.data) {
         setError(result.error ?? "Ekki tókst að búa til ökumannstengil.");
         return;
@@ -122,7 +122,7 @@ export function DriverAssignmentContactActions({
             onClick={createAssignmentLink}
             aria-label={`Búa til öruggan úthlutunartengil fyrir ${summary.driverName}`}
           >
-            <Send size={14} /> {pending ? "Bý til…" : "Búa til tengil"}
+            <Send size={14} /> {pending ? "Bý til…" : "Búa til verkefnistengil"}
           </button>
         ) : null}
       </div>
@@ -137,7 +137,7 @@ export function DriverAssignmentContactActions({
           recipientName={summary.driverName}
         />
       ) : (
-        <p>Býr til einkatengil fyrir ökumanninn. Afritaðu síðan skilaboðin í WhatsApp Business.</p>
+        <p>Býr til einkatengil sem má opna aftur meðan úthlutunin er virk. Afritaðu síðan skilaboðin í WhatsApp Business.</p>
       )}
       {error ? <p className="compact-error" role="alert">{error}</p> : null}
     </div>

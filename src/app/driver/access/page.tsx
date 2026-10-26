@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { KeyRound, MapPinned } from "lucide-react";
 
 import { DriverAccessForm } from "@/features/auth/driver-access-form";
+import { DriverAssignmentAccessForm } from "@/features/auth/assignment-access-form";
+import { assignmentTokenSchema } from "@/features/auth/assignment-link";
 import type { DriverAccessTokenType } from "@/features/operators/driver-access";
 import { decodeDriverAccessButtonCode } from "@/features/whatsapp/messages";
 
@@ -10,14 +12,16 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Ökumannsaðgangur | Iceland Road Assistance",
   robots: { index: false, follow: false },
+  referrer: "no-referrer",
 };
 
 interface DriverAccessPageProps {
-  searchParams: Promise<{ code?: string; token_hash?: string; type?: string }>;
+  searchParams: Promise<{ code?: string; token_hash?: string; type?: string; assignment?: string }>;
 }
 
 export default async function DriverAccessPage({ searchParams }: DriverAccessPageProps) {
   const params = await searchParams;
+  const assignment = assignmentTokenSchema.safeParse(params.assignment);
   const buttonCode = decodeDriverAccessButtonCode(params.code);
   const tokenHash = params.token_hash ?? buttonCode?.tokenHash;
   const type = params.type ?? buttonCode?.type;
@@ -33,7 +37,9 @@ export default async function DriverAccessPage({ searchParams }: DriverAccessPag
         </div>
         <p className="eyebrow">Iceland Road Assistance</p>
         <h1>Ökumannsaðgangur</h1>
-        {tokenHash && validType ? (
+        {params.assignment !== undefined && assignment.success ? (
+          <DriverAssignmentAccessForm token={assignment.data} />
+        ) : params.assignment === undefined && tokenHash && validType ? (
           <DriverAccessForm tokenHash={tokenHash} type={validType} />
         ) : (
           <div className="access-link-error">

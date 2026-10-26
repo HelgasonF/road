@@ -12,7 +12,8 @@ export const dynamic = "force-dynamic";
 
 const demoDriverOperatorId = "10000000-0000-4000-8000-000000000002";
 
-export default async function DriverPage() {
+export default async function DriverPage({ searchParams }: { searchParams: Promise<{ job?: string }> }) {
+  const { job: requestedJobId } = await searchParams;
   const demoMode = isDemoMode();
   if (!demoMode && !hasSupabaseConfig()) redirect("/login");
 
@@ -31,5 +32,6 @@ export default async function DriverPage() {
   const operator = operators.find((item) => item.id === identity.operatorId);
   if (!operator) redirect("/login");
 
-  return <DriverWorkspace demoMode={false} jobs={jobs} operator={operator} />;
+  const initialJobId = jobs.find((job) => job.id === requestedJobId)?.id;
+  return <DriverWorkspace key={initialJobId ?? operator.id} initialJobId={initialJobId} demoMode={false} jobs={jobs} operator={operator} />;
 }

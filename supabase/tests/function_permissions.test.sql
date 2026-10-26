@@ -129,7 +129,7 @@ select is(
     join pg_namespace namespace on namespace.oid = procedure.pronamespace
     where namespace.nspname = 'app_private' and procedure.prosecdef
   ),
-  17::bigint,
+  19::bigint,
   'all privileged implementations are in the private schema'
 );
 
@@ -147,7 +147,7 @@ select is(
       and has_function_privilege('authenticated', wrapper.oid, 'EXECUTE')
       and has_function_privilege('service_role', wrapper.oid, 'EXECUTE')
   ),
-  17::bigint,
+  18::bigint,
   'existing RPC signatures remain callable through invoker wrappers'
 );
 

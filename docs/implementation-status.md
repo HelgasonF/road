@@ -2,6 +2,13 @@
 
 Last updated: 26 October 2026
 
+Reusable driver assignment links: Freyr approved reopening the same link across
+browsers until completion/cancellation/reassignment. Implementation is verified
+in an isolated release: 585 application tests, 24 integration tests, 431 SQL
+assertions and actual two-browser Auth/job-completion acceptance pass. Migration
+`20261026174440` and deployment are pending; unrelated local map/editor edits are
+excluded. See the [driver-link record](reusable-driver-links-2026-10-26.md).
+
 Released payment fix: controlled unpaid comparisons isolated the legacy myPOS
 rejection to accented customer names; the `is` language code works. The provider
 now receives a Latin display spelling while actual names remain in Vegstoð.

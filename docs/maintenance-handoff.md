@@ -1,6 +1,16 @@
 # Road / Iceland Road Assistance maintenance handoff
 
-Last updated: 23 October 2026 (Atlantic/Reykjavik)
+Last updated: 26 October 2026 (Atlantic/Reykjavik)
+
+Current driver-link work: reusable assignment links are implemented and verified
+locally, including actual fresh-browser sign-in, repeat access, target selection
+and closure through the normal driver completion action. The isolated candidate
+passes build/types/lint, 585 application tests, 24 integration tests and 431 SQL
+assertions. Migration `20261026174440` and release are pending. Preserve unrelated
+job-editor/address-map edits; the candidate excludes them. See the
+[driver-link record](reusable-driver-links-2026-10-26.md). The payment fix from
+`e13d642` is already live on `vegstod-q8hdb4e0f-freyrs-projects-fad4047a.vercel.app`;
+the 23 October release notes below are an earlier checkpoint.
 
 Released on 23 October: the shared international phone
 input/display update is complete, with **no default country** for new fields.

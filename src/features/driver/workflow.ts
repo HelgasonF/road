@@ -36,3 +36,9 @@ export function formatDriverTimestamp(value: string) {
   const minutes = String(date.getUTCMinutes()).padStart(2, "0");
   return `${day}.${month}. kl. ${hours}:${minutes}`;
 }
+
+export function initialDriverJobId(jobs: { id: string; status: string }[], requested: unknown) {
+  return typeof requested === "string" && jobs.some((job) => job.id === requested)
+    ? requested
+    : jobs.find((job) => job.status !== "completed" && job.status !== "cancelled")?.id ?? jobs[0]?.id ?? null;
+}

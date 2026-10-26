@@ -47,6 +47,6 @@ export function buildDriverAssignmentMessage(
     "Opnaðu örugga tengilinn til að sjá nákvæma staðsetningu og upplýsingar viðskiptavinar:",
     driverUrl.trim(),
     "",
-    "Tengillinn rennur út. Ekki framsenda tengilinn.",
+    "Þú getur opnað tengilinn aftur meðan verkefnið er í gangi. Ekki framsenda tengilinn.",
   ].join("\n");
 }

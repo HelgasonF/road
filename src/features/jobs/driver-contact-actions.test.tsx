@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { recordJobContactAction } from "@/features/job-timeline/actions";
-import { createDriverAccessLinkAction } from "@/features/operators/actions";
+import { createDriverAssignmentAccessLinkAction } from "@/features/operators/assignment-access-actions";
 
 import type { DriverJobContactSummary } from "./driver-contact";
 import {
@@ -14,10 +14,10 @@ vi.mock("@/features/job-timeline/actions", () => ({
   recordJobContactAction: vi.fn().mockResolvedValue({ ok: true }),
 }));
 
-vi.mock("@/features/operators/actions", () => ({
-  createDriverAccessLinkAction: vi.fn().mockResolvedValue({
+vi.mock("@/features/operators/assignment-access-actions", () => ({
+  createDriverAssignmentAccessLinkAction: vi.fn().mockResolvedValue({
     ok: true,
-    data: { path: "/driver/access?token_hash=secure-token&type=magiclink" },
+    data: { path: "/driver/access?assignment=reusable-token" },
   }),
 }));
 
@@ -79,12 +79,13 @@ describe("driver job contact actions", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Búa til öruggan úthlutunartengil fyrir Bjarni Ólafsson" }));
 
-    expect(createDriverAccessLinkAction).toHaveBeenCalledWith({ operatorId });
+    expect(createDriverAssignmentAccessLinkAction).toHaveBeenCalledWith({ jobId, operatorId });
     const link = await screen.findByRole("link", { name: "Opna WhatsApp fyrir Bjarni Ólafsson" });
 
     const href = link.getAttribute("href")!;
     const message = new URL(href).searchParams.get("text");
-    expect(message).toContain("http://localhost:3000/driver/access?token_hash=secure-token&type=magiclink");
+    expect(message).toContain("http://localhost:3000/driver/access?assignment=reusable-token");
+    expect(message).toContain("aftur meðan verkefnið er í gangi");
     expect(message).toContain("Verkefninu hefur verið úthlutað");
 
     fireEvent.click(link);

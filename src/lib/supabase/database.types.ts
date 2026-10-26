@@ -572,6 +572,14 @@ export type Database = {
       };
     };
     Functions: {
+      create_driver_assignment_link: {
+        Args: { p_job_id: string; p_operator_id: string; p_token_hash: string };
+        Returns: string;
+      };
+      resolve_driver_assignment_link: {
+        Args: { p_token_hash: string };
+        Returns: { assignment_id: string; job_id: string; operator_id: string; driver_user_id: string }[];
+      };
       prepare_customer_payment_intake: {
         Args: { p_token_hash: string; p_details: Json; p_language: string; p_environment: string; p_merchant_id: string; p_provider_api: string; p_amount_isk: number };
         Returns: Json;

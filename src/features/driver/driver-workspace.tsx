@@ -46,9 +46,10 @@ import {
   updateDriverJobStatusAction,
 } from "./actions";
 import { DriverMap } from "./driver-map";
-import { buildDirectionsHref, formatDriverTimestamp, getDriverStatusActions } from "./workflow";
+import { buildDirectionsHref, formatDriverTimestamp, getDriverStatusActions, initialDriverJobId } from "./workflow";
 
 interface DriverWorkspaceProps {
+  initialJobId?: string;
   demoMode: boolean;
   jobs: Job[];
   operator: Operator;
@@ -67,15 +68,11 @@ function jobVehicle(job: Job) {
 
 const DRIVER_LIVE_TABLES = ["jobs", "job_assignments"] as const;
 
-export function DriverWorkspace({ demoMode, jobs, operator }: DriverWorkspaceProps) {
+export function DriverWorkspace({ demoMode, jobs, operator, initialJobId }: DriverWorkspaceProps) {
   const router = useRouter();
   useLiveRefresh({ enabled: !demoMode, tables: DRIVER_LIVE_TABLES });
   const [pending, startTransition] = useTransition();
-  const [selectedJobId, setSelectedJobId] = useState(
-    jobs.find((job) => job.status !== "completed" && job.status !== "cancelled")?.id
-      ?? jobs[0]?.id
-      ?? null,
-  );
+  const [selectedJobId, setSelectedJobId] = useState(() => initialDriverJobId(jobs, initialJobId));
   const [showDecline, setShowDecline] = useState(false);
   const [declineReason, setDeclineReason] = useState("");
   const [error, setError] = useState<string | null>(null);

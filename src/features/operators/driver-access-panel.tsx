@@ -92,6 +92,8 @@ export function DriverAccessPanel({ demoMode, operator }: DriverAccessPanelProps
         ) : null}
       </div>
 
+      <p className="muted-copy">Þessi aðgangstengill er fyrir innskráningu. Fyrir úthlutað verkefni skaltu búa til verkefnistengil á verkefninu; hann má opna aftur þar til verkefninu lýkur.</p>
+
       <div className="driver-access-details">
         <div className="info-row">
           <MessageCircle size={18} />
