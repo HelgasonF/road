@@ -26,7 +26,7 @@ function reservation(data: unknown, error: unknown) {
   if (error || !parsed.success) {
     // Explicit application diagnostics only; never return a database message.
     const code = typeof error === "object" && error !== null && "message" in error ? error.message : null;
-    if (code === "payment_details_locked" || code === "payment_link_unavailable") throw new PaymentError(code);
+    if (["payment_details_locked", "payment_link_unavailable", "payment_creation_unresolved"].includes(String(code))) throw new PaymentError(String(code));
     throw new PaymentError("payment_storage_error");
   }
   return { claimed: parsed.data.claimed, request: paymentFromRow(parsed.data.request) };

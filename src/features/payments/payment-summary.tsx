@@ -1,7 +1,8 @@
 "use client";
 
 import { CreditCard, LockKeyhole } from "lucide-react";
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { resumeCustomerCheckoutAction } from "./checkout-actions";
 import type { PublicPaymentSummary } from "./public-summary";
 
 const copy = {
@@ -13,6 +14,8 @@ const copy = {
     submitted: "Your details have been submitted to dispatch.", review: "Payment received. Dispatch is reviewing your request.",
     unavailable: "This payment needs checking. Please contact Iceland Road Assistance dispatch.",
     secure: "Card details are entered securely on myPOS.", refresh: "Refresh payment status",
+    retry: "Try payment again", retryHelp: "Payment setup failed. Your details are saved; you can try again without entering them again.",
+    preparing: "Preparing payment…", retryError: "Payment could not be prepared. Please contact dispatch.",
   },
   is: {
     title: "Greiðsla fyrir þjónustu", initial: "Upphafsgjald fyrir aðstoð", amount: "Upphæð til greiðslu", vehicle: "Ökutæki",
@@ -22,13 +25,27 @@ const copy = {
     submitted: "Upplýsingarnar þínar hafa verið sendar til aðgerðastjórnar.", review: "Greiðsla móttekin. Aðgerðastjórn er að fara yfir beiðnina.",
     unavailable: "Skoða þarf stöðu greiðslunnar. Hafðu samband við aðgerðastjórn Iceland Road Assistance.",
     secure: "Kortaupplýsingar eru færðar inn á öruggri greiðslusíðu myPOS.", refresh: "Uppfæra greiðslustöðu",
+    retry: "Reyna greiðslu aftur", retryHelp: "Ekki tókst að undirbúa greiðsluna. Upplýsingarnar þínar eru vistaðar og þú getur reynt aftur án þess að fylla þær út á ný.",
+    preparing: "Undirbý greiðslu…", retryError: "Ekki tókst að undirbúa greiðslu. Hafðu samband við aðgerðastjórn.",
   },
 };
 
-export function PaymentSummary({ summary }: { summary: PublicPaymentSummary }) {
+export function PaymentSummary({ summary, initialToken }: { summary: PublicPaymentSummary; initialToken?: string }) {
   const [language, setLanguage] = useState<"en" | "is">("en");
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
   const t = copy[language];
   const paid = summary.status === "paid";
+  function retry() {
+    setError(null);
+    startTransition(async () => {
+      try {
+        const result = await resumeCustomerCheckoutAction({ token: initialToken, language });
+        if (result.ok) window.location.assign(result.data.checkoutUrl);
+        else setError(result.error);
+      } catch { setError(t.retryError); }
+    });
+  }
   return (
     <main className="customer-intake-page payment-summary-page" lang={language}>
       <div className="customer-intake-brand"><span aria-hidden="true">IR</span><strong>Iceland Road Assistance</strong></div>
@@ -44,7 +61,11 @@ export function PaymentSummary({ summary }: { summary: PublicPaymentSummary }) {
           <div className="payment-confirmed" role="status"><strong>✓ {t.paid}</strong>{summary.intakeState ? <p>{summary.intakeState === "submitted" ? t.submitted : summary.intakeState === "review_required" ? t.review : t.pending}</p> : null}</div>
         ) : summary.checkoutUrl ? (
           <a className="customer-submit-button payment-pay-button" href={summary.checkoutUrl} rel="noreferrer"><LockKeyhole size={18} />{t.pay}</a>
-        ) : <p className="customer-form-error" role="status">{t.unavailable}</p>}
+        ) : summary.retryAllowed && initialToken ? <>
+          <p role="status">{t.retryHelp}</p>
+          <button type="button" className="customer-submit-button payment-pay-button" disabled={pending} onClick={retry}>{pending ? t.preparing : t.retry}</button>
+        </> : <p className="customer-form-error" role="status">{t.unavailable}</p>}
+        {error ? <p className="customer-form-error" role="alert">{error}</p> : null}
         {!paid && summary.checkoutUrl ? <small><LockKeyhole size={13} /> {t.secure}</small> : null}
         <button type="button" className="payment-refresh-button" onClick={() => window.location.reload()}>{t.refresh}</button>
       </section>

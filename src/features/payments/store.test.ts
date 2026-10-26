@@ -38,8 +38,8 @@ describe("payment storage boundary", () => {
   });
   it("persists an opaque safe error code instead of raw provider data", async () => {
     rpc.mockResolvedValueOnce({ data: { ...row, status: "creation_unknown", provider_code: null, payment_url: null }, error: null });
-    await createPaymentStore().finish(row.id, { status: "creation_unknown", errorCode: "payment_provider_unavailable" });
-    expect(rpc).toHaveBeenCalledWith("finish_job_payment_creation", { p_id: row.id, p_provider_code: null, p_payment_url: null, p_status: "creation_unknown", p_error_code: "payment_provider_unavailable" });
+    await createPaymentStore().finish(row.id, { reference: row.reference, status: "creation_unknown", errorCode: "payment_provider_unavailable", diagnostics: { httpStatus: 503 } });
+    expect(rpc).toHaveBeenCalledWith("finish_job_payment_creation_v2", { p_id: row.id, p_provider_code: null, p_payment_url: null, p_status: "creation_unknown", p_error_code: "payment_provider_unavailable", p_reference: row.reference, p_diagnostics: { httpStatus: 503 } });
   });
   it("limits reconciliation candidates to one account/environment and ten requests", async () => {
     result.mockResolvedValueOnce({ data: [row], error: null });

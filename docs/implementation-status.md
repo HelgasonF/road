@@ -1,6 +1,19 @@
 # Iceland Road Assistance implementation status
 
-Last updated: 23 October 2026
+Last updated: 26 October 2026
+
+Released payment fix: controlled unpaid comparisons isolated the legacy myPOS
+rejection to accented customer names; the `is` language code works. The provider
+now receives a Latin display spelling while actual names remain in Vegstoð.
+Explicit recovery of definite creation failures retains history and safe
+diagnostics, supports replacement links, and fences stale attempt results.
+Uncertain/Paid attempts cannot be reclaimed. Build/types/lint, the full suite
+(576 tests), real unpaid checks in both languages and 404 SQL assertions passed.
+Hosted migration `20261026115922` is applied; the stable alias points to Ready
+Preview `vegstod-q8hdb4e0f-freyrs-projects-fad4047a.vercel.app`. See the
+[investigation/release record](payment-failure-investigation-2026-10-26.md).
+The payment fix is also recorded in the user-requested Git checkpoint on
+`chore/vercel-git-connection`; existing job/location edits remain outside it.
 
 Released phone formatting update: `libphonenumber-js`, a shared country-code picker
 with **no default country**, formatting while typing, E.164 submissions and
@@ -23,7 +36,7 @@ checks pass with no console errors/warnings and no new charge or message. See th
 [audit/release record](phone-location-release-2026-10-23.md).
 
 The live customer site is **https://vegstod.vercel.app**, served by the Ready
-Vercel Preview deployment `vegstod-vr1npotdf-freyrs-projects-fad4047a.vercel.app`.
+Vercel Preview deployment `vegstod-q8hdb4e0f-freyrs-projects-fad4047a.vercel.app`.
 The separate Vercel Production target is unused. myPOS REST v1.1 collection is
 enabled with the owner's server-only merchant credentials.
 

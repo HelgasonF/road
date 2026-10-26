@@ -53,4 +53,14 @@ describe.skipIf(!connectionString)("PostgreSQL payment reservation concurrency",
     const count = await clients[0].query("select count(*)::integer as count from public.customer_payment_intakes where job_id = $1", [checkoutJobId]);
     expect(count.rows[0].count).toBe(1);
   });
+  it("lets exactly one concurrent retry reclaim a definitively failed attempt", async () => {
+    const first = (await clients[0].query("select id,reference from public.job_payment_requests where job_id=$1 and purpose='initial_fee'", [jobId])).rows[0];
+    await clients[0].query("select public.finish_job_payment_creation_v2($1,$2,null,null,'creation_failed','payment_provider_rejected','{\"httpStatus\":400,\"providerCode\":\"4\"}')", [first.id,first.reference]);
+    const sql = "select public.reserve_job_payment_request($1,'initial_fee','sandbox','concurrency-merchant','rest_v1_1',5000,$2) as result";
+    const results = await Promise.all(clients.slice(1).map((client) => client.query(sql,[jobId,staffId])));
+    expect(results.map((result) => result.rows[0].result.claimed).sort()).toEqual([false,true]);
+    expect(results[0].rows[0].result.request.reference).toBe(results[1].rows[0].result.request.reference);
+    expect(results[0].rows[0].result.request.reference).not.toBe(first.reference);
+    expect(results[0].rows[0].result.request.id).toBe(first.id);
+  });
 });

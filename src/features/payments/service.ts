@@ -18,7 +18,7 @@ export function createPaymentService(provider: PaymentProvider, store: PaymentSt
     if (!claimed) {
       if (request.status === "expired" || request.status === "cancelled") throw new PaymentError("payment_request_closed");
       if (request.providerCode && request.paymentUrl) return request;
-      // Never reclaim abandoned/failed/ambiguous reservations automatically.
+      // Only an atomic store claim can authorize a new creation attempt.
       throw new PaymentError("payment_creation_unresolved", true);
     }
 
@@ -32,7 +32,8 @@ export function createPaymentService(provider: PaymentProvider, store: PaymentSt
       const failure = error instanceof PaymentError ? error : new PaymentError("payment_creation_unresolved", true);
       try {
         await store.finish(request.id, {
-          status: failure.uncertain ? "creation_unknown" : "creation_failed", errorCode: failure.code,
+          reference: request.reference, status: failure.uncertain ? "creation_unknown" : "creation_failed", errorCode: failure.code,
+          diagnostics: failure.diagnostics,
         });
       } catch {
         // The durable reservation remains in place even if this write fails.
@@ -41,7 +42,7 @@ export function createPaymentService(provider: PaymentProvider, store: PaymentSt
       throw failure;
     }
     try {
-      return await store.finish(request.id, { status: "pending", code: receipt.code, url: receipt.url });
+      return await store.finish(request.id, { reference: request.reference, status: "pending", code: receipt.code, url: receipt.url });
     } catch {
       throw new PaymentError("payment_persistence_uncertain", true);
     }

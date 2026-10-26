@@ -6,6 +6,7 @@ import { ManualWhatsAppMessage } from "@/features/whatsapp/manual-message";
 import { verifyJobPaymentRequestAction } from "./actions";
 import { createServicePaymentLinkAction, getPaymentPanelAction } from "./checkout-actions";
 import type { PaymentRequest, PaymentStatus } from "./types";
+import { canRetryPaymentCreation } from "./creation-recovery";
 
 const labels: Record<PaymentStatus, string> = {
   creating: "Í undirbúningi", creation_unknown: "Þarf yfirferð", creation_failed: "Undirbúningur mistókst",
@@ -124,11 +125,12 @@ export function PaymentPanel({ jobId, customerName, customerPhone, intakePending
           {watching ? <p className="muted-copy">Greiðslustaða uppfærist sjálfkrafa.</p> : null}
           {statusRefreshFailed ? <p className="compact-error" role="status">Ekki tókst að uppfæra greiðslustöðu. Reyni aftur sjálfkrafa.</p> : null}
           {state.intakeReviewRequired ? <p className="compact-error" role="alert">Upphafsgjaldið er greitt en upplýsingarnar bíða yfirferðar hjá starfsfólki. Ekki senda nýja greiðslubeiðni.</p> : null}
+          {first && canRetryPaymentCreation(first) ? <p className="compact-error" role="status">Undirbúningur greiðslu mistókst. Viðskiptavinurinn getur opnað formtengilinn aftur og reynt greiðslu á ný.</p> : null}
           {intakePending ? <p className="muted-copy">{first?.status === "paid" ? "Upphafsgjaldið er greitt. Upplýsingarnar bíða staðfestingar." : "Viðskiptavinurinn fyllir út upplýsingarnar og greiðir upphafsgjaldið í formtenglinum."}</p> : second?.status === "paid" ? <p className="payment-confirmed" role="status">Þjónustugreiðsla hefur verið staðfest hjá myPOS.</p> : <form className="payment-service-form" onSubmit={createLink}>
             <label className="field"><span>Upphæð fyrir þjónustu (ISK)</span><input type="number" inputMode="numeric" min={1} max={2147483647} step={1} required value={locked ? second!.amountIsk : amount} disabled={pending || locked} onChange={(event) => setAmount(event.target.value)} /></label>
             <label className="field"><span>Lýsing fyrir viðskiptavin</span><textarea value={state.serviceDescription ?? description} minLength={3} maxLength={500} required disabled={pending || locked} onChange={(event) => setDescription(event.target.value)} placeholder="Lýstu þjónustunni sem greiðslan nær yfir" /></label>
             {locked ? <small>Upphæð og lýsing eru læstar. Nýr síðutengill afturkallar þann gamla og notar sömu greiðslubeiðni.</small> : null}
-            <button className="secondary-button full-button" type="submit" disabled={pending || !state.ready || ["expired", "cancelled", "creation_unknown", "creating", "creation_failed"].includes(second?.status ?? "")}>{pending ? "Undirbý…" : locked ? "Nýr tengill fyrir sömu greiðslu" : "Undirbúa seinni greiðslu"}</button>
+            <button className="secondary-button full-button" type="submit" disabled={pending || !state.ready || ["expired", "cancelled", "creation_unknown", "creating"].includes(second?.status ?? "") || (second?.status === "creation_failed" && !canRetryPaymentCreation(second))}>{pending ? "Undirbý…" : second && canRetryPaymentCreation(second) ? "Reyna undirbúning greiðslu aftur" : locked ? "Nýr tengill fyrir sömu greiðslu" : "Undirbúa seinni greiðslu"}</button>
           </form>}
           {message ? <ManualWhatsAppMessage key={message} message={message} phone={customerPhone} recipientName={customerName} /> : null}
           {error ? <p className="compact-error" role="alert">{error}</p> : null}

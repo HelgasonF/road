@@ -1,5 +1,16 @@
 # myPOS existing REST API v1.1
 
+26 October payment fix: controlled unpaid comparisons isolated HTTP 400/code 4
+to accented customer names in the legacy API. Both `is` and `en` accept the same
+plain name. The adapter now sends a Latin spelling to myPOS while preserving the
+actual name in the draft/job. Definitively rejected creations can be retried
+explicitly, including from replacement intake links; uncertain attempts remain
+reserved. The recovery migration and v2 finish RPC preserve attempt history,
+safe diagnostics and per-attempt reference fencing. See the
+[investigation and verification](payment-failure-investigation-2026-10-26.md).
+The fix is live on the stable Vercel Preview alias; hosted recovery migration
+`20261026115922` is applied. Consult that record for release and verification.
+
 Hosted release, 21 October 2026: payment collection is enabled on the existing
 public site, `https://vegstod.vercel.app`, with the fixed **10,490 ISK** first fee
 and dispatcher-entered second payment. The payment migrations and scheduler
@@ -138,7 +149,7 @@ References: [legacy v1.1 overview](https://demo.developers.mypos.eu/en/doc/more_
 
 Before reserving a collection slot, `PaymentProvider.prepare` validates the existing customer fields and performs cached read-only capability checks. Missing data, an unsupported language, or unavailable ISK therefore does not consume the job's payment slot. These checks also run inside the adapter before any creation POST.
 
-- **Customer name:** normal legacy requests require `client_name`. The existing staff action supplies `jobs.customer_name`. A missing/blank name raises `payment_customer_name_required` before authentication or persistence. Phone-first intake can have no name yet. The implemented **Pay and submit** flow uses the validated name from the private form draft before final intake submission, so no placeholder name is needed. The vendor documents the field as required text but does not describe a cardholder-name match. Generic placeholder use in production has not been verified.
+- **Customer name:** normal legacy requests require `client_name`. The staff action supplies `jobs.customer_name`; customer checkout uses the private form draft. Missing/blank names fail before reservation. The adapter sends a Latin spelling because accented names reproducibly cause HTTP 400/code 4, even with explicit UTF-8 or escaped JSON. Actual names remain unchanged in the draft/job; no placeholder is introduced. Both languages passed unpaid checks through this adapter. The vendor does not document a cardholder-name match.
 - **ISK:** the actual settlement endpoint returns `settlement_currency` and an `account` that can be null. Creation requires an ISK entry with a connected non-reserve account; merely listing ISK is insufficient. Missing eligibility raises `payment_isk_unavailable`. The public sandbox listed ISK but had no connected ISK account. The owner's production account passed this eligibility check on 21 October and subsequently accepted the explicitly approved 35 ISK test request described below.
 - **Language:** the supplied caller locale is checked against the vendor's language list and is passed through. An unsupported choice raises `payment_language_unsupported`. If no locale exists, the adapter sends the documented empty value for the merchant/provider default. Empty language was accepted in sandbox; no new application language policy is imposed.
 - **Expiry:** caller expiry is sent as `expiry_date`, whose behavior was tested in sandbox. The table's `expired_date` spelling conflicts with its examples. The sandbox accepted `expiry_date` and returned the requested date in `expiry_on` at 23:59:59. Production acceptance remains part of the authorized live test.
@@ -167,7 +178,7 @@ The payment migrations are `supabase/migrations/20261020223002_add_mypos_payment
 
 Staff-only SELECT RLS and server-only mutation RPCs are retained. The unique `(job_id, purpose, environment)` slot is reserved atomically before an external creation POST. Concurrent/repeated clicks cannot create a second request. A known open request can be returned again at the same amount and account. Closed requests, changed amounts/account associations and unresolved attempts fail safely.
 
-Creation POSTs never retry automatically, including after 401, timeout, 429, 5xx, malformed success or failed persistence. Ambiguous outcomes remain reserved for investigation under their original `IRA-<UUID>` reference. Definite post-reservation rejection also retains its slot. Do not clear a slot or create a replacement while the first remote outcome is unresolved. Authentication/permission/provider errors are safe opaque codes; raw bodies/exceptions are not returned or stored. GET may refresh authentication and retry once after 401; 403, rate limiting and other failures are not retried. Every request has a ten-second timeout and rejects redirects.
+Creation POSTs never retry automatically, including after 401, timeout, 429, 5xx, malformed success or failed persistence. Ambiguous outcomes remain reserved for investigation under their original `IRA-<UUID>` reference. An explicit customer/staff action may atomically reclaim an allowlisted `creation_failed` rejection with no checkout code/URL and an unchanged account and amount. Migration `20261026115922` retains old failure evidence, safe HTTP/numeric provider diagnostics and each attempt's outcome. Every retry changes its reference; `finish_job_payment_creation_v2` fences stale results. A replacement intake link can rebind only a definitively failed draft. Never clear an unresolved slot. Raw provider bodies/exceptions are not returned or stored. GET may refresh authentication and retry once after 401; 403, rate limiting and other failures are not retried. Every request has a ten-second timeout and rejects redirects.
 
 The original staff reconciliation action remains available. Unattended reconciliation uses `POST /api/internal/payments/reconcile`, authenticated by a server-only `PAYMENT_WORKER_SECRET` of at least 32 characters. It leases at most ten due requests under the exact account/environment/API, updates each lease before the external GET, and uses a twenty-second budget before starting another record. An in-flight authentication/read can extend a pass. Authentication, permission, rate-limit or network failures stop the pass. Overlapping workers cannot claim the same batch. Unfinished Paid drafts remain eligible until submitted or flagged for review. A successful response includes only counts, never customer/payment data.
 

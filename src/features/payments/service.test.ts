@@ -60,7 +60,7 @@ describe("payment collection service", () => {
     const { service, store, provider } = setup();
     const result = await service.create(input);
     expect(provider.create).toHaveBeenCalledWith(expect.objectContaining({ amountIsk: 5000, reference: "IRA-test" }));
-    expect(store.finish).toHaveBeenCalledWith(initial.id, { status: "pending", code: "B123", url: "https://demo.mypos.eu/en/pr/B123" });
+    expect(store.finish).toHaveBeenCalledWith(initial.id, { reference: initial.reference, status: "pending", code: "B123", url: "https://demo.mypos.eu/en/pr/B123" });
     expect(result.providerCode).toBe("B123");
   });
 
@@ -92,16 +92,16 @@ describe("payment collection service", () => {
     const { service, provider, store } = setup();
     provider.create.mockRejectedValueOnce(new PaymentError("payment_provider_unavailable", true));
     await expect(service.create(input)).rejects.toMatchObject({ uncertain: true });
-    expect(store.finish).toHaveBeenCalledWith(initial.id, { status: "creation_unknown", errorCode: "payment_provider_unavailable" });
+    expect(store.finish).toHaveBeenCalledWith(initial.id, { reference: initial.reference, status: "creation_unknown", errorCode: "payment_provider_unavailable", diagnostics: {} });
     await expect(service.create(input)).rejects.toMatchObject({ code: "payment_creation_unresolved" });
     expect(provider.create).toHaveBeenCalledTimes(1);
   });
 
-  it("also requires reconciliation before retrying a definitively failed create", async () => {
+  it("requires an atomic store claim before retrying a definitively failed create", async () => {
     const { service, provider, store } = setup();
     provider.create.mockRejectedValueOnce(new PaymentError("payment_authentication_failed"));
     await expect(service.create(input)).rejects.toMatchObject({ code: "payment_authentication_failed" });
-    expect(store.finish).toHaveBeenCalledWith(initial.id, { status: "creation_failed", errorCode: "payment_authentication_failed" });
+    expect(store.finish).toHaveBeenCalledWith(initial.id, { reference: initial.reference, status: "creation_failed", errorCode: "payment_authentication_failed", diagnostics: {} });
     await expect(service.create(input)).rejects.toMatchObject({ code: "payment_creation_unresolved" });
     expect(provider.create).toHaveBeenCalledTimes(1);
   });

@@ -64,7 +64,7 @@ export default async function CustomerIntakePage({
     }
   }
 
-  if (summary) return <PaymentSummary summary={summary} />;
+  if (summary) return <PaymentSummary summary={summary} initialToken={token} />;
 
   return (
     <CustomerIntakeForm

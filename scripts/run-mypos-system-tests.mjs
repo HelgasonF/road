@@ -65,6 +65,7 @@ try {
     }
   }
   sql(readFileSync(resolve(project, "supabase/migrations/20261023171927_support_typed_customer_locations.sql"), "utf8"));
+  sql(readFileSync(resolve(project, "supabase/migrations/20261026115922_recover_rejected_payment_creation.sql"), "utf8"));
   sql(readFileSync(resolve(project, "supabase/seed.sql"), "utf8"));
 
   const rest = inspect("supabase_rest_Road");

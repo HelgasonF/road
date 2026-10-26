@@ -100,6 +100,8 @@ The myPOS REST v1.1 integration includes the combined **Pay and submit** custome
 
 The [21 October live phone audit](docs/live-phone-audit-2026-10-21.md) passed both payments, automatic confirmation, private photos and correction submission. The 23 October release preserved the current inventory: two jobs (one active), zero operators and three staff accounts, with the cancelled audit job's two Paid records retained. Its temporary audit job was removed without creating a payment or sending a message. The company owner will add their drivers/providers. Release source, migrations, tests and documentation are recorded on `chore/vercel-git-connection`. Automatic Git deployments remain disabled by `git.deploymentEnabled=false` in [vercel.json](vercel.json); future releases use the manual commands in the [deployment runbook](docs/deployment.md).
 
+The [26 October payment fix](docs/payment-failure-investigation-2026-10-26.md) is live: accented customer names receive a Latin display spelling only at the myPOS boundary, and definitively rejected creations support guarded retry and replacement intake links. Both `en` and `is` passed real unpaid creation checks; actual customer names and existing payment records are preserved. The recovery migration is applied, and the worker remains healthy. This payment release and its Git checkpoint on `chore/vercel-git-connection` exclude the existing local job/location edits.
+
 ## Verification
 
 ```bash

@@ -59,6 +59,34 @@ describe("legacy myPOS REST v1.1 contract", () => {
     expect(JSON.parse(creates(fetcher)[0][1]?.body as string)).toEqual({ amount: 5000, currency: "ISK", booking_text: input.reference, qr_generated: false, client_name: input.customerName, payment_request_lang: "de", expiry_date: "2026-12-01" });
   });
 
+  it.each(["en", "is"])("collects for an Icelandic name in %s without changing the original name", async (language) => {
+    const { provider, fetcher } = setup();
+    const original = { ...input, customerName: "Þórður Ægir Guðjónsson", language };
+    await provider.prepare(original);
+    // The live legacy API rejects accented names with HTTP 400/code 4.
+    fetcher.mockImplementationOnce(async (_url, request) => {
+      const body = JSON.parse(String(request?.body));
+      return /[^\x20-\x7e]/.test(body.client_name)
+        ? json({ code: 4, message: "Execution failed", details: null }, 400)
+        : json(receipt);
+    });
+    await expect(provider.create(original)).resolves.toMatchObject({ code: "B123" });
+    expect(JSON.parse(creates(fetcher)[0][1]?.body as string)).toMatchObject({
+      client_name: "Thordur Aegir Gudjonsson", payment_request_lang: language,
+    });
+    expect(original.customerName).toBe("Þórður Ægir Guðjónsson");
+  });
+
+  it("retains safe rejection diagnostics without retaining the provider message or details", async () => {
+    const { provider, fetcher } = setup();
+    await provider.prepare(input);
+    fetcher.mockResolvedValueOnce(json({ code: 4, message: "private customer merchant_secret", details: "bearer" }, 400));
+    const error = await provider.create(input).catch((error) => error);
+    expect(error).toMatchObject({ code: "payment_provider_rejected", uncertain: false,
+      diagnostics: { httpStatus: 400, providerCode: "4", requestId: expect.stringMatching(uuid) } });
+    expect(JSON.stringify(error)).not.toMatch(/merchant_secret|private customer|bearer/);
+  });
+
   it.each([undefined, "", "   "])("requires an existing customer name before authenticating (%s)", async (customerName) => {
     const { provider, fetcher } = setup();
     await expect(provider.create({ ...input, customerName })).rejects.toMatchObject({ code: "payment_customer_name_required" });

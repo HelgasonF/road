@@ -5,6 +5,7 @@ import { hashCustomerIntakeToken } from "@/features/customer-intake/tokens";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isCollectionEnabled, requireReconciliationConfig } from "./collection-config";
 import { PaymentError } from "./mypos-config";
+import { canRetryPaymentCreation } from "./creation-recovery";
 import { safeCheckoutUrl, type PublicPaymentSummary } from "./public-summary";
 import { createPaymentStore } from "./store";
 import type { PaymentRequest } from "./types";
@@ -33,9 +34,11 @@ export async function getInitialCheckoutSummary(token: string): Promise<PublicPa
   if (!draft) return null;
   const request = await createPaymentStore().get(draft.payment_request_id);
   if (!request || request.purpose !== "initial_fee" || !currentAccount(request)) return null;
+  const allowed = await checkoutAllowedForJob(request);
   return {
     purpose: "initial_fee", description: "", vehicleRegistration: null, amountIsk: request.amountIsk,
-    status: request.status, checkoutUrl: await checkoutAllowedForJob(request) ? safeCheckoutUrl(request) : null,
+    status: request.status, checkoutUrl: allowed ? safeCheckoutUrl(request) : null,
+    retryAllowed: allowed && canRetryPaymentCreation(request),
     intakeState: draft.completed_at ? "submitted" : draft.review_required ? "review_required" : "pending",
   };
 }

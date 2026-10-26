@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { customerIntakeSchema } from "@/features/customer-intake/schemas";
+import { customerIntakeSchema, customerTokenSchema } from "@/features/customer-intake/schemas";
 import { getActiveCustomerLinkByToken } from "@/features/customer-intake/queries";
 import { customerLinkRequestAllowed, customerRateLimitError } from "@/features/customer-intake/rate-limit";
 import { createCustomerIntakeToken, hashCustomerIntakeToken } from "@/features/customer-intake/tokens";
@@ -22,13 +22,18 @@ import type { PaymentResult } from "./types";
 const customerCheckoutSchema = customerIntakeSchema.extend({ language: z.enum(["en", "is"]) });
 const serviceCheckoutSchema = z.object({ jobId: z.uuid(), amountIsk: paymentAmountSchema, description: z.string().trim().min(3).max(500) }).strict();
 
-function failure(error: unknown) {
+function failure(error: unknown, language: "en" | "is" = "en") {
   const errorCode = error instanceof PaymentError ? error.code : "payment_unavailable";
-  return { ok: false as const, errorCode,
-    error: errorCode === "payment_details_locked" ? "This payment is already prepared. Use the existing payment or contact dispatch to correct the details."
+  const errorMessage = language === "is"
+    ? errorCode === "payment_details_locked" ? "Upplýsingarnar eru læstar við greiðslubeiðnina. Hafðu samband við aðgerðastjórn til að leiðrétta þær."
+      : ["payment_creation_unresolved", "payment_persistence_uncertain"].includes(errorCode)
+        ? "Upplýsingarnar þínar eru vistaðar. Aðgerðastjórn þarf að kanna greiðslubeiðnina áður en þú reynir aftur."
+        : "Ekki tókst að undirbúa greiðslu. Upplýsingarnar hafa ekki verið sendar. Hafðu samband við aðgerðastjórn."
+    : errorCode === "payment_details_locked" ? "Your details are locked to the payment request. Contact dispatch to correct them."
       : ["payment_creation_unresolved", "payment_persistence_uncertain"].includes(errorCode)
         ? "Your details are saved. Dispatch needs to check the payment request before you try again."
-        : "Payment is temporarily unavailable. Your details have not been submitted. Please contact dispatch." };
+        : "Payment is temporarily unavailable. Your details have not been submitted. Please contact dispatch.";
+  return { ok: false as const, errorCode, error: errorMessage };
 }
 
 function context() {
@@ -37,8 +42,7 @@ function context() {
   return createCheckoutService(new MyPosProvider(config), payments, createCheckoutStore());
 }
 
-export async function startCustomerCheckoutAction(input: unknown): Promise<PaymentResult<{ checkoutUrl: string }>> {
-  if (!(await customerLinkRequestAllowed())) return { ok: false, errorCode: "payment_rate_limited", error: customerRateLimitError };
+async function startCheckout(input: unknown): Promise<PaymentResult<{ checkoutUrl: string }>> {
   try {
     requireCollectionConfig();
     const parsed = customerCheckoutSchema.safeParse(input);
@@ -50,7 +54,35 @@ export async function startCustomerCheckoutAction(input: unknown): Promise<Payme
     if (!request.paymentUrl) throw new PaymentError("payment_creation_unresolved", true);
     revalidatePath(`/customer/${token}`);
     return { ok: true, data: { checkoutUrl: request.paymentUrl } };
-  } catch (error) { return failure(error); }
+  } catch (error) { return failure(error, typeof input === "object" && input !== null && "language" in input && input.language === "is" ? "is" : "en"); }
+}
+
+export async function startCustomerCheckoutAction(input: unknown): Promise<PaymentResult<{ checkoutUrl: string }>> {
+  if (!(await customerLinkRequestAllowed())) return { ok: false, errorCode: "payment_rate_limited", error: customerRateLimitError };
+  return startCheckout(input);
+}
+
+/** Retry the exact saved draft; browser callers cannot replace its details. */
+export async function resumeCustomerCheckoutAction(input: unknown): Promise<PaymentResult<{ checkoutUrl: string }>> {
+  const parsed = z.object({ token: customerTokenSchema, language: z.enum(["en", "is"]) }).strict().safeParse(input);
+  if (!parsed.success) return failure(new PaymentError("payment_invalid_input"));
+  const { token, language } = parsed.data;
+  if (!(await customerLinkRequestAllowed())) return { ok: false, errorCode: "payment_rate_limited", error: customerRateLimitError };
+  try {
+    requireCollectionConfig();
+    if (!(await getActiveCustomerLinkByToken(token))) throw new PaymentError("payment_link_unavailable");
+    const admin = createAdminClient();
+    const { data: link, error } = await admin.from("customer_intake_links").select("id")
+      .eq("token_hash", hashCustomerIntakeToken(token)).maybeSingle();
+    if (error || !link) throw new PaymentError("payment_link_unavailable");
+    const { data: draft, error: draftError } = await admin.from("customer_payment_intakes").select("details, language")
+      .eq("customer_intake_link_id", link.id).maybeSingle();
+    if (draftError || !draft) throw new PaymentError("payment_link_unavailable");
+    const details = z.record(z.string(), z.unknown()).safeParse(draft.details);
+    if (!details.success) throw new PaymentError("payment_storage_error");
+    const result = await startCheckout({ ...details.data, token, language: draft.language });
+    return result.ok ? result : failure(new PaymentError(result.errorCode), language);
+  } catch (error) { return failure(error, language); }
 }
 
 export async function createServicePaymentLinkAction(input: unknown): Promise<PaymentResult<{ path: string }>> {

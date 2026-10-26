@@ -2,7 +2,7 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { parseMyPosConfig, PaymentError, type MyPosConfig } from "./mypos-config";
+import { parseMyPosConfig, PaymentError, type MyPosConfig, type PaymentDiagnostics } from "./mypos-config";
 import { paymentAmountSchema } from "./schemas";
 import type { PaymentAccount, PaymentProvider, ProviderPaymentInput, VerifiedPaymentStatus } from "./types";
 
@@ -42,6 +42,13 @@ const statuses: Record<number, VerifiedPaymentStatus> = {
 type Token = { value: string; expiresAt: number };
 export type MyPosAccountCapabilities = { currencies: string[]; languages: string[]; iskSupported: boolean };
 
+function providerCustomerName(name: string) {
+  // The legacy API rejects Icelandic letters even with UTF-8/escaped JSON.
+  // Keep the actual name in the private draft/job; adapt only myPOS's display.
+  const letters: Record<string, string> = { Þ: "Th", þ: "th", Ð: "D", ð: "d", Æ: "Ae", æ: "ae", Ø: "O", ø: "o", Ł: "L", ł: "l", ß: "ss", Œ: "Oe", œ: "oe" };
+  return name.normalize("NFKD").replace(/\p{M}/gu, "").replace(/[ÞþÐðÆæØøŁłßŒœ]/g, (letter) => letters[letter]);
+}
+
 /** Only this adapter knows legacy hosts, headers, response shapes and codes. */
 export class MyPosProvider implements PaymentProvider {
   readonly account: PaymentAccount;
@@ -67,7 +74,18 @@ export class MyPosProvider implements PaymentProvider {
           : response.status === 401 ? "payment_authentication_failed"
           : response.status === 403 ? "payment_permission_denied"
           : response.status === 429 ? "payment_rate_limited" : "payment_provider_rejected";
-        throw new PaymentError(code, uncertain);
+        const diagnostics: PaymentDiagnostics = { httpStatus: response.status };
+        const requestId = z.uuid().safeParse(new Headers(init.headers).get("X-Request-ID"));
+        if (requestId.success) diagnostics.requestId = requestId.data;
+        // Only a short numeric provider code is safe to retain. Never persist
+        // arbitrary messages/details that can echo customer data or secrets.
+        try {
+          const body = await response.json();
+          const providerCode = z.union([z.number().int().nonnegative(), z.string().regex(/^\d{1,8}$/)])
+            .transform(String).pipe(z.string().max(8)).safeParse(body?.code);
+          if (providerCode.success) diagnostics.providerCode = providerCode.data;
+        } catch { /* Non-JSON error responses still retain HTTP status/request ID. */ }
+        throw new PaymentError(code, uncertain, diagnostics);
       }
       return await response.json();
     } catch (error) {
@@ -158,7 +176,7 @@ export class MyPosProvider implements PaymentProvider {
     const response = createSchema.safeParse(await this.request(`${HOSTS[this.config.environment].api}${paymentPath}`, {
       method: "POST", headers: { ...this.headers(token), "Content-Type": "application/json" },
       body: JSON.stringify({
-        amount: value.amountIsk, currency: "ISK", client_name: value.customerName,
+        amount: value.amountIsk, currency: "ISK", client_name: providerCustomerName(value.customerName),
         booking_text: input.reference, qr_generated: false,
         // The legacy API documents the empty value as the merchant/default
         // language. No caller language is replaced or guessed here.

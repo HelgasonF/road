@@ -49,8 +49,8 @@ describe.skipIf(!databaseUrl || !restUrl || !serviceKey || !anonKey)("payment sy
     const service = () => createCheckoutService(new MyPosProvider({
         environment: "sandbox", clientId: "system-test-merchant", clientSecret: "system-test-secret", livePaymentsEnabled: false,
     }, apiFetch), createPaymentStore(), createCheckoutStore());
-    const start = () => service().startInitial({ tokenHash, language: "is", amountIsk: 10490,
-        details: Object.fromEntries(Object.entries(customerIntakeSchema.parse({ ...details, token })).filter(([key]) => key !== "token")),
+    const start = (overrides = {}) => service().startInitial({ tokenHash, language: "is", amountIsk: 10490,
+        details: Object.fromEntries(Object.entries(customerIntakeSchema.parse({ ...details, ...overrides, token })).filter(([key]) => key !== "token")),
     });
     const pending = async () => (await db.query("select intake_pending from public.jobs where id=$1", [jobId])).rows[0].intake_pending;
     const due = () => db.query("update public.job_payment_requests set next_check_at=now()-interval '1 second' where job_id=$1", [jobId]);
@@ -113,7 +113,8 @@ describe.skipIf(!databaseUrl || !restUrl || !serviceKey || !anonKey)("payment sy
                     const body = JSON.parse(Buffer.concat(chunks).toString());
                     assert.equal(body.currency, "ISK");
                     assert.equal(body.qr_generated, false);
-                    assert.equal(body.client_name, details.customerName);
+                    assert.match(body.client_name, /^[\x20-\x7e]+$/);
+                    calls.at(-1).body = body;
                     const code = `SYSTEM${++sequence}`;
                     payments.set(code, { code, amount: body.amount, currency: body.currency,
                         booking_text: body.booking_text, status: 1, qr_generated: false });
@@ -213,14 +214,38 @@ describe.skipIf(!databaseUrl || !restUrl || !serviceKey || !anonKey)("payment sy
         expect(await pending()).toBe(true);
         expect((await createPaymentStore().get(request.id)).status).toBe("pending");
     });
-    it.each(["uncertain_create", "deny_create"])("retains the draft and reservation after %s and never retries creation", async (failure) => {
-        mode = failure;
+    it("retains the draft and reservation after an uncertain creation and never retries", async () => {
+        mode = "uncertain_create";
         await expect(start()).rejects.toThrow();
         mode = "ok";
         await expect(start()).rejects.toMatchObject({ code: "payment_creation_unresolved" });
         expect(creates()).toBe(1);
         expect(await pending()).toBe(true);
         expect((await db.query("select count(*)::int as count from public.customer_payment_intakes where job_id=$1", [jobId])).rows[0].count).toBe(1);
+    });
+    it("retries a rejected creation once across concurrent clicks and retains both attempt outcomes", async () => {
+        mode = "deny_create";
+        await expect(start()).rejects.toMatchObject({ code: "payment_permission_denied" });
+        const first = (await db.query("select reference from public.job_payment_requests where job_id=$1", [jobId])).rows[0];
+        mode = "ok";
+        const results = await Promise.allSettled([start(),start()]);
+        expect(results.some((result) => result.status === "fulfilled")).toBe(true);
+        const request = await start();
+        expect(request.status).toBe("pending");
+        expect(request.reference).not.toBe(first.reference);
+        expect(creates()).toBe(2);
+        const row = (await db.query("select creation_history from public.job_payment_requests where job_id=$1", [jobId])).rows[0];
+        expect(row.creation_history.map((attempt) => attempt.status)).toEqual(["creation_failed","pending"]);
+        expect(row.creation_history[0].diagnostics.httpStatus).toBe(403);
+    });
+    it("uses a provider-compatible display name while finalizing the actual Icelandic name", async () => {
+        const customerName = "Þórður Ægir Guðjónsson";
+        const request = await start({ customerName });
+        expect(calls.find((call) => call.body)?.body.client_name).toBe("Thordur Aegir Gudjonsson");
+        expect(calls.find((call) => call.body)?.body.payment_request_lang).toBe("is");
+        markRemote(request.providerCode,4);
+        expect(await service().reconcile()).toMatchObject({ submitted:1 });
+        expect((await db.query("select customer_name from public.jobs where id=$1",[jobId])).rows[0].customer_name).toBe(customerName);
     });
     it("recovers after a provider read outage without requiring a customer return", async () => {
         const request = await start();

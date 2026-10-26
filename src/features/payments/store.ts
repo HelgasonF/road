@@ -2,7 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { PaymentError } from "./mypos-config";
+import { PaymentError, type PaymentDiagnostics } from "./mypos-config";
 import type { PaymentEnvironment, PaymentPurpose, PaymentRequest, PaymentRow, ProviderPaymentDetails } from "./types";
 
 const paymentRowSchema: z.ZodType<PaymentRow> = z.object({
@@ -39,10 +39,12 @@ export interface ReservationInput {
   createdBy: string;
 }
 export interface CreationOutcome {
+  reference: string;
   status: "pending" | "creation_unknown" | "creation_failed";
   code?: string;
   url?: string;
   errorCode?: string;
+  diagnostics?: PaymentDiagnostics;
 }
 export interface PaymentStore {
   reserve(input: ReservationInput): Promise<{ claimed: boolean; request: PaymentRequest }>;
@@ -67,9 +69,10 @@ export function createPaymentStore(): PaymentStore {
       return { claimed: parsed.data.claimed, request: paymentFromRow(parsed.data.request) };
     },
     async finish(id, outcome) {
-      const { data, error } = await client.rpc("finish_job_payment_creation", {
+      const { data, error } = await client.rpc("finish_job_payment_creation_v2", {
         p_id: id, p_provider_code: outcome.code ?? null, p_payment_url: outcome.url ?? null,
         p_status: outcome.status, p_error_code: outcome.errorCode ?? null,
+        p_reference: outcome.reference, p_diagnostics: outcome.diagnostics ?? {},
       });
       if (error) throw new PaymentError("payment_storage_error");
       return paymentFromRow(data);

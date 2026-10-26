@@ -1,6 +1,19 @@
 # Hosted preview and Supabase operations
 
-Last updated: 23 October 2026
+Last updated: 26 October 2026
+
+Released 26 October: myPOS customer-name compatibility and guarded recovery of
+definitively rejected creations. Both `en` and `is` passed real unpaid provider
+creation checks after adapting only the provider's display name to Latin text.
+The customer's actual name remains in Vegstoð. Migration `20261026115922` is
+applied. The stable alias now points to Ready Preview deployment
+`dpl_2LXeT3SEcfstuoAX8Vckk6umgJeq`,
+`vegstod-q8hdb4e0f-freyrs-projects-fad4047a.vercel.app`. Payment source was released
+from an isolated `111ae22` checkout plus the fix, excluding existing local
+job/location edits. The subsequent user-requested Git checkpoint records the
+payment changes on `chore/vercel-git-connection`; pushing does not redeploy.
+No card charge was made. See the
+[payment investigation/release record](payment-failure-investigation-2026-10-26.md).
 
 Released 23 October: international phone input/display with no default country
 and the approved typed-location/actionable-error fix. Migration
@@ -48,16 +61,16 @@ DEMO_MODE=false
 
 On 21 October, Freyr authorized myPOS collection on the existing public Preview.
 `vegstod.vercel.app` now points to
-`vegstod-vr1npotdf-freyrs-projects-fad4047a.vercel.app` after the 23 October
-phone/location release. Payment configuration is
+`vegstod-q8hdb4e0f-freyrs-projects-fad4047a.vercel.app` after the 26 October
+payment fix. Payment configuration is
 installed in **Preview**; the unused Production target remains unchanged.
 Server-only sensitive variables hold the merchant Client ID/Secret and
 `PAYMENT_WORKER_SECRET`. Collection and production API creation are enabled,
 the initial fee is `10490` ISK, and `WHATSAPP_API_ENABLED=false` preserves manual
 messaging. Local defaults remain disabled.
 
-Hosted migrations `20261020223002`, `20261021201000`, `20261021220248` and
-`20261023171927` are applied. The third enables pg_cron and pg_net; it creates no
+Hosted migrations `20261020223002`, `20261021201000`, `20261021220248`,
+`20261023171927` and `20261026115922` are applied. The third enables pg_cron and pg_net; it creates no
 schedule or secret. The fourth permits searched customer locations and grants
 server-only catalog access, preserving existing table structures and payment flow.
 The separately applied `supabase/ops/schedule-payment-reconciliation.sql` invokes

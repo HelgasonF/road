@@ -44,6 +44,17 @@ describe("private payment page authorization", () => {
     expect(get).not.toHaveBeenCalled();
     expect(from).toHaveBeenCalledOnce();
   });
+  it.each([
+    ["creation_failed", "payment_provider_rejected", true],
+    ["creation_failed", "payment_invalid_response", false],
+    ["creation_unknown", "payment_provider_unavailable", false],
+    ["paid", null, false],
+  ] as const)("offers recovery only for a definite rejected creation (%s/%s)", async (status, errorCode, retryAllowed) => {
+    maybeSingle.mockResolvedValueOnce({ data: { id: "link", expires_at: "2099-01-01T00:00:00Z", revoked_at: null }, error: null })
+      .mockResolvedValueOnce({ data: { payment_request_id: "payment", completed_at: null, review_required: false }, error: null });
+    get.mockResolvedValueOnce({ ...payment, purpose: "initial_fee", status, errorCode, providerCode: null, paymentUrl: null });
+    expect(await getInitialCheckoutSummary(token)).toMatchObject({ retryAllowed });
+  });
   it("stops offering checkout when the job was cancelled", async () => {
     maybeSingle.mockResolvedValueOnce({ data: page, error: null }).mockResolvedValueOnce({ data: { status: "cancelled" }, error: null });
     expect(await getServicePaymentSummary(token)).toMatchObject({ checkoutUrl: null });

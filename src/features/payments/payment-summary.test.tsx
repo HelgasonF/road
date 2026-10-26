@@ -1,8 +1,11 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { PaymentSummary } from "./payment-summary";
 import { safeCheckoutUrl, type PublicPaymentSummary } from "./public-summary";
 import type { PaymentRequest } from "./types";
+import { resumeCustomerCheckoutAction } from "./checkout-actions";
+
+vi.mock("./checkout-actions", () => ({ resumeCustomerCheckoutAction: vi.fn() }));
 
 afterEach(cleanup);
 const summary: PublicPaymentSummary = {
@@ -23,6 +26,19 @@ describe("private payment summary", () => {
     render(<PaymentSummary summary={{ ...summary, status: "paid", checkoutUrl: null }} />);
     expect(screen.getByRole("status")).toHaveTextContent("Payment received");
     expect(screen.queryByRole("link", { name: /Pay/ })).not.toBeInTheDocument();
+  });
+  it("retries a saved rejected draft with only its token and selected display language", async () => {
+    vi.mocked(resumeCustomerCheckoutAction).mockResolvedValueOnce({ ok: false, errorCode: "payment_unavailable", error: "Greiðslan þarfnast yfirferðar." });
+    const token = "A".repeat(43);
+    render(<PaymentSummary summary={{ ...summary, purpose: "initial_fee", status: "creation_failed", checkoutUrl: null, retryAllowed: true }} initialToken={token} />);
+    fireEvent.click(screen.getByRole("button", { name: "Íslenska" }));
+    fireEvent.click(screen.getByRole("button", { name: "Reyna greiðslu aftur" }));
+    await waitFor(() => expect(resumeCustomerCheckoutAction).toHaveBeenCalledWith({ token, language: "is" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Greiðslan þarfnast yfirferðar.");
+  });
+  it.each(["creation_unknown", "creating", "paid"] as const)("does not offer retries for %s", (status) => {
+    render(<PaymentSummary summary={{ ...summary, status, checkoutUrl: null }} initialToken={"A".repeat(43)} />);
+    expect(screen.queryByRole("button", { name: "Try payment again" })).not.toBeInTheDocument();
   });
   it("explains first-payment completion without a return visit in both languages", () => {
     render(<PaymentSummary summary={{ ...summary, purpose: "initial_fee", intakeState: "pending" }} />);

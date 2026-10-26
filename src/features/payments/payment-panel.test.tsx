@@ -43,6 +43,14 @@ describe("dispatcher service payment", () => {
     expect(await screen.findByText(/greiðir upphafsgjaldið/)).toBeInTheDocument();
     expect(screen.queryByLabelText("Upphæð fyrir þjónustu (ISK)")).not.toBeInTheDocument();
   });
+  it("lets staff retry a rejected service payment using its locked details", async () => {
+    vi.mocked(getPaymentPanelAction).mockResolvedValue({ ok: true, data: { ...state, serviceDescription: "Existing service", requests: [{ purpose: "service", environment: "production", status: "creation_failed", errorCode: "payment_provider_rejected", amountIsk: 28000, id: "payment", providerCode: null, paymentUrl: null } as PaymentRequest] } });
+    render(<PaymentPanel {...props} />);
+    const retry = await screen.findByRole("button", { name: "Reyna undirbúning greiðslu aftur" });
+    expect(retry).toBeEnabled();
+    fireEvent.click(retry);
+    await waitFor(() => expect(createServicePaymentLinkAction).toHaveBeenCalledWith({ jobId: props.jobId, amountIsk: 28000, description: "Existing service" }));
+  });
 });
 
 describe("automatic dispatcher payment status", () => {

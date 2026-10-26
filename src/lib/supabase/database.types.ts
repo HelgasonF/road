@@ -36,7 +36,7 @@ export type Database = {
         Relationships: [];
       };
       job_payment_requests: {
-        Row: PaymentRow & { next_check_at: string };
+        Row: PaymentRow & { next_check_at: string; creation_started_at: string; creation_diagnostics: Json; creation_history: Json };
         Insert: Pick<PaymentRow, "job_id" | "purpose" | "environment" | "merchant_id" | "provider_api" | "amount_isk" | "reference" | "created_by"> & Partial<PaymentRow> & { next_check_at?: string };
         Update: Partial<PaymentRow & { next_check_at: string }>;
         Relationships: [];
@@ -591,6 +591,10 @@ export type Database = {
       };
       finish_job_payment_creation: {
         Args: { p_id: string; p_provider_code: string | null; p_payment_url: string | null; p_status: string; p_error_code: string | null };
+        Returns: Json;
+      };
+      finish_job_payment_creation_v2: {
+        Args: { p_id: string; p_reference: string; p_provider_code: string | null; p_payment_url: string | null; p_status: string; p_error_code: string | null; p_diagnostics: Json };
         Returns: Json;
       };
       record_job_payment_status: {

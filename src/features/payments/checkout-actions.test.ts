@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { startCustomerCheckoutAction, createServicePaymentLinkAction } from "./checkout-actions";
+import { startCustomerCheckoutAction, resumeCustomerCheckoutAction, createServicePaymentLinkAction } from "./checkout-actions";
 import { getVerifiedStaffSession } from "@/lib/auth/session";
 import { requireCollectionConfig } from "./collection-config";
 import { PaymentError } from "./mypos-config";
@@ -19,7 +19,9 @@ vi.mock("./checkout-store", () => ({ createCheckoutStore: vi.fn() }));
 const startInitial = vi.fn();
 const startService = vi.fn();
 vi.mock("./checkout-service", () => ({ createCheckoutService: () => ({ startInitial, startService }) }));
-vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn() }));
+const maybeSingle = vi.fn();
+const query = { select: vi.fn(() => query), eq: vi.fn(() => query), maybeSingle };
+vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => ({ from: () => query }) }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: () => ({ from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { customer_name: "Existing Customer" }, error: null }) }) }) }) }) }));
 
 const input = {
@@ -36,6 +38,28 @@ beforeEach(() => {
 });
 
 describe("checkout action authorization", () => {
+  it("resumes the exact saved draft while keeping its original checkout language and name", async () => {
+    const details = Object.fromEntries(Object.entries(input).filter(([key]) => !["token", "language"].includes(key)));
+    maybeSingle.mockResolvedValueOnce({ data: { id: "link" }, error: null })
+      .mockResolvedValueOnce({ data: { details: { ...details, customerName: "Þórður Ægir" }, language: "is" }, error: null });
+    expect(await resumeCustomerCheckoutAction({ token: input.token, language: "en" })).toMatchObject({ ok: true });
+    expect(startInitial).toHaveBeenCalledWith(expect.objectContaining({ language: "is", details: expect.objectContaining({ customerName: "Þórður Ægir" }) }));
+  });
+  it("rejects an expired/revoked retry token before reading a draft or contacting myPOS", async () => {
+    vi.mocked(getActiveCustomerLinkByToken).mockResolvedValueOnce(null);
+    expect(await resumeCustomerCheckoutAction({ token: input.token, language: "is" })).toMatchObject({ ok: false, errorCode: "payment_link_unavailable" });
+    expect(maybeSingle).not.toHaveBeenCalled();
+    expect(startInitial).not.toHaveBeenCalled();
+  });
+  it("does not accept replacement customer details in a retry request", async () => {
+    expect(await resumeCustomerCheckoutAction({ token: input.token, language: "is", customerName: "Changed" })).toMatchObject({ ok: false, errorCode: "payment_invalid_input" });
+    expect(maybeSingle).not.toHaveBeenCalled();
+    expect(startInitial).not.toHaveBeenCalled();
+  });
+  it("returns Icelandic checkout errors for the Icelandic form", async () => {
+    startInitial.mockRejectedValueOnce(new PaymentError("payment_details_locked"));
+    expect(await startCustomerCheckoutAction(input)).toMatchObject({ ok: false, error: expect.stringContaining("Hafðu samband við aðgerðastjórn") });
+  });
   it("accepts a resolved search location without changing the payment flow", async () => {
     expect(await startCustomerCheckoutAction({ ...input, locationSource: "search", locationLabel: "Keflavík · Bær · Approximate location" })).toMatchObject({ ok: true });
     expect(startInitial).toHaveBeenCalledWith(expect.objectContaining({ amountIsk: 5000, details: expect.objectContaining({ locationSource: "search" }) }));

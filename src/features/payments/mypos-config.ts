@@ -14,8 +14,10 @@ const configSchema = z.object({
 
 export type MyPosConfig = z.infer<typeof configSchema>;
 
+export type PaymentDiagnostics = { httpStatus?: number; providerCode?: string; requestId?: string };
+
 export class PaymentError extends Error {
-  constructor(public readonly code: string, public readonly uncertain = false) {
+  constructor(public readonly code: string, public readonly uncertain = false, public readonly diagnostics: PaymentDiagnostics = {}) {
     // Never attach provider bodies, URLs, credentials, or fetch exceptions.
     super(code);
     this.name = "PaymentError";

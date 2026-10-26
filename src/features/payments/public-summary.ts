@@ -8,6 +8,7 @@ export interface PublicPaymentSummary {
   status: PaymentStatus;
   checkoutUrl: string | null;
   intakeState: "pending" | "submitted" | "review_required" | null;
+  retryAllowed?: boolean;
 }
 
 export function safeCheckoutUrl(request: PaymentRequest) {
