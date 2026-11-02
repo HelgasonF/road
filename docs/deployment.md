@@ -1,6 +1,17 @@
 # Hosted preview and Supabase operations
 
-Last updated: 26 October 2026
+Last updated: 2 November 2026
+
+Pending local owner follow-ups 1–4 are implemented but **uncommitted and
+undeployed**. Before releasing them, apply destination migration `20261102185452`
+then service replacement migration `20261102192200` and verify the hosted schema/
+API before deploying compatible source. Final local checks pass build/types/lint,
+669 application tests, 35 isolated integration tests and 499 SQL assertions.
+Preserve unrelated editor/map changes. Once payment replacement history exists,
+do not roll back to code that selects the oldest service request. See the
+[replacement record](service-payment-replacement-2026-11-02.md) and
+[maintenance handoff](maintenance-handoff.md). No hosted migration or release
+was performed for these follow-ups; the live release below remains unchanged.
 
 Latest copy-only release: section 4 of customer intake uses **þjónustuaðili** /
 **service provider**. Source `2716c4b`, Ready Preview

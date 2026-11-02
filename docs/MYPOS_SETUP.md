@@ -1,5 +1,16 @@
 # myPOS existing REST API v1.1
 
+2 November local follow-up: unpaid service payments can be replaced from IRA
+with a revised amount/description and new private link. Old requests remain in
+history and their IRA pages expire. Server-checked customer Pay, retained polling
+and late-Paid blocking protect collection. IRA cannot close a provider checkout
+already opened; the customer must close it and use the replacement. This change
+is **uncommitted and undeployed**, as are the other owner follow-ups. Migration
+`20261102192200` must precede deployment; destination migration `20261102185452`
+is also pending. Build/types/lint, 669 application tests, 35 isolated integration
+tests and 499 SQL assertions pass. See the
+[replacement record](service-payment-replacement-2026-11-02.md).
+
 26 October payment fix: controlled unpaid comparisons isolated HTTP 400/code 4
 to accented customer names in the legacy API. Both `is` and `en` accept the same
 plain name. The adapter now sends a Latin spelling to myPOS while preserving the
@@ -79,6 +90,16 @@ Optional creation arguments remain `language` (the caller's existing two-letter 
 The first WhatsApp intake message remains `buildCustomerIntakeWhatsAppMessage` in `src/features/customer-intake/customer-contact.ts`. Phone-only creation and replacement links still use it unchanged, with manual sending. When collection is enabled, the form uses `startCustomerCheckoutAction` and one **Pay and submit** button; its displayed amount is server-derived. `getCustomerPaymentSettings` exposes no credentials and fails closed when enabled configuration is incomplete. With collection disabled, the existing intake remains available as before.
 
 The job detail now includes `PaymentPanel`: staff enter the second whole-ISK amount and a customer-visible service description. `createServicePaymentLinkAction` atomically reserves that payment and its summary metadata, then returns `/pay/<random token>`. Only its SHA-256 hash is stored. The summary shows service, vehicle registration, amount and the separate-payment explanation, with English/Icelandic controls and a button opening the exact myPOS URL. No customer information is re-entered. The app prepares a manual WhatsApp draft; staff press Send in WhatsApp. Summary links last 24 hours. Reissuing rotates the old page token while retaining the same payment, amount and description. Paid/closed/uncertain requests cannot create an additional charge.
+
+In the local 2 November source, `replaceServicePaymentLinkAction` is the separate
+staff-only edit operation. It requires the expected service request ID; repeating
+the same replacement reuses its successor. Ordinary reissue keeps the current
+amount/description. Payment history now distinguishes superseded and current
+requests. New service summaries omit the raw provider URL; `openServiceCheckoutAction`
+checks the private token and verified history when Pay is pressed, rechecks the
+active page, and returns only a validated checkout URL. Initial Pay and submit
+is unchanged. Manual sharing now offers WhatsApp, SMS and copy. These local
+changes are not yet present on the hosted site.
 
 ## Server configuration and credentials
 

@@ -14,7 +14,8 @@ function renderPhone(defaultValue = "", required = true) {
   const input = screen.getByRole("textbox", { name: "Phone" }) as HTMLInputElement;
   const country = screen.getByRole("combobox", { name: "Country code for Phone" });
   const submitted = () => new FormData(input.form!).get("phone");
-  return { input, country, submitted };
+  const code = screen.getByRole("textbox", { name: "Enter country code for Phone" });
+  return { input, country, code, submitted };
 }
 
 describe("PhoneInput", () => {
@@ -53,6 +54,101 @@ describe("PhoneInput", () => {
     expect(input).toHaveValue("659 7003");
     expect(submitted()).toBe("+3546597003");
     expect(input).toBeValid();
+  });
+
+  it.each(["+44", "44", "0044"])("accepts the typed calling code %s without a country search", (value) => {
+    const { input, country, code, submitted } = renderPhone();
+    expect(code).toBeInTheDocument();
+    fireEvent.change(code, { target: { value } });
+    fireEvent.change(input, { target: { value: "02079460958" } });
+    expect(country).toHaveValue("GB");
+    expect(input).toHaveValue("020 7946 0958");
+    expect(input).toBeValid();
+    expect(submitted()).toBe("+442079460958");
+  });
+
+  it("keeps the calling-code box and country picker synchronized", () => {
+    const { input, country, code, submitted } = renderPhone();
+    expect(code).toHaveValue("");
+    fireEvent.change(country, { target: { value: "IS" } });
+    expect(code).toHaveValue("+354");
+    fireEvent.change(input, { target: { value: "+1 (702) 219-6679" } });
+    expect(code).toHaveValue("+1");
+    expect(country).toHaveValue("US");
+    expect(submitted()).toBe("+17022196679");
+  });
+
+  it("does not show a premature phone error when moving from the code to an empty number", () => {
+    const { code } = renderPhone();
+    fireEvent.change(code, { target: { value: "44" } });
+    fireEvent.blur(code);
+    expect(code).toHaveValue("+44");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("validates the editable code field for a missing required code and preserves untouched legacy contacts", () => {
+    const { code } = renderPhone();
+    expect(code).toBeRequired();
+    expect(code).toBeInvalid();
+    cleanup();
+    const legacy = renderPhone("112");
+    expect(legacy.code).not.toBeRequired();
+    expect(legacy.input.form).toBeValid();
+  });
+
+  it("clears the editable code when the country selection is cleared for an international contact", () => {
+    const { country, code, input } = renderPhone("+80012345678");
+    expect(code).toHaveValue("+800");
+    fireEvent.change(country, { target: { value: "" } });
+    expect(code).toHaveValue("");
+    expect(input).toBeInvalid();
+  });
+
+  it("accepts a code after entering the national number and blocks clearing the code", () => {
+    const { input, code, submitted } = renderPhone();
+    fireEvent.change(input, { target: { value: "07400123456" } });
+    fireEvent.change(code, { target: { value: "+44" } });
+    expect(input).toBeValid();
+    expect(submitted()).toBe("+447400123456");
+    fireEvent.change(code, { target: { value: "" } });
+    expect(input).toBeInvalid();
+    expect(code).toBeInvalid();
+  });
+
+  it("rejects an unknown calling code without falling back to the previous country", () => {
+    const { input, country, code, submitted } = renderPhone("+442079460958");
+    fireEvent.change(code, { target: { value: "+999" } });
+    fireEvent.blur(code);
+    expect(country).toHaveValue("");
+    expect(code).toBeInvalid();
+    expect(input).toBeInvalid();
+    expect(submitted()).not.toBe("+442079460958");
+    expect(screen.getByRole("alert")).toHaveTextContent("Enter a valid country calling code");
+    fireEvent.change(code, { target: { value: "+44" } });
+    expect(code).toBeValid();
+    expect(input).toBeValid();
+    expect(submitted()).toBe("+442079460958");
+  });
+
+  it("allows clearing and retyping a saved code without duplicating the trunk prefix", () => {
+    const { input, country, code, submitted } = renderPhone("+442079460958");
+    for (const value of ["", "+", "+4", "+44"]) fireEvent.change(code, { target: { value } });
+    expect(country).toHaveValue("GB");
+    expect(input).toHaveValue("020 7946 0958");
+    expect(submitted()).toBe("+442079460958");
+    expect(input).toBeValid();
+  });
+
+  it.each([
+    ["1", "4165550123", "+14165550123"],
+    ["39", "0236618300", "+390236618300"],
+    ["800", "12345678", "+80012345678"],
+  ])("supports typed +%s without losing significant digits", (value, number, expected) => {
+    const { input, code, submitted } = renderPhone();
+    fireEvent.change(code, { target: { value } });
+    fireEvent.change(input, { target: { value: number } });
+    expect(input).toBeValid();
+    expect(submitted()).toBe(expected);
   });
 
   it("supports a selected foreign country with a national number", () => {

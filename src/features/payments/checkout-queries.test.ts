@@ -9,11 +9,12 @@ const query = { select: vi.fn(() => query), eq: vi.fn(() => query), maybeSingle 
 const from = vi.fn(() => query);
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => ({ from }) }));
 const get = vi.fn();
-vi.mock("./store", () => ({ createPaymentStore: () => ({ get }) }));
+const listForJob = vi.fn(async () => [] as PaymentRequest[]);
+vi.mock("./store", () => ({ createPaymentStore: () => ({ get, listForJob }) }));
 const token = "A".repeat(43);
 const payment = { environment: "production", merchantId: "merchant", providerApi: "rest_v1_1", purpose: "service", amountIsk: 27000, status: "pending", paymentUrl: "https://mypos.eu/pr/B123" } as PaymentRequest;
 const page = { payment_request_id: "payment", description: "Jump start", vehicle_registration: "AB123", expires_at: "2099-01-01T00:00:00Z" };
-beforeEach(() => { vi.clearAllMocks(); get.mockResolvedValue(payment); maybeSingle.mockResolvedValue({ data: { status: "new" }, error: null }); });
+beforeEach(() => { vi.clearAllMocks(); get.mockResolvedValue(payment); listForJob.mockResolvedValue([]); maybeSingle.mockResolvedValue({ data: { status: "new" }, error: null }); });
 
 describe("private payment page authorization", () => {
   it("rejects malformed bearer tokens before database access", async () => {
@@ -33,10 +34,20 @@ describe("private payment page authorization", () => {
   it("returns only the summary, without merchant identifiers or raw tokens", async () => {
     maybeSingle.mockResolvedValueOnce({ data: page, error: null });
     const result = await getServicePaymentSummary(token);
-    expect(result).toMatchObject({ amountIsk: 27000, description: "Jump start", checkoutUrl: payment.paymentUrl });
+    expect(result).toMatchObject({ amountIsk: 27000, description: "Jump start", checkoutUrl: null, serviceCheckoutAvailable: true });
     expect(result).not.toHaveProperty("merchantId");
     expect(result).not.toHaveProperty("jobId");
     expect(query.eq).toHaveBeenCalledWith("token_hash", expect.stringMatching(/^[a-f0-9]{64}$/));
+  });
+  it("rejects a superseded payment even if its page expiry has not been changed", async () => {
+    maybeSingle.mockResolvedValueOnce({ data: page, error: null });
+    get.mockResolvedValueOnce({ ...payment, supersededAt: "2026-11-02T19:00:00Z" });
+    expect(await getServicePaymentSummary(token)).toBeNull();
+  });
+  it("offers no checkout if an older service request was paid", async () => {
+    maybeSingle.mockResolvedValueOnce({ data: page, error: null });
+    listForJob.mockResolvedValueOnce([{ ...payment, status: "paid", supersededAt: "2026-11-02T19:00:00Z" }]);
+    expect(await getServicePaymentSummary(token)).toMatchObject({ checkoutUrl: null, serviceCheckoutAvailable: false });
   });
   it("does not reveal a revoked intake draft", async () => {
     maybeSingle.mockResolvedValueOnce({ data: { id: "link", expires_at: "2099-01-01T00:00:00Z", revoked_at: "2026-10-21T00:00:00Z" }, error: null });

@@ -161,6 +161,8 @@ export function JobDetail({ customerLink, demoMode, job, matches, operators, onC
         )}
       </section>
 
+      {job.destinationLabel ? <section className="detail-section"><h3>Áfangastaður ökutækis</h3><p className="vehicle-destination-copy">{job.destinationLabel}</p></section> : null}
+
       <section className="detail-section">
         <h3>{is.requiredAssistance}</h3>
         {job.intakePending ? (

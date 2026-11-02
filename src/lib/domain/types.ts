@@ -188,6 +188,7 @@ export interface Job {
   vehicleType: string | null;
   rentalCompany: string | null;
   peopleCount: number | null;
+  destinationLabel: string | null;
   latitude: number;
   longitude: number;
   locationLabel: string;

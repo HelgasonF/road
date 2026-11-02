@@ -15,6 +15,7 @@ import { AddressSearchField, type AddressSearchFieldHandle } from "@/features/lo
 import type { Capability, CapabilityCode, Job } from "@/lib/domain/types";
 import { jobPriorities } from "@/lib/domain/types";
 import { OTHER_VEHICLE_MAKE, vehicleMakes } from "@/lib/domain/vehicle-makes";
+import { VEHICLE_DESTINATION_MAX_LENGTH } from "@/lib/domain/destination";
 import { capabilityLabels, is, jobPriorityLabels } from "@/lib/i18n/is";
 import { saveJobAction } from "./actions";
 import { jobInputSchema } from "./schemas";
@@ -108,6 +109,7 @@ export function JobEditor({ capabilities, job, onClose, onQuickCreated, onSaved 
         vehicleRegistration: String(form.get("vehicleRegistration") ?? ""),
         vehicleMake,
         rentalCompany: String(form.get("rentalCompany") ?? ""),
+        destinationLabel: String(form.get("destinationLabel") ?? ""),
         peopleCount: Number(form.get("peopleCount")),
         latitude: location.latitude,
         longitude: location.longitude,
@@ -144,9 +146,9 @@ export function JobEditor({ capabilities, job, onClose, onQuickCreated, onSaved 
             <div className="quick-job-success">
               <span><CheckCircle2 size={28} /></span>
               <h3>Verkefnið og tengillinn eru tilbúin</h3>
-              <p>Opnaðu WhatsApp eða afritaðu skilaboðin og sendu þau þaðan.</p>
+              <p>Sendu sama tengil með WhatsApp eða SMS, eða afritaðu skilaboðin.</p>
               <small>{formatCustomerLinkExpiry(quickLink.expiresAt, "is")}</small>
-              <ManualWhatsAppMessage key={quickLink.message} message={quickLink.message} phone={quickLink.phone} recipientName={formatPhoneNumber(quickLink.phone)} />
+              <ManualWhatsAppMessage allowSms key={quickLink.message} message={quickLink.message} phone={quickLink.phone} recipientName={formatPhoneNumber(quickLink.phone)} />
               <button className="secondary-button" type="button" onClick={onClose}>Loka</button>
             </div>
           ) : (
@@ -161,7 +163,7 @@ export function JobEditor({ capabilities, job, onClose, onQuickCreated, onSaved 
               <PhoneInput className="quick-job-phone" label={is.customerPhone} name="customerPhone" required />
               {error ? <p className="form-error" role="alert">{error}</p> : null}
               <button className="primary-button quick-create-button" type="submit" disabled={pending}>
-                <MessageCircle size={17} /> {pending ? "Bý til…" : "Búa til WhatsApp-tengil"}
+                <MessageCircle size={17} /> {pending ? "Bý til…" : "Búa til viðskiptavinatengil"}
               </button>
               <button className="quick-job-switch" type="button" onClick={() => { setEntryMode("full"); setError(null); }}>
                 <PencilLine size={15} /> Ég vil skrá allar upplýsingar sjálf/ur
@@ -255,6 +257,8 @@ export function JobEditor({ capabilities, job, onClose, onQuickCreated, onSaved 
               <label className="field"><span id="job-peopleCount-label">Fjöldi fólks</span><input {...fieldProps("peopleCount")} name="peopleCount" defaultValue={job?.peopleCount ?? 1} inputMode="numeric" min={1} max={99} required type="number" />{fieldError("peopleCount")}</label>
             </div>
 
+            <label className="field"><span id="job-destinationLabel-label">Hvert á að flytja ökutækið? (valfrjálst)</span><input {...fieldProps("destinationLabel")} name="destinationLabel" defaultValue={job?.destinationLabel ?? ""} maxLength={VEHICLE_DESTINATION_MAX_LENGTH} />
+              <small className="customer-field-help">Til dæmis verkstæði, bílaleiga, heimilisfang eða bær. Má vera autt ef áfangastaður hefur ekki verið ákveðinn.</small>{fieldError("destinationLabel")}</label>
             <label className="field"><span id="job-notes-label">{is.notes}</span><textarea {...fieldProps("notes")} name="notes" defaultValue={job?.notes ?? ""} rows={3} />{fieldError("notes")}</label>
             {error ? <p className="form-error" role="alert">{error}</p> : null}
             <footer className="modal-actions">

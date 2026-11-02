@@ -22,12 +22,15 @@ function setup() {
     get: vi.fn(async (): Promise<ProviderPaymentDetails> => ({ code: "B123", amountIsk: 5000, currency: "ISK", reference: "IRA-test", providerStatus: "4", status: "paid" })),
   };
   const payments = {
+    get: vi.fn(async () => ({ ...request, purpose: "service", status: "pending", providerCode: "B123" })),
+    listForJob: vi.fn(async () => [{ ...request, purpose: "service", status: "pending", providerCode: "B123" }]),
     finish: vi.fn(async () => ({ ...request, status: "pending", providerCode: "B123", paymentUrl: "https://demo.mypos.eu/pr/B123" })),
     record: vi.fn(async () => ({ ...request, status: "paid", paidAt: "2026-10-21T12:01:00Z" })),
   } as unknown as PaymentStore;
   const checkouts = {
     prepareInitial: vi.fn(async () => ({ claimed: true, request })),
     prepareService: vi.fn(async () => ({ claimed: true, request: { ...request, purpose: "service" } })),
+    replaceService: vi.fn(async () => ({ claimed: true, request: { ...request, id: "40000000-0000-4000-8000-000000000002", purpose: "service", amountIsk: 27000 } })),
     claimDue: vi.fn(async () => []),
     finalize: vi.fn(async () => "submitted"),
   } as unknown as CheckoutStore;
@@ -35,6 +38,52 @@ function setup() {
 }
 
 describe("customer checkout orchestration", () => {
+  const replacement = { jobId: request.jobId, paymentId: request.id, amountIsk: 27000, description: "Revised towing", createdBy: "00000000-0000-4000-8000-000000000001", tokenHash: "b".repeat(64), expiresAt: "2099-01-01T00:00:00Z", customerName: "Customer" };
+  it("verifies the old service payment before reserving and creating its replacement", async () => {
+    const { provider, payments, checkouts, service } = setup();
+    vi.mocked(provider.get).mockResolvedValue({ code: "B123", amountIsk: 5000, currency: "ISK", reference: "IRA-test", providerStatus: "1", status: "pending" });
+    vi.mocked(payments.record).mockResolvedValue({ ...request, purpose: "service", status: "pending" });
+    await service.replaceService(replacement);
+    expect(provider.get).toHaveBeenCalledWith("B123");
+    expect(vi.mocked(provider.get).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(checkouts.replaceService).mock.invocationCallOrder[0]);
+    expect(vi.mocked(checkouts.replaceService).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(provider.create).mock.invocationCallOrder[0]);
+    expect(provider.create).toHaveBeenCalledWith(expect.objectContaining({ amountIsk: 27000 }));
+  });
+  it("blocks replacement if the old service request has already been paid", async () => {
+    const { provider, checkouts, service } = setup();
+    await expect(service.replaceService(replacement)).rejects.toMatchObject({ code: "payment_already_paid" });
+    expect(checkouts.replaceService).not.toHaveBeenCalled();
+    expect(provider.create).not.toHaveBeenCalled();
+  });
+  it("cannot replace the first fee using the service replacement operation", async () => {
+    const { provider, payments, checkouts, service } = setup();
+    vi.mocked(payments.get).mockResolvedValue(request);
+    await expect(service.replaceService(replacement)).rejects.toMatchObject({ code: "payment_not_found" });
+    expect(checkouts.replaceService).not.toHaveBeenCalled();
+    expect(provider.get).not.toHaveBeenCalled();
+  });
+  it.each(["creating", "creation_unknown"] as const)("blocks an unresolved %s request without creating a successor", async (status) => {
+    const { provider, payments, checkouts, service } = setup();
+    vi.mocked(payments.listForJob).mockResolvedValue([{ ...request, purpose: "service", status }]);
+    await expect(service.replaceService(replacement)).rejects.toMatchObject({ code: "payment_creation_unresolved" });
+    expect(checkouts.replaceService).not.toHaveBeenCalled();
+    expect(provider.create).not.toHaveBeenCalled();
+  });
+  it("does not replace an unknown provider status", async () => {
+    const { payments, checkouts, service } = setup();
+    vi.mocked(payments.record).mockResolvedValue({ ...request, purpose: "service", status: "unknown" });
+    await expect(service.replaceService(replacement)).rejects.toMatchObject({ code: "payment_creation_unresolved" });
+    expect(checkouts.replaceService).not.toHaveBeenCalled();
+  });
+  it("blocks further collection after a superseded request is recorded Paid", async () => {
+    const { provider, payments, service } = setup();
+    vi.mocked(payments.listForJob).mockResolvedValue([
+      { ...request, purpose: "service", status: "paid", supersededAt: "2026-11-02T19:00:00Z" },
+      { ...request, id: "40000000-0000-4000-8000-000000000002", purpose: "service", status: "pending" },
+    ]);
+    await expect(service.verifyServicePayments(request.jobId)).rejects.toMatchObject({ code: "payment_already_paid" });
+    expect(provider.get).not.toHaveBeenCalled();
+  });
   it("durably saves and associates the draft before any external payment creation", async () => {
     const { provider, checkouts, service } = setup();
     await service.startInitial({ tokenHash: "a".repeat(64), amountIsk: 5000, language: "is", details: { customerName: "Customer" } as never });

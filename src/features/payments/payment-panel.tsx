@@ -4,7 +4,7 @@ import { CreditCard, RefreshCw } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { ManualWhatsAppMessage } from "@/features/whatsapp/manual-message";
 import { verifyJobPaymentRequestAction } from "./actions";
-import { createServicePaymentLinkAction, getPaymentPanelAction } from "./checkout-actions";
+import { createServicePaymentLinkAction, getPaymentPanelAction, replaceServicePaymentLinkAction } from "./checkout-actions";
 import type { PaymentRequest, PaymentStatus } from "./types";
 import { canRetryPaymentCreation } from "./creation-recovery";
 
@@ -20,7 +20,8 @@ export function PaymentPanel({ jobId, customerName, customerPhone, intakePending
   const [state, setState] = useState<{ enabled: boolean; ready: boolean; environment: "sandbox" | "production" | null; serviceDescription: string | null; intakeReviewRequired: boolean; requests: PaymentRequest[] } | null>(null);
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ paymentId: string; text: string } | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusRefreshFailed, setStatusRefreshFailed] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -65,9 +66,15 @@ export function PaymentPanel({ jobId, customerName, customerPhone, intakePending
     };
   }, [jobId, watching, pending]);
 
-  const second = state?.requests.find((request) => request.purpose === "service" && request.environment === state.environment);
+  const serviceRequests = state?.requests.filter((request) => request.purpose === "service" && request.environment === state.environment) ?? [];
+  const second = serviceRequests.find((request) => !request.supersededAt);
+  const servicePaid = serviceRequests.some((request) => request.status === "paid");
+  const serviceReviewRequired = serviceRequests.some((request) => request.supersededAt && request.status === "paid")
+    || serviceRequests.filter((request) => request.status === "paid").length > 1;
   const first = state?.requests.find((request) => request.purpose === "initial_fee" && request.environment === state.environment);
-  const locked = Boolean(second);
+  const editing = editingId !== null;
+  const locked = Boolean(second) && !editing;
+  const canReplace = Boolean(second && !servicePaid && (["pending", "seen", "failed", "expired", "cancelled"].includes(second.status) || canRetryPaymentCreation(second)));
 
   async function refresh() {
     const result = await getPaymentPanelAction({ jobId });
@@ -81,21 +88,27 @@ export function PaymentPanel({ jobId, customerName, customerPhone, intakePending
     setMessage(null);
     startTransition(async () => {
       try {
-        const amountIsk = second?.amountIsk ?? Number(amount);
-        const paymentDescription = state?.serviceDescription ?? description;
-        const result = await createServicePaymentLinkAction({ jobId, amountIsk, description: paymentDescription });
+        const amountIsk = editing ? Number(amount) : second?.amountIsk ?? Number(amount);
+        const paymentDescription = editing ? description : state?.serviceDescription ?? description;
+        const input = { jobId, amountIsk, description: paymentDescription };
+        const result = editingId ? await replaceServicePaymentLinkAction({ ...input, paymentId: editingId }) : await createServicePaymentLinkAction(input);
         if (!result.ok) {
           const errors: Record<string, string> = {
             payment_details_locked: "Upphæð og lýsing eru læstar við tilbúna greiðslubeiðni. Notaðu sömu upplýsingar eða fáðu aðstoð við yfirferð.",
             payment_amount_locked: "Ekki er hægt að breyta upphæð tilbúinnar greiðslubeiðni.",
             payment_creation_unresolved: "Óvíst er hvort beiðni var búin til. Skoða þarf stöðuna áður en reynt er aftur.",
             payment_persistence_uncertain: "Óvíst er hvort beiðni var vistuð. Skoða þarf stöðuna áður en reynt er aftur.",
+            payment_already_paid: "Þjónustugreiðsla hefur þegar borist. Ekki senda nýja greiðslubeiðni.",
+            payment_changed: "Greiðslubeiðninni hefur þegar verið breytt. Uppfærðu síðuna og farðu yfir nýjustu upplýsingar.",
+            payment_details_unchanged: "Breyttu upphæð eða lýsingu, eða hættu við og búðu til nýjan tengil fyrir sömu greiðslu.",
+            payment_account_mismatch: "Greiðslubeiðnin tilheyrir öðrum greiðslustillingum og þarf yfirferð.",
           };
           setError(errors[result.errorCode] ?? "Ekki tókst að búa til greiðslutengil. Athugaðu stillingar og greiðslustöðu.");
         } else {
           const url = new URL(result.data.path, window.location.origin).toString();
           const customerAmount = `${new Intl.NumberFormat("en-GB").format(amountIsk)} ISK`;
-          setMessage(`Hello ${customerName.replace(/\s+/g, " ").trim()},\n\nIceland Road Assistance — service payment\n${paymentDescription.trim()}\nAmount: ${customerAmount}\n\nThis payment is separate from the initial assistance fee. Review the details and pay securely here:\n${url}\n\nThis private link is valid for 24 hours. Do not forward it.`);
+          setMessage({ paymentId: result.data.paymentId, text: `Hello ${customerName.replace(/\s+/g, " ").trim()},\n\nIceland Road Assistance — service payment\n${paymentDescription.trim()}\nAmount: ${customerAmount}\n\n${editing ? "This replaces the previous service payment link. Please close any earlier checkout and use this link.\n\n" : ""}This payment is separate from the initial assistance fee. Review the details and pay securely here:\n${url}\n\nThis private link is valid for 24 hours. Do not forward it.` });
+          setEditingId(null);
         }
         await refresh();
       } catch {
@@ -121,18 +134,21 @@ export function PaymentPanel({ jobId, customerName, customerPhone, intakePending
       : !state.enabled ? <p className="muted-copy">Greiðslukerfið er í undirbúningi og er ekki virkt.</p>
         : <>
           {!state.ready ? <p className="compact-error">Greiðslusending er ekki virk. Ljúka þarf stillingum áður en hægt er að búa til tengla.</p> : null}
-          <div className="payment-history" aria-live="polite">{state.requests.map((request) => <div className="payment-history-row" key={request.id}><span><strong>{request.purpose === "initial_fee" ? "Upphafsgjald" : "Þjónusta"}</strong><small>{money(request.amountIsk)} · {labels[request.status]}{request.environment === "sandbox" ? " · Prófun" : ""}</small></span>{request.providerCode && request.status !== "paid" ? <button type="button" className="icon-button" disabled={pending || !state.ready} onClick={() => verify(request.id)} aria-label={`Staðfesta ${request.purpose === "initial_fee" ? "upphafsgjald" : "þjónustugreiðslu"}`}><RefreshCw size={15} /></button> : null}</div>)}</div>
+          <div className="payment-history" aria-live="polite">{state.requests.map((request) => <div className="payment-history-row" key={request.id}><span><strong>{request.purpose === "initial_fee" ? "Upphafsgjald" : "Þjónusta"}</strong><small>{money(request.amountIsk)} · {labels[request.status]}{request.supersededAt ? " · Skipt út" : ""}{request.environment === "sandbox" ? " · Prófun" : ""}</small></span>{request.providerCode && request.status !== "paid" ? <button type="button" className="icon-button" disabled={pending || !state.ready} onClick={() => verify(request.id)} aria-label={`Staðfesta ${request.purpose === "initial_fee" ? "upphafsgjald" : "þjónustugreiðslu"}`}><RefreshCw size={15} /></button> : null}</div>)}</div>
           {watching ? <p className="muted-copy">Greiðslustaða uppfærist sjálfkrafa.</p> : null}
           {statusRefreshFailed ? <p className="compact-error" role="status">Ekki tókst að uppfæra greiðslustöðu. Reyni aftur sjálfkrafa.</p> : null}
           {state.intakeReviewRequired ? <p className="compact-error" role="alert">Upphafsgjaldið er greitt en upplýsingarnar bíða yfirferðar hjá starfsfólki. Ekki senda nýja greiðslubeiðni.</p> : null}
           {first && canRetryPaymentCreation(first) ? <p className="compact-error" role="status">Undirbúningur greiðslu mistókst. Viðskiptavinurinn getur opnað formtengilinn aftur og reynt greiðslu á ný.</p> : null}
-          {intakePending ? <p className="muted-copy">{first?.status === "paid" ? "Upphafsgjaldið er greitt. Upplýsingarnar bíða staðfestingar." : "Viðskiptavinurinn fyllir út upplýsingarnar og greiðir upphafsgjaldið í formtenglinum."}</p> : second?.status === "paid" ? <p className="payment-confirmed" role="status">Þjónustugreiðsla hefur verið staðfest hjá myPOS.</p> : <form className="payment-service-form" onSubmit={createLink}>
+          {intakePending ? <p className="muted-copy">{first?.status === "paid" ? "Upphafsgjaldið er greitt. Upplýsingarnar bíða staðfestingar." : "Viðskiptavinurinn fyllir út upplýsingarnar og greiðir upphafsgjaldið í formtenglinum."}</p> : serviceReviewRequired ? <p className="compact-error" role="alert">Greiðsla barst á eldri greiðslubeiðni eða fleiri en eina beiðni. Ekki senda nýja greiðslubeiðni. Farðu yfir greiðslusöguna og hafðu samband við viðskiptavininn.</p> : servicePaid ? <p className="payment-confirmed" role="status">Þjónustugreiðsla hefur verið staðfest hjá myPOS.</p> : <form className="payment-service-form" onSubmit={createLink}>
             <label className="field"><span>Upphæð fyrir þjónustu (ISK)</span><input type="number" inputMode="numeric" min={1} max={2147483647} step={1} required value={locked ? second!.amountIsk : amount} disabled={pending || locked} onChange={(event) => setAmount(event.target.value)} /></label>
-            <label className="field"><span>Lýsing fyrir viðskiptavin</span><textarea value={state.serviceDescription ?? description} minLength={3} maxLength={500} required disabled={pending || locked} onChange={(event) => setDescription(event.target.value)} placeholder="Lýstu þjónustunni sem greiðslan nær yfir" /></label>
-            {locked ? <small>Upphæð og lýsing eru læstar. Nýr síðutengill afturkallar þann gamla og notar sömu greiðslubeiðni.</small> : null}
-            <button className="secondary-button full-button" type="submit" disabled={pending || !state.ready || ["expired", "cancelled", "creation_unknown", "creating"].includes(second?.status ?? "") || (second?.status === "creation_failed" && !canRetryPaymentCreation(second))}>{pending ? "Undirbý…" : second && canRetryPaymentCreation(second) ? "Reyna undirbúning greiðslu aftur" : locked ? "Nýr tengill fyrir sömu greiðslu" : "Undirbúa seinni greiðslu"}</button>
+            <label className="field"><span>Lýsing fyrir viðskiptavin</span><textarea value={locked ? state.serviceDescription ?? description : description} minLength={3} maxLength={500} required disabled={pending || locked} onChange={(event) => setDescription(event.target.value)} placeholder="Lýstu þjónustunni sem greiðslan nær yfir" /></label>
+            {locked ? <small>Nýr síðutengill afturkallar þann gamla og notar sömu greiðslubeiðni. Veldu „Breyta upphæð eða lýsingu“ til að skipta greiðslubeiðninni út.</small> : null}
+            {editing ? <small>Gamli tengillinn í kerfinu hættir að virka. Biddu viðskiptavininn að loka eldri greiðslusíðu ef hann hefur opnað hana og nota nýja tengilinn.</small> : null}
+            {editing && second?.id !== editingId ? <p className="compact-error" role="status">Greiðslubeiðninni hefur verið breytt annars staðar. Hættu við breytingu og farðu yfir nýjustu upplýsingar.</p> : null}
+            <button className="secondary-button full-button" type="submit" disabled={pending || !state.ready || (editing ? !canReplace || second?.id !== editingId : ["expired", "cancelled", "creation_unknown", "creating"].includes(second?.status ?? "") || (second?.status === "creation_failed" && !canRetryPaymentCreation(second)))}>{pending ? "Undirbý…" : editing ? "Skipta út og búa til nýjan tengil" : second && canRetryPaymentCreation(second) ? "Reyna undirbúning greiðslu aftur" : locked ? "Nýr tengill fyrir sömu greiðslu" : "Undirbúa seinni greiðslu"}</button>
+            {editing ? <button className="secondary-button full-button" type="button" disabled={pending} onClick={() => setEditingId(null)}>Hætta við breytingu</button> : canReplace ? <button className="secondary-button full-button" type="button" disabled={pending || !state.ready} onClick={() => { setEditingId(second!.id); setAmount(String(second!.amountIsk)); setDescription(state.serviceDescription ?? ""); setMessage(null); setError(null); }}>Breyta upphæð eða lýsingu</button> : null}
           </form>}
-          {message ? <ManualWhatsAppMessage key={message} message={message} phone={customerPhone} recipientName={customerName} /> : null}
+          {message && message.paymentId === second?.id && !servicePaid ? <ManualWhatsAppMessage allowSms key={message.text} message={message.text} phone={customerPhone} recipientName={customerName} /> : null}
           {error ? <p className="compact-error" role="alert">{error}</p> : null}
         </>}
   </section>;

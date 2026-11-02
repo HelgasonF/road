@@ -10,7 +10,10 @@ import { createCheckoutService } from "../src/features/payments/checkout-service
 import { createCheckoutStore } from "../src/features/payments/checkout-store";
 import { createPaymentStore } from "../src/features/payments/store";
 import { MyPosProvider } from "../src/features/payments/mypos";
+import { getServicePaymentSummary, getServicePaymentRequest } from "../src/features/payments/checkout-queries";
 vi.mock("server-only", () => ({}));
+vi.mock("../src/features/payments/collection-config", () => ({ isCollectionEnabled: () => true,
+    requireReconciliationConfig: () => ({ environment: "sandbox", clientId: "system-test-merchant" }) }));
 const connection = vi.hoisted(() => ({ admin: undefined }));
 vi.mock("../src/lib/supabase/admin", () => ({ createAdminClient: () => {
         assert(connection.admin, "The isolated API must be configured before storage access");
@@ -198,6 +201,124 @@ describe.skipIf(!databaseUrl || !restUrl || !serviceKey || !anonKey)("payment sy
         expect(repeated.status).toBe("pending");
         expect(creates()).toBe(1);
         expect((await db.query("select count(*)::int as count from public.customer_payment_intakes where job_id=$1", [jobId])).rows[0].count).toBe(1);
+    });
+    it("carries an optional destination through API-verified Paid without changing pickup", async () => {
+        const request = await start({ destinationLabel: "  Workshop in Keflavík  ", requiredCapability: "towing" });
+        const draft = (await db.query("select details from public.customer_payment_intakes where job_id=$1", [jobId])).rows[0].details;
+        expect(draft.destinationLabel).toBe("Workshop in Keflavík");
+        expect((await db.query("select destination_label from public.jobs where id=$1", [jobId])).rows[0].destination_label).toBeNull();
+        markRemote(request.providerCode, 4);
+        expect(await service().reconcile()).toMatchObject({ submitted: 1, failed: 0 });
+        const saved = await connection.admin.from("jobs").select("destination_label,latitude,longitude").eq("id", jobId).single();
+        expect(saved.error).toBeNull();
+        expect(saved.data).toEqual({ destination_label: "Workshop in Keflavík", latitude: details.latitude, longitude: details.longitude });
+        expect(creates()).toBe(1);
+    });
+    async function submittedJob() {
+        const initial = await start();
+        markRemote(initial.providerCode, 4);
+        await service().reconcile();
+        return initial;
+    }
+    it("replaces the unpaid service amount, retaining history and rejecting its old IRA page", async () => {
+        const initial = await submittedJob();
+        const oldInput = serviceInput();
+        const old = await service().startService(oldInput);
+        const replacementInput = { ...serviceInput(32000), paymentId: old.id, description: "Revised towing" };
+        const replacement = await service().replaceService(replacementInput);
+        expect(replacement).toMatchObject({ amountIsk: 32000, purpose: "service", replacesPaymentId: old.id, supersededAt: null });
+        expect(replacement.id).not.toBe(old.id);
+        const retired = await createPaymentStore().get(old.id);
+        expect(retired.status).toBe("pending");
+        expect(retired.supersededAt).not.toBeNull();
+        expect((await db.query("select expires_at < clock_timestamp() as expired from public.job_payment_pages where token_hash=$1", [oldInput.tokenHash])).rows[0].expired).toBe(true);
+        expect((await createPaymentStore().get(initial.id))).toMatchObject({ amountIsk: 10490, status: "paid", supersededAt: null });
+        expect(creates()).toBe(3);
+        const repeated = await service().replaceService({ ...replacementInput, tokenHash: serviceInput().tokenHash });
+        expect(repeated.id).toBe(replacement.id);
+        expect(creates()).toBe(3);
+        const list = await createPaymentStore().listForJob(jobId);
+        expect(list.filter((item) => item.purpose === "service" && !item.supersededAt)).toHaveLength(1);
+    });
+    it("resolves only the current private page and hides its provider URL until Pay is checked", async () => {
+        await submittedJob();
+        const oldToken = randomBytes(32).toString("base64url");
+        const nextToken = randomBytes(32).toString("base64url");
+        const old = await service().startService({ ...serviceInput(), tokenHash: createHash("sha256").update(oldToken).digest("hex") });
+        expect(await getServicePaymentSummary(oldToken)).toMatchObject({ amountIsk: 27000, checkoutUrl: null, serviceCheckoutAvailable: true });
+        const next = await service().replaceService({ ...serviceInput(32000), paymentId: old.id, tokenHash: createHash("sha256").update(nextToken).digest("hex") });
+        expect(await getServicePaymentSummary(oldToken)).toBeNull();
+        expect(await getServicePaymentRequest(oldToken)).toBeNull();
+        expect(await getServicePaymentSummary(nextToken)).toMatchObject({ amountIsk: 32000, checkoutUrl: null, serviceCheckoutAvailable: true });
+        expect((await getServicePaymentRequest(nextToken)).id).toBe(next.id);
+        markRemote(old.providerCode, 4);
+        await due();
+        await service().reconcile();
+        expect(await getServicePaymentSummary(nextToken)).toBeNull();
+        expect(await getServicePaymentRequest(nextToken)).toBeNull();
+    });
+    it("creates at most one successor during concurrent replacement clicks", async () => {
+        await submittedJob();
+        const old = await service().startService(serviceInput());
+        const input = { ...serviceInput(32000), paymentId: old.id, description: "Revised towing" };
+        const results = await Promise.allSettled([service().replaceService(input), service().replaceService({ ...input, tokenHash: serviceInput().tokenHash })]);
+        expect(results.some((result) => result.status === "fulfilled")).toBe(true);
+        expect((await db.query("select count(*)::int as count from public.job_payment_requests where replaces_payment_id=$1", [old.id])).rows[0].count).toBe(1);
+        expect(creates()).toBe(3);
+    });
+    it("finds an old checkout's Paid response before replacement and creates no extra request", async () => {
+        await submittedJob();
+        const old = await service().startService(serviceInput());
+        markRemote(old.providerCode, 4);
+        await expect(service().replaceService({ ...serviceInput(32000), paymentId: old.id })).rejects.toMatchObject({ code: "payment_already_paid" });
+        expect((await createPaymentStore().get(old.id)).status).toBe("paid");
+        expect(creates()).toBe(2);
+        expect((await createPaymentStore().listForJob(jobId))).toHaveLength(2);
+    });
+    it("keeps monitoring superseded requests and closes the current page after a late Paid", async () => {
+        await submittedJob();
+        const old = await service().startService(serviceInput());
+        const replacementInput = { ...serviceInput(32000), paymentId: old.id };
+        const current = await service().replaceService(replacementInput);
+        markRemote(old.providerCode, 4);
+        await due();
+        expect(await service().reconcile()).toMatchObject({ failed: 0 });
+        expect((await createPaymentStore().get(old.id))).toMatchObject({ status: "paid", amountIsk: 27000 });
+        expect((await createPaymentStore().get(current.id)).status).toBe("pending");
+        expect((await db.query("select expires_at < clock_timestamp() as expired from public.job_payment_pages where token_hash=$1", [replacementInput.tokenHash])).rows[0].expired).toBe(true);
+        await expect(service().replaceService({ ...serviceInput(34000), paymentId: current.id })).rejects.toMatchObject({ code: "payment_already_paid" });
+        await expect(service().verifyServicePayments(jobId)).rejects.toMatchObject({ code: "payment_already_paid" });
+        expect(creates()).toBe(3);
+    });
+    it("leaves the existing link intact if verification fails before replacement", async () => {
+        await submittedJob();
+        const oldInput = serviceInput();
+        const old = await service().startService(oldInput);
+        mode = "wrong_amount";
+        await expect(service().replaceService({ ...serviceInput(32000), paymentId: old.id })).rejects.toMatchObject({ code: "payment_response_mismatch" });
+        expect((await createPaymentStore().get(old.id)).supersededAt).toBeNull();
+        expect((await db.query("select expires_at > clock_timestamp() as valid from public.job_payment_pages where token_hash=$1", [oldInput.tokenHash])).rows[0].valid).toBe(true);
+        expect(creates()).toBe(2);
+    });
+    it.each(["deny_create", "uncertain_create"])("retains the replacement reservation safely after %s", async (failure) => {
+        await submittedJob();
+        const old = await service().startService(serviceInput());
+        const input = { ...serviceInput(32000), paymentId: old.id };
+        mode = failure;
+        await expect(service().replaceService(input)).rejects.toMatchObject({ code: failure === "deny_create" ? "payment_permission_denied" : "payment_provider_unavailable" });
+        const successor = (await createPaymentStore().listForJob(jobId)).find((item) => item.replacesPaymentId === old.id);
+        expect(successor).toMatchObject({ amountIsk: 32000, status: failure === "deny_create" ? "creation_failed" : "creation_unknown" });
+        expect((await createPaymentStore().get(old.id)).supersededAt).not.toBeNull();
+        expect(creates()).toBe(3);
+        mode = "ok";
+        if (failure === "deny_create") {
+            expect((await service().replaceService({ ...input, tokenHash: serviceInput().tokenHash })).id).toBe(successor.id);
+            expect(creates()).toBe(4);
+        } else {
+            await expect(service().replaceService(input)).rejects.toMatchObject({ code: "payment_creation_unresolved" });
+            expect(creates()).toBe(3);
+        }
+        expect((await createPaymentStore().listForJob(jobId)).filter((item) => item.replacesPaymentId === old.id)).toHaveLength(1);
     });
     it.each([1, 2, 3, 5, 6, 99])("keeps the form unsubmitted for provider status %i", async (status) => {
         const request = await start();

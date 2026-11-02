@@ -17,6 +17,7 @@ export type ServiceCheckoutInput = PaymentAccount & {
 export interface CheckoutStore {
   prepareInitial(input: InitialCheckoutInput): Promise<{ claimed: boolean; request: PaymentRequest }>;
   prepareService(input: ServiceCheckoutInput): Promise<{ claimed: boolean; request: PaymentRequest }>;
+  replaceService(input: ServiceCheckoutInput & { paymentId: string }): Promise<{ claimed: boolean; request: PaymentRequest }>;
   claimDue(account: PaymentAccount): Promise<PaymentRequest[]>;
   finalize(paymentId: string): Promise<"submitted" | "review_required" | "not_ready" | "none">;
 }
@@ -26,7 +27,7 @@ function reservation(data: unknown, error: unknown) {
   if (error || !parsed.success) {
     // Explicit application diagnostics only; never return a database message.
     const code = typeof error === "object" && error !== null && "message" in error ? error.message : null;
-    if (["payment_details_locked", "payment_link_unavailable", "payment_creation_unresolved"].includes(String(code))) throw new PaymentError(String(code));
+    if (["payment_details_locked", "payment_link_unavailable", "payment_creation_unresolved", "payment_already_paid", "payment_changed", "payment_details_unchanged"].includes(String(code))) throw new PaymentError(String(code));
     throw new PaymentError("payment_storage_error");
   }
   return { claimed: parsed.data.claimed, request: paymentFromRow(parsed.data.request) };
@@ -57,6 +58,15 @@ export function createCheckoutStore(): CheckoutStore {
       });
       if (error || !Array.isArray(data)) throw new PaymentError("payment_storage_error");
       return data.map(paymentFromRow);
+    },
+    async replaceService(input) {
+      const { data, error } = await client.rpc("replace_service_payment_page", {
+        p_job_id: input.jobId, p_payment_id: input.paymentId, p_amount_isk: input.amountIsk,
+        p_description: input.description, p_environment: input.environment, p_merchant_id: input.merchantId,
+        p_provider_api: input.providerApi, p_created_by: input.createdBy,
+        p_token_hash: input.tokenHash, p_expires_at: input.expiresAt,
+      });
+      return reservation(data, error);
     },
     async finalize(paymentId) {
       const { data, error } = await client.rpc("finalize_paid_customer_intake", { p_payment_id: paymentId });

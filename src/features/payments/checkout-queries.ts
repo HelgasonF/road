@@ -59,7 +59,7 @@ export async function hasPaidInitialForIntake(token: string) {
   return Boolean(data);
 }
 
-export async function getServicePaymentSummary(token: string): Promise<PublicPaymentSummary | null> {
+async function loadServicePaymentPage(token: string) {
   if (!isCollectionEnabled() || !customerTokenSchema.safeParse(token).success) return null;
   const admin = createAdminClient();
   const { data: page, error } = await admin.from("job_payment_pages")
@@ -68,7 +68,26 @@ export async function getServicePaymentSummary(token: string): Promise<PublicPay
   if (error) throw new PaymentError("payment_storage_error");
   if (!page || new Date(page.expires_at).getTime() <= Date.now()) return null;
   const request = await createPaymentStore().get(page.payment_request_id);
-  if (!request || request.purpose !== "service" || !currentAccount(request)) return null;
+  if (!request || request.purpose !== "service" || request.supersededAt || !currentAccount(request)) return null;
+  return { page, request };
+}
+
+async function serviceCheckoutAllowed(request: PaymentRequest) {
+  if (!(await checkoutAllowedForJob(request))) return false;
+  const history = await createPaymentStore().listForJob(request.jobId);
+  return !history.some((other) => other.purpose === "service" && other.environment === request.environment && other.status === "paid");
+}
+
+export async function getServicePaymentRequest(token: string): Promise<PaymentRequest | null> {
+  const context = await loadServicePaymentPage(token);
+  return context && await serviceCheckoutAllowed(context.request) ? context.request : null;
+}
+
+export async function getServicePaymentSummary(token: string): Promise<PublicPaymentSummary | null> {
+  const context = await loadServicePaymentPage(token);
+  if (!context) return null;
+  const { page, request } = context;
   return { purpose: "service", description: page.description, vehicleRegistration: page.vehicle_registration,
-    amountIsk: request.amountIsk, status: request.status, checkoutUrl: await checkoutAllowedForJob(request) ? safeCheckoutUrl(request) : null, intakeState: null };
+    amountIsk: request.amountIsk, status: request.status, checkoutUrl: null,
+    serviceCheckoutAvailable: Boolean(await serviceCheckoutAllowed(request) && safeCheckoutUrl(request)), intakeState: null };
 }

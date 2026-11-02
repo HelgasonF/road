@@ -37,6 +37,7 @@ export interface ActiveCustomerIntake {
     vehicleMake: string | null;
     rentalCompany: string | null;
     peopleCount: number | null;
+    destinationLabel: string | null;
     requiredCapability: CapabilityCode | null;
     latitude: number;
     longitude: number;
@@ -121,6 +122,7 @@ export async function getCustomerIntakePageData(token: string): Promise<Customer
         vehicle_make,
         rental_company,
         people_count,
+        destination_label,
         intake_pending,
         latitude,
         longitude,
@@ -158,6 +160,7 @@ export async function getCustomerIntakePageData(token: string): Promise<Customer
       vehicleMake: job.vehicle_make,
       rentalCompany: job.rental_company,
       peopleCount: job.people_count,
+      destinationLabel: job.destination_label ?? null,
       requiredCapability: requirements?.[0]?.capability_code ?? null,
       latitude: job.latitude,
       longitude: job.longitude,

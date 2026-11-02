@@ -1,4 +1,5 @@
 import pg from "pg";
+import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 // Opt-in integration check against an explicitly isolated local test database.
@@ -8,6 +9,7 @@ const clients = [];
 const jobId = "aa000000-0000-4000-8000-000000000020";
 const checkoutJobId = "aa000000-0000-4000-8000-000000000021";
 const staffId = "00000000-0000-4000-8000-000000000001";
+const replacementJobIds = [];
 
 describe.skipIf(!connectionString)("PostgreSQL payment reservation concurrency", () => {
   beforeAll(async () => {
@@ -28,7 +30,7 @@ describe.skipIf(!connectionString)("PostgreSQL payment reservation concurrency",
   afterAll(async () => {
     try {
       // Delete only the exact disposable fixture created by this test.
-      if (clients[0]) await clients[0].query("delete from public.jobs where id = any($1::uuid[])", [[jobId, checkoutJobId]]);
+      if (clients[0]) await clients[0].query("delete from public.jobs where id = any($1::uuid[])", [[jobId, checkoutJobId, ...replacementJobIds]]);
     } finally {
       await Promise.all(clients.map((client) => client.end()));
     }
@@ -62,5 +64,36 @@ describe.skipIf(!connectionString)("PostgreSQL payment reservation concurrency",
     expect(results[0].rows[0].result.request.reference).toBe(results[1].rows[0].result.request.reference);
     expect(results[0].rows[0].result.request.reference).not.toBe(first.reference);
     expect(results[0].rows[0].result.request.id).toBe(first.id);
+  });
+  it.each(["payment-first", "replacement-first"])("serializes a Paid observation and replacement without losing payment (%s)", async (order) => {
+    const ownedJobId = randomUUID();
+    replacementJobIds.push(ownedJobId);
+    await clients[0].query("insert into public.jobs(id,customer_name,customer_phone,latitude,longitude,location_label,location_source,created_by) values($1,'Replacement race','+3545550101',64.14,-21.9,'Pickup','manual',$2)",[ownedJobId,staffId]);
+    const old = (await clients[0].query("select public.prepare_service_payment_page($1,27000,'Original towing','sandbox','concurrency-merchant','rest_v1_1',$2,$3,now()+interval '1 hour') as result",[ownedJobId,staffId,randomUUID().replaceAll('-','').repeat(2)])).rows[0].result.request;
+    const code = `BRACE${randomUUID().replaceAll('-','')}`;
+    await clients[0].query("select public.finish_job_payment_creation($1,$2,$3,'pending',null)",[old.id,code,`https://demo.mypos.eu/pr/${code}`]);
+    const observation = "select public.record_job_payment_status($1,$2,27000,'ISK',$3,$4,$5,clock_timestamp())";
+    await clients[0].query(observation,[old.id,code,old.reference,'1','pending']);
+    const replaceSql = "select public.replace_service_payment_page($1,$2,32000,'Revised towing','sandbox','concurrency-merchant','rest_v1_1',$3,$4,now()+interval '1 hour') as result";
+    const parameters = [ownedJobId,old.id,staffId,randomUUID().replaceAll('-','').repeat(2)];
+    const first = clients[1], second = clients[2];
+    await first.query('begin');
+    try {
+      if(order === 'payment-first') {
+        await first.query(observation,[old.id,code,old.reference,'4','paid']);
+        const competing = second.query(replaceSql,parameters).then(result=>({result}),error=>({error}));
+        await first.query('commit');
+        expect((await competing).error?.message).toBe('payment_already_paid');
+      } else {
+        const successor = (await first.query(replaceSql,parameters)).rows[0].result.request;
+        const competing = second.query(observation,[old.id,code,old.reference,'4','paid']);
+        await first.query('commit');
+        await competing;
+        const page = (await clients[0].query('select expires_at <= clock_timestamp() as expired from public.job_payment_pages where payment_request_id=$1',[successor.id])).rows[0];
+        expect(page.expired).toBe(true);
+      }
+    } catch(error) { await first.query('rollback'); throw error; }
+    expect((await clients[0].query('select status from public.job_payment_requests where id=$1',[old.id])).rows[0].status).toBe('paid');
+    expect((await clients[0].query("select count(*)::int as count from public.job_payment_requests where job_id=$1 and purpose='service' and superseded_at is null",[ownedJobId])).rows[0].count).toBe(1);
   });
 });

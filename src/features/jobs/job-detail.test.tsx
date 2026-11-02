@@ -48,6 +48,12 @@ describe("JobDetail layout", () => {
 });
 
 describe("JobDetail vehicle summary", () => {
+  it("shows a supplied destination separately from the pickup location", () => {
+    renderJob({ destinationLabel: "Workshop in Keflavík" });
+    expect(screen.getByRole("heading", { name: "Áfangastaður ökutækis" })).toBeInTheDocument();
+    expect(screen.getByText("Workshop in Keflavík")).toBeInTheDocument();
+  });
+
   it("shows the vehicle registration the customer submitted", () => {
     renderJob({ vehicleRegistration: "AB123" });
 

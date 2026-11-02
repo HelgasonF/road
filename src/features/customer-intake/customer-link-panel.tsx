@@ -69,15 +69,15 @@ export function CustomerLinkPanel({ customerName, customerPhone, jobId, link }: 
 
       {customerMessage ? (
         <div className="customer-whatsapp-handoff">
-          <ManualWhatsAppMessage key={customerMessage} message={customerMessage} phone={customerPhone} recipientName={customerName || customerPhone} />
+          <ManualWhatsAppMessage allowSms key={customerMessage} message={customerMessage} phone={customerPhone} recipientName={customerName || customerPhone} />
         </div>
-      ) : active ? <p className="muted-copy">Vegna öryggis er hrái tengillinn aðeins tiltækur þegar hann er búinn til. Búðu til nýjan til að senda aftur í WhatsApp.</p> : null}
+      ) : active ? <p className="muted-copy">Tengillinn er aðeins tiltækur hér þegar hann er búinn til. Þú getur sent áður afrituð skilaboð aftur með WhatsApp eða SMS. Nýr tengill gerir þann gamla óvirkan.</p> : null}
 
       <div className="customer-link-actions">
         <button className="secondary-button" type="button" disabled={pending} onClick={createLink}>{active || submitted ? <RefreshCw size={15} /> : <Link2 size={15} />}{pending ? "Bý til…" : active ? "Nýr tengill" : submitted ? "Óska eftir leiðréttingu" : "Búa til tengil"}</button>
         {active ? <button className="text-danger-button" type="button" disabled={pending} onClick={revokeLink}><Unlink size={15} /> Afturkalla</button> : null}
       </div>
-      {active && !generatedUrl ? <small>Nýr tengill afturkallar sjálfkrafa þann gamla.</small> : null}
+      {active ? <small>Nýr tengill afturkallar sjálfkrafa þann gamla. Notaðu sama tengil þegar þú skiptir milli SMS og WhatsApp.</small> : null}
       {error ? <p className="compact-error" role="alert">{error}</p> : null}
     </section>
   );

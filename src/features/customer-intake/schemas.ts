@@ -3,6 +3,7 @@ import { z } from "zod";
 import { capabilityCodes } from "@/lib/domain/types";
 import { buildContactLinks } from "@/lib/contact-links";
 import { normalizePhoneNumberOrOriginal } from "@/lib/phone";
+import { destinationLabelSchema } from "@/lib/domain/destination";
 
 export const customerTokenSchema = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
 
@@ -21,6 +22,7 @@ export const customerIntakeSchema = z.object({
   vehicleRegistration: optionalText(24).transform((value) => value?.toLocaleUpperCase("is") ?? null),
   vehicleMake: optionalText(120),
   rentalCompany: optionalText(120),
+  destinationLabel: destinationLabelSchema,
   peopleCount: z.number().int().min(1).max(99),
   requiredCapability: z.enum(capabilityCodes),
   latitude: z.number().min(62.5).max(67.5),

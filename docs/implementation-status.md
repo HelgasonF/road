@@ -1,6 +1,44 @@
 # Iceland Road Assistance implementation status
 
-Last updated: 26 October 2026
+Last updated: 2 November 2026
+
+Local, unreleased **issue 4**: dispatch can edit an unpaid service payment and
+prepare a replacement link/message inside IRA. Old requests remain in history;
+the old IRA page expires. Paid/uncertain requests are guarded, stale edits and
+concurrent replacements are fenced, and late Paid on an older request stops
+collection. New customer Pay checks the token and payment status on the server.
+An already-open myPOS checkout must still be closed by the customer. **669
+application tests**, **35 isolated integration tests / 499 SQL assertions**,
+build/types/lint and browser checks at 320/390/1280px pass. Issues 1–4 are local,
+uncommitted and undeployed; no hosted migration, message or card charge was made.
+See the [replacement record](service-payment-replacement-2026-11-02.md).
+
+Local, unreleased **issue 3**: an **optional** vehicle destination is available
+in the English/Icelandic customer form and dispatcher editor, with display in
+dispatcher and assigned-provider details. Free text is separate from pickup
+coordinates; blank is allowed. Migration `20261102185452` adds the nullable field
+and compatible writer/finalizer support. **639 application tests**, **25 isolated
+integration tests / 465 SQL assertions**, build/types/lint and browser checks at
+320/390/1280px pass. No hosted migration, deployment, message or payment was made.
+Apply the migration before deploying this source. See the
+[destination record](vehicle-destination-2026-11-02.md). Issue 4 was completed next,
+as recorded above.
+
+Local, unreleased **issue 2**: customer form/correction and prepared service-payment
+links now offer **Opna SMS** alongside WhatsApp/copy, reusing one message and URL.
+Android/iPhone/iPad formats, the physical Samsung composer and responsive layouts
+are verified; Freyr also confirmed the actual iPhone Safari → Messages draft.
+Native iPhone acceptance is user-observed; iPad has format coverage only.
+**621 tests**, build/types/lint pass. No SMS was sent by the agent. See the
+[SMS record](sms-handoff-2026-11-02.md). Issue 3 was then completed above;
+issue 4 was subsequently completed above.
+
+Local, unreleased: direct calling-code entry is implemented in the shared phone
+input after Freyr selected owner report **1** and requested one fix at a time.
+Users can type `+44`, `44` or `0044`, still use the country picker, and submit
+E.164 with no default country. See the [verification record](phone-code-entry-2026-11-02.md).
+Issue 2 was then implemented above; the live source remains the
+26 October copy follow-up below.
 
 Customer-form copy follow-up: section 4 now says **þjónustuaðili** in Icelandic
 and **service provider** in English. Source `2716c4b` passed all 13 customer-form

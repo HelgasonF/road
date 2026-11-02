@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { startCustomerCheckoutAction, resumeCustomerCheckoutAction, createServicePaymentLinkAction } from "./checkout-actions";
+import { startCustomerCheckoutAction, resumeCustomerCheckoutAction, createServicePaymentLinkAction, replaceServicePaymentLinkAction, openServiceCheckoutAction } from "./checkout-actions";
+import { getServicePaymentRequest } from "./checkout-queries";
 import { getVerifiedStaffSession } from "@/lib/auth/session";
 import { requireCollectionConfig } from "./collection-config";
 import { PaymentError } from "./mypos-config";
@@ -10,15 +11,17 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("@/lib/auth/session", () => ({ getVerifiedStaffSession: vi.fn() }));
 vi.mock("@/features/customer-intake/rate-limit", () => ({ customerLinkRequestAllowed: vi.fn(async () => true), customerRateLimitError: "rate limited" }));
 vi.mock("@/features/customer-intake/queries", () => ({ getActiveCustomerLinkByToken: vi.fn(async () => ({ id: "valid-link" })) }));
-vi.mock("./collection-config", () => ({ requireCollectionConfig: vi.fn(() => ({ environment: "sandbox" })), isCollectionEnabled: vi.fn(() => true) }));
-vi.mock("./checkout-queries", () => ({ hasPaidInitialForIntake: vi.fn(async () => false) }));
+vi.mock("./collection-config", () => ({ requireCollectionConfig: vi.fn(() => ({ environment: "sandbox" })), requireReconciliationConfig: vi.fn(() => ({ environment: "sandbox" })), isCollectionEnabled: vi.fn(() => true) }));
+vi.mock("./checkout-queries", () => ({ hasPaidInitialForIntake: vi.fn(async () => false), getServicePaymentRequest: vi.fn() }));
 vi.mock("./mypos-config", async (original) => ({ ...await original<typeof import("./mypos-config")>(), getInitialFeeIsk: () => 5000 }));
 vi.mock("./mypos", () => ({ MyPosProvider: class {} }));
 vi.mock("./store", () => ({ createPaymentStore: vi.fn() }));
 vi.mock("./checkout-store", () => ({ createCheckoutStore: vi.fn() }));
 const startInitial = vi.fn();
 const startService = vi.fn();
-vi.mock("./checkout-service", () => ({ createCheckoutService: () => ({ startInitial, startService }) }));
+const replaceService = vi.fn();
+const verifyServicePayments = vi.fn();
+vi.mock("./checkout-service", () => ({ createCheckoutService: () => ({ startInitial, startService, replaceService, verifyServicePayments }) }));
 const maybeSingle = vi.fn();
 const query = { select: vi.fn(() => query), eq: vi.fn(() => query), maybeSingle };
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => ({ from: () => query }) }));
@@ -34,10 +37,55 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(requireCollectionConfig).mockReturnValue({ environment: "sandbox", clientId: "m", clientSecret: "s", livePaymentsEnabled: false });
   startInitial.mockResolvedValue({ paymentUrl: "https://demo.mypos.eu/pr/B123" });
-  startService.mockResolvedValue({ paymentUrl: "https://demo.mypos.eu/pr/B456" });
+  startService.mockResolvedValue({ id: "40000000-0000-4000-8000-000000000001", paymentUrl: "https://demo.mypos.eu/pr/B456" });
+  replaceService.mockResolvedValue({ id: "40000000-0000-4000-8000-000000000002", paymentUrl: "https://demo.mypos.eu/pr/B457" });
+  verifyServicePayments.mockResolvedValue(undefined);
+  vi.mocked(getServicePaymentRequest).mockResolvedValue(null);
 });
 
 describe("checkout action authorization", () => {
+  const replacement = { jobId: "30000000-0000-4000-8000-000000000001", paymentId: "40000000-0000-4000-8000-000000000001", amountIsk: 32000, description: "Revised towing" };
+  it("requires staff authorization before replacing the second payment", async () => {
+    vi.mocked(getVerifiedStaffSession).mockResolvedValue(null);
+    expect(await replaceServicePaymentLinkAction(replacement)).toMatchObject({ ok: false, errorCode: "staff_access_required" });
+    expect(replaceService).not.toHaveBeenCalled();
+    expect(requireCollectionConfig).not.toHaveBeenCalled();
+  });
+  it("binds replacement to the expected payment, verified staff and stored customer name", async () => {
+    vi.mocked(getVerifiedStaffSession).mockResolvedValue({ id: "00000000-0000-4000-8000-000000000001" } as never);
+    expect(await replaceServicePaymentLinkAction(replacement)).toMatchObject({ ok: true, data: { paymentId: "40000000-0000-4000-8000-000000000002", path: expect.stringMatching(/^\/pay\//) } });
+    expect(replaceService).toHaveBeenCalledWith(expect.objectContaining({ ...replacement, customerName: "Existing Customer", createdBy: "00000000-0000-4000-8000-000000000001", tokenHash: expect.stringMatching(/^[a-f0-9]{64}$/) }));
+    expect(startService).not.toHaveBeenCalled();
+  });
+  it.each([{ paymentId: "invalid" }, { amountIsk: 0 }, { description: "x" }, { status: "paid" }])("rejects malformed replacement input %j", async (invalid) => {
+    vi.mocked(getVerifiedStaffSession).mockResolvedValue({ id: "00000000-0000-4000-8000-000000000001" } as never);
+    expect(await replaceServicePaymentLinkAction({ ...replacement, ...invalid })).toMatchObject({ ok: false, errorCode: "payment_invalid_input" });
+    expect(replaceService).not.toHaveBeenCalled();
+  });
+  it("rejects an old service token before provider verification", async () => {
+    expect(await openServiceCheckoutAction({ token: "A".repeat(43) })).toMatchObject({ ok: false, errorCode: "payment_link_unavailable" });
+    expect(verifyServicePayments).not.toHaveBeenCalled();
+  });
+  it("checks a service token again after provider verification to catch a concurrent replacement", async () => {
+    vi.mocked(getServicePaymentRequest).mockResolvedValueOnce({ jobId: replacement.jobId } as never).mockResolvedValueOnce(null);
+    expect(await openServiceCheckoutAction({ token: "A".repeat(43) })).toMatchObject({ ok: false, errorCode: "payment_link_unavailable" });
+    expect(verifyServicePayments).toHaveBeenCalledWith(replacement.jobId);
+    expect(getServicePaymentRequest).toHaveBeenCalledTimes(2);
+  });
+  it("does not return checkout when an older service request is Paid", async () => {
+    vi.mocked(getServicePaymentRequest).mockResolvedValue({ jobId: replacement.jobId } as never);
+    verifyServicePayments.mockRejectedValueOnce(new PaymentError("payment_already_paid"));
+    expect(await openServiceCheckoutAction({ token: "A".repeat(43) })).toMatchObject({ ok: false, errorCode: "payment_already_paid" });
+    expect(getServicePaymentRequest).toHaveBeenCalledOnce();
+  });
+  it("opens only the validated active provider URL and never accepts a browser-supplied amount", async () => {
+    const token = "A".repeat(43);
+    vi.mocked(getServicePaymentRequest).mockResolvedValue({ jobId: replacement.jobId, environment: "sandbox", status: "pending", paymentUrl: "https://demo.mypos.eu/pr/B456" } as never);
+    expect(await openServiceCheckoutAction({ token, amountIsk: 1 })).toMatchObject({ ok: false, errorCode: "payment_invalid_input" });
+    expect(await openServiceCheckoutAction({ token })).toEqual({ ok: true, data: { checkoutUrl: "https://demo.mypos.eu/pr/B456" } });
+    expect(startService).not.toHaveBeenCalled();
+    expect(replaceService).not.toHaveBeenCalled();
+  });
   it("resumes the exact saved draft while keeping its original checkout language and name", async () => {
     const details = Object.fromEntries(Object.entries(input).filter(([key]) => !["token", "language"].includes(key)));
     maybeSingle.mockResolvedValueOnce({ data: { id: "link" }, error: null })

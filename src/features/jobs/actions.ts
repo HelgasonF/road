@@ -32,7 +32,7 @@ export async function saveJobAction(input: JobInput): Promise<ActionResult<{ id:
   if (!parsed.success) return validationError(parsed.error);
   const value = parsed.data;
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("save_job", {
+  const parameters = {
     p_id: value.id,
     p_customer_name: value.customerName,
     p_customer_phone: value.customerPhone,
@@ -47,7 +47,10 @@ export async function saveJobAction(input: JobInput): Promise<ActionResult<{ id:
     p_priority: value.priority,
     p_notes: value.notes,
     p_required_capabilities: value.requiredCapabilities,
-  });
+  };
+  const { data, error } = value.destinationLabel === undefined
+    ? await supabase.rpc("save_job", parameters)
+    : await supabase.rpc("save_job_v2", { ...parameters, p_destination_label: value.destinationLabel });
 
   if (error) return { ok: false, error: "Ekki tókst að vista verkefnið." };
   revalidatePath("/");

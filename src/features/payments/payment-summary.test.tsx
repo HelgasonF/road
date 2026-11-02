@@ -3,9 +3,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { PaymentSummary } from "./payment-summary";
 import { safeCheckoutUrl, type PublicPaymentSummary } from "./public-summary";
 import type { PaymentRequest } from "./types";
-import { resumeCustomerCheckoutAction } from "./checkout-actions";
+import { openServiceCheckoutAction, resumeCustomerCheckoutAction } from "./checkout-actions";
 
-vi.mock("./checkout-actions", () => ({ resumeCustomerCheckoutAction: vi.fn() }));
+vi.mock("./checkout-actions", () => ({ resumeCustomerCheckoutAction: vi.fn(), openServiceCheckoutAction: vi.fn() }));
 
 afterEach(cleanup);
 const summary: PublicPaymentSummary = {
@@ -14,13 +14,22 @@ const summary: PublicPaymentSummary = {
 };
 
 describe("private payment summary", () => {
-  it("shows the service, vehicle, separate second amount and hosted checkout", () => {
-    render(<PaymentSummary summary={summary} />);
+  it("shows the service and second amount with a server-checked Pay button", () => {
+    render(<PaymentSummary summary={{ ...summary, checkoutUrl: null, serviceCheckoutAvailable: true }} serviceToken={"A".repeat(43)} />);
     expect(screen.getByText("Jump start service")).toBeInTheDocument();
     expect(screen.getByText("AB123")).toBeInTheDocument();
     expect(screen.getByText("27,000 ISK")).toBeInTheDocument();
     expect(screen.getByText(/separate from the initial/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Pay securely/ })).toHaveAttribute("href", summary.checkoutUrl);
+    expect(screen.getByRole("button", { name: /Pay securely/ })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Pay securely/ })).not.toBeInTheDocument();
+  });
+  it("checks its token again at Pay and explains a replaced link without opening checkout", async () => {
+    const token = "A".repeat(43);
+    vi.mocked(openServiceCheckoutAction).mockResolvedValueOnce({ ok: false, errorCode: "payment_link_unavailable", error: "Unavailable" });
+    render(<PaymentSummary summary={{ ...summary, checkoutUrl: null, serviceCheckoutAvailable: true }} serviceToken={token} />);
+    fireEvent.click(screen.getByRole("button", { name: /Pay securely/ }));
+    await waitFor(() => expect(openServiceCheckoutAction).toHaveBeenCalledWith({ token }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("contact Iceland Road Assistance dispatch");
   });
   it("does not offer payment again after Paid", () => {
     render(<PaymentSummary summary={{ ...summary, status: "paid", checkoutUrl: null }} />);

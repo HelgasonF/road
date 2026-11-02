@@ -14,6 +14,7 @@ export function createPaymentService(provider: PaymentProvider, store: PaymentSt
   type Options = Omit<ProviderPaymentInput, "reference">;
   async function createReserved(input: Options, { claimed, request }: { claimed: boolean; request: PaymentRequest }) {
     if (!matchesAccount(request, account)) throw new PaymentError("payment_account_mismatch");
+    if (request.supersededAt) throw new PaymentError("payment_request_closed");
     if (request.amountIsk !== input.amountIsk) throw new PaymentError("payment_amount_locked");
     if (!claimed) {
       if (request.status === "expired" || request.status === "cancelled") throw new PaymentError("payment_request_closed");

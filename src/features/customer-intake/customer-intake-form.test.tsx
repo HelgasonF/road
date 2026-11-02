@@ -39,6 +39,7 @@ const job: ActiveCustomerIntake["job"] = {
   vehicleMake: null,
   rentalCompany: null,
   peopleCount: null,
+  destinationLabel: null,
   requiredCapability: null,
   latitude: 64.95,
   longitude: -18.7,
@@ -65,6 +66,26 @@ afterEach(() => {
 });
 
 describe("CustomerIntakeForm", () => {
+  it("makes destination optional and preserves typed text when switching languages", () => {
+    renderForm();
+    const destination = screen.getByLabelText("Where should the vehicle be taken? (optional)");
+    expect(destination).not.toBeRequired();
+    expect(destination).toHaveValue("");
+    fireEvent.change(destination, { target: { value: "Rental depot in Keflavík" } });
+    fireEvent.click(screen.getByRole("button", { name: "Íslenska" }));
+    expect(screen.getByLabelText("Hvert á að flytja ökutækið? (valfrjálst)")).toHaveValue("Rental depot in Keflavík");
+  });
+
+  it("includes the optional destination in checkout without changing the pickup", async () => {
+    vi.mocked(startCustomerCheckoutAction).mockResolvedValueOnce({ ok: false, errorCode: "preview", error: "Test checkout" });
+    render(<CustomerIntakeForm expiresAt="2026-09-27T16:38:00.000Z" initialPhotos={[]} job={{ ...job, customerName: "Customer", requiredCapability: "towing", customerNotes: "The vehicle needs towing." }} token="token" payment={{ enabled: true, ready: true, amountIsk: 10490 }} />);
+    fireEvent.change(screen.getByLabelText("Where should the vehicle be taken? (optional)"), { target: { value: "Workshop in Reykjavík" } });
+    fireEvent.click(screen.getByRole("button", { name: "Pick on map" }));
+    fireEvent.submit(screen.getByRole("button", { name: "Pay and submit" }).closest("form")!);
+    await waitFor(() => expect(startCustomerCheckoutAction).toHaveBeenCalledWith(expect.objectContaining({ destinationLabel: "Workshop in Reykjavík", latitude: 64.14, longitude: -21.9 })));
+    expect(submitCustomerIntakeAction).not.toHaveBeenCalled();
+  });
+
   it("preserves an existing map location and description when confirming a correction form", async () => {
     vi.mocked(submitCustomerIntakeAction).mockResolvedValueOnce({ ok: true });
     render(<CustomerIntakeForm expiresAt="2026-09-27T16:38:00.000Z" initialPhotos={[]} job={{ ...job, customerName: "Customer", requiredCapability: "jump_start", customerNotes: "Battery is flat.", latitude: 64.14, longitude: -21.9, locationLabel: "Next to the Olís station", locationSource: "map_pin" }} token="token" />);
@@ -121,7 +142,7 @@ describe("CustomerIntakeForm", () => {
     render(<CustomerIntakeForm expiresAt="2026-09-27T16:38:00.000Z" initialPhotos={[]} job={{ ...job, customerName: "Customer", requiredCapability: "jump_start", customerNotes: "Battery is flat." }} token="token" payment={{ enabled: true, ready: true, amountIsk: 5000 }} />);
     fireEvent.click(screen.getByRole("button", { name: "Pick on map" }));
     fireEvent.submit(screen.getByRole("button", { name: "Pay and submit" }).closest("form")!);
-    await waitFor(() => expect(startCustomerCheckoutAction).toHaveBeenCalledWith(expect.objectContaining({ token: "token", customerName: "Customer", customerPhone: "+3546597003", language: "en", locationSource: "map_pin" })));
+    await waitFor(() => expect(startCustomerCheckoutAction).toHaveBeenCalledWith(expect.objectContaining({ token: "token", customerName: "Customer", customerPhone: "+3546597003", language: "en", locationSource: "map_pin", destinationLabel: "" })));
     expect(submitCustomerIntakeAction).not.toHaveBeenCalled();
     expect(await screen.findByText("Payment unavailable in this test.")).toBeInTheDocument();
   });

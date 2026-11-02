@@ -27,6 +27,8 @@ export interface PaymentRequest {
   lastVerifiedAt: string | null;
   paidAt: string | null;
   errorCode: string | null;
+  supersededAt?: string | null;
+  replacesPaymentId?: string | null;
 }
 
 export type PaymentRow = {
@@ -49,6 +51,8 @@ export type PaymentRow = {
   created_at: string;
   last_verified_at: string | null;
   paid_at: string | null;
+  superseded_at?: string | null;
+  replaces_payment_id?: string | null;
 };
 
 export interface ProviderPaymentInput {

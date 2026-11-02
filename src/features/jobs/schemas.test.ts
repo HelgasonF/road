@@ -36,6 +36,14 @@ describe("jobInputSchema", () => {
     expect(result.requiredCapabilities).toEqual(["tire_assistance", "towing"]);
   });
 
+  it("accepts a separate optional destination and normalizes an explicitly empty value", () => {
+    expect(jobInputSchema.parse({ ...validJob, destinationLabel: "  Blue Car Rental, Keflavík  " }).destinationLabel).toBe("Blue Car Rental, Keflavík");
+    for (const value of [undefined, null, "", "  "]) {
+      expect(jobInputSchema.parse({ ...validJob, destinationLabel: value }).destinationLabel).toBe(value === undefined ? undefined : null);
+    }
+    expect(jobInputSchema.safeParse({ ...validJob, destinationLabel: "x".repeat(301) }).success).toBe(false);
+  });
+
   it("rejects a job without a verified Iceland location", () => {
     const result = jobInputSchema.safeParse({
       ...validJob,

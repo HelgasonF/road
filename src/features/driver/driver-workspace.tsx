@@ -242,6 +242,8 @@ export function DriverWorkspace({ demoMode, jobs, operator, initialJobId }: Driv
                 </section>
               </div>
 
+              {selectedJob.destinationLabel ? <section className="driver-card"><div className="driver-card-heading"><MapPin size={20} /><span><small>Áfangastaður ökutækis</small></span></div><p className="driver-card-copy vehicle-destination-copy">{selectedJob.destinationLabel}</p></section> : null}
+
               <section className="driver-card driver-assistance-card">
                 <h3>Umbeðin aðstoð</h3>
                 <div className="tag-list">{selectedJob.requiredCapabilities.map((capability) => <span className="capability-tag" key={capability}>{capabilityLabels[capability]}</span>)}</div>

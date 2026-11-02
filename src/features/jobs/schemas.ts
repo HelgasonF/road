@@ -8,6 +8,7 @@ import {
 } from "@/lib/domain/types";
 import { buildContactLinks } from "@/lib/contact-links";
 import { normalizePhoneNumberOrOriginal } from "@/lib/phone";
+import { destinationLabelSchema } from "@/lib/domain/destination";
 
 const optionalTrimmedString = z
   .string()
@@ -24,6 +25,7 @@ export const jobInputSchema = z.object({
   vehicleRegistration: optionalTrimmedString.pipe(z.string().max(40).nullable()),
   vehicleMake: optionalTrimmedString.pipe(z.string().max(120).nullable()),
   rentalCompany: optionalTrimmedString.pipe(z.string().max(120).nullable()),
+  destinationLabel: destinationLabelSchema,
   peopleCount: z.number().int().min(1).max(99),
   latitude: z.number().min(62).max(68),
   longitude: z.number().min(-26).max(-12),

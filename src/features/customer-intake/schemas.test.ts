@@ -55,6 +55,22 @@ describe("customerIntakeSchema", () => {
     expect(customerIntakeSchema.safeParse({ ...valid, peopleCount: 100 }).success).toBe(false);
   });
 
+  it("accepts an optional plain-text destination without changing pickup coordinates", () => {
+    const result = customerIntakeSchema.parse({ ...valid, destinationLabel: "  Verkstæði í Keflavík  " });
+    expect(result).toMatchObject({ destinationLabel: "Verkstæði í Keflavík", latitude: valid.latitude, longitude: valid.longitude });
+    for (const value of [undefined, null, "", "   "]) {
+      const parsed = customerIntakeSchema.parse({ ...valid, destinationLabel: value });
+      expect(parsed.destinationLabel).toBe(value === undefined ? undefined : null);
+    }
+  });
+
+  it("rejects overlong or non-text destinations while accepting older forms with no destination", () => {
+    expect(customerIntakeSchema.safeParse(valid).success).toBe(true);
+    for (const destinationLabel of ["x".repeat(301), 123, { address: "Keflavík" }]) {
+      expect(customerIntakeSchema.safeParse({ ...valid, destinationLabel }).success).toBe(false);
+    }
+  });
+
   it("rejects a location outside the Iceland operating bounds", () => {
     expect(customerIntakeSchema.safeParse({ ...valid, latitude: 51.5072, longitude: -0.1276 }).success)
       .toBe(false);

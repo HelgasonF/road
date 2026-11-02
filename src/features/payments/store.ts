@@ -14,6 +14,7 @@ const paymentRowSchema: z.ZodType<PaymentRow> = z.object({
   status: z.enum(["creating", "creation_unknown", "creation_failed", "pending", "seen", "paid", "failed", "expired", "cancelled", "unknown"]),
   provider_status: z.string().nullable(), error_code: z.string().nullable(),
   created_by: z.uuid(), created_at: z.string(), last_verified_at: z.string().nullable(), paid_at: z.string().nullable(),
+  superseded_at: z.string().nullish(), replaces_payment_id: z.uuid().nullish(),
 });
 
 export function paymentFromRow(input: unknown): PaymentRequest {
@@ -26,6 +27,7 @@ export function paymentFromRow(input: unknown): PaymentRequest {
     currency: row.currency, reference: row.reference, providerCode: row.provider_code, paymentUrl: row.payment_url,
     status: row.status, providerStatus: row.provider_status, errorCode: row.error_code,
     createdAt: row.created_at, lastVerifiedAt: row.last_verified_at, paidAt: row.paid_at,
+    supersededAt: row.superseded_at ?? null, replacesPaymentId: row.replaces_payment_id ?? null,
   };
 }
 

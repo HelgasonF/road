@@ -26,9 +26,14 @@ describe("checkout persistence boundary", () => {
     await createCheckoutStore().prepareService({ ...account, jobId: row.job_id, amountIsk: 5000, createdBy: row.created_by, description: "Jump start", tokenHash: "b".repeat(64), expiresAt: "2026-10-22T12:00:00Z" });
     expect(rpc).toHaveBeenCalledWith("prepare_service_payment_page", expect.objectContaining({ p_token_hash: "b".repeat(64), p_description: "Jump start", p_created_by: row.created_by }));
   });
-  it.each(["payment_details_locked", "payment_link_unavailable"])("retains the safe %s diagnostic", async (message) => {
+  it.each(["payment_details_locked", "payment_link_unavailable", "payment_already_paid", "payment_changed", "payment_details_unchanged"])("retains the safe %s diagnostic", async (message) => {
     rpc.mockResolvedValueOnce({ data: null, error: { message } });
     await expect(createCheckoutStore().prepareInitial({ ...account, amountIsk: 5000, tokenHash: "a".repeat(64), details: {} as never, language: "en" })).rejects.toMatchObject({ code: message });
+  });
+  it("passes the expected predecessor and hashed token to service-only replacement", async () => {
+    rpc.mockResolvedValueOnce({ data: { claimed: true, request: row }, error: null });
+    await createCheckoutStore().replaceService({ ...account, paymentId: row.id, jobId: row.job_id, amountIsk: 32000, createdBy: row.created_by, description: "Revised towing", tokenHash: "c".repeat(64), expiresAt: "2026-11-03T12:00:00Z" });
+    expect(rpc).toHaveBeenCalledWith("replace_service_payment_page", expect.objectContaining({ p_payment_id: row.id, p_amount_isk: 32000, p_token_hash: "c".repeat(64) }));
   });
   it("never leaks database exception contents or malformed reservation data", async () => {
     rpc.mockResolvedValueOnce({ data: { claimed: "true", request: row }, error: { message: "raw secret customer data" } });

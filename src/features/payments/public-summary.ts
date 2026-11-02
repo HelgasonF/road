@@ -9,6 +9,7 @@ export interface PublicPaymentSummary {
   checkoutUrl: string | null;
   intakeState: "pending" | "submitted" | "review_required" | null;
   retryAllowed?: boolean;
+  serviceCheckoutAvailable?: boolean;
 }
 
 export function safeCheckoutUrl(request: PaymentRequest) {

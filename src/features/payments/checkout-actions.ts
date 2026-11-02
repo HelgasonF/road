@@ -12,7 +12,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createCheckoutService } from "./checkout-service";
 import { createCheckoutStore } from "./checkout-store";
 import { isCollectionEnabled, requireCollectionConfig, requireReconciliationConfig } from "./collection-config";
-import { hasPaidInitialForIntake } from "./checkout-queries";
+import { getServicePaymentRequest, hasPaidInitialForIntake } from "./checkout-queries";
+import { safeCheckoutUrl } from "./public-summary";
 import { getInitialFeeIsk, PaymentError } from "./mypos-config";
 import { MyPosProvider } from "./mypos";
 import { paymentAmountSchema } from "./schemas";
@@ -21,6 +22,7 @@ import type { PaymentResult } from "./types";
 
 const customerCheckoutSchema = customerIntakeSchema.extend({ language: z.enum(["en", "is"]) });
 const serviceCheckoutSchema = z.object({ jobId: z.uuid(), amountIsk: paymentAmountSchema, description: z.string().trim().min(3).max(500) }).strict();
+const serviceReplacementSchema = serviceCheckoutSchema.extend({ paymentId: z.uuid() });
 
 function failure(error: unknown, language: "en" | "is" = "en") {
   const errorCode = error instanceof PaymentError ? error.code : "payment_unavailable";
@@ -36,8 +38,8 @@ function failure(error: unknown, language: "en" | "is" = "en") {
   return { ok: false as const, errorCode, error: errorMessage };
 }
 
-function context() {
-  const config = requireCollectionConfig();
+function context(readOnly = false) {
+  const config = readOnly ? requireReconciliationConfig() : requireCollectionConfig();
   const payments = createPaymentStore();
   return createCheckoutService(new MyPosProvider(config), payments, createCheckoutStore());
 }
@@ -85,20 +87,51 @@ export async function resumeCustomerCheckoutAction(input: unknown): Promise<Paym
   } catch (error) { return failure(error, language); }
 }
 
-export async function createServicePaymentLinkAction(input: unknown): Promise<PaymentResult<{ path: string }>> {
+async function prepareServiceLink(input: unknown, replace: boolean): Promise<PaymentResult<{ path: string; paymentId: string }>> {
   try {
     const identity = await getVerifiedStaffSession();
     if (!identity) throw new PaymentError("staff_access_required");
-    const parsed = serviceCheckoutSchema.safeParse(input);
+    const parsed = (replace ? serviceReplacementSchema : serviceCheckoutSchema).safeParse(input);
     if (!parsed.success) throw new PaymentError("payment_invalid_input");
+    const paymentId = "paymentId" in parsed.data ? parsed.data.paymentId : null;
+    if (replace && typeof paymentId !== "string") throw new PaymentError("payment_invalid_input");
     const service = context();
     const client = await createClient();
     const { data: job, error } = await client.from("jobs").select("customer_name").eq("id", parsed.data.jobId).maybeSingle();
     if (error || !job) throw new PaymentError("payment_job_unavailable");
     const token = createCustomerIntakeToken();
-    await service.startService({ ...parsed.data, createdBy: identity.id, customerName: job.customer_name,
-      tokenHash: hashCustomerIntakeToken(token), expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() });
-    return { ok: true, data: { path: `/pay/${token}` } };
+    const parameters = { ...parsed.data, createdBy: identity.id, customerName: job.customer_name,
+      tokenHash: hashCustomerIntakeToken(token), expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() };
+    const request = typeof paymentId === "string"
+      ? await service.replaceService({ ...parameters, paymentId })
+      : await service.startService(parameters);
+    revalidatePath("/");
+    return { ok: true, data: { path: `/pay/${token}`, paymentId: request.id } };
+  } catch (error) { return failure(error); }
+}
+
+export async function createServicePaymentLinkAction(input: unknown) {
+  return prepareServiceLink(input, false);
+}
+
+export async function replaceServicePaymentLinkAction(input: unknown) {
+  return prepareServiceLink(input, true);
+}
+
+/** Recheck a bearer page when Pay is pressed, including pages loaded earlier. */
+export async function openServiceCheckoutAction(input: unknown): Promise<PaymentResult<{ checkoutUrl: string }>> {
+  if (!(await customerLinkRequestAllowed())) return { ok: false, errorCode: "payment_rate_limited", error: customerRateLimitError };
+  const parsed = z.object({ token: customerTokenSchema }).strict().safeParse(input);
+  if (!parsed.success) return failure(new PaymentError("payment_invalid_input"));
+  try {
+    const request = await getServicePaymentRequest(parsed.data.token);
+    if (!request) throw new PaymentError("payment_link_unavailable");
+    await context(true).verifyServicePayments(request.jobId);
+    // Replacement or payment may have occurred during the provider reads.
+    const latest = await getServicePaymentRequest(parsed.data.token);
+    const checkoutUrl = latest && safeCheckoutUrl(latest);
+    if (!checkoutUrl) throw new PaymentError("payment_link_unavailable");
+    return { ok: true, data: { checkoutUrl } };
   } catch (error) { return failure(error); }
 }
 
@@ -112,7 +145,7 @@ export async function getPaymentPanelAction(input: unknown) {
     let environment: "sandbox" | "production" | null = null;
     try { environment = requireReconciliationConfig().environment; requireCollectionConfig(); ready = true; } catch { /* History remains readable while creation is disabled. */ }
     const requests = await createPaymentStore().listForJob(parsed.data.jobId);
-    const second = requests.find((request) => request.environment === environment && request.purpose === "service");
+    const second = requests.find((request) => request.environment === environment && request.purpose === "service" && !request.supersededAt);
     const first = requests.find((request) => request.environment === environment && request.purpose === "initial_fee");
     const admin = createAdminClient();
     const page = second ? await admin.from("job_payment_pages").select("description").eq("payment_request_id", second.id).maybeSingle() : null;

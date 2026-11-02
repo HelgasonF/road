@@ -146,7 +146,7 @@ export async function submitCustomerIntakeAction(input: unknown): Promise<Action
 
   const value = parsed.data;
   const admin = createAdminClient();
-  const { data: jobId, error } = await admin.rpc("submit_customer_intake_v3", {
+  const parameters = {
     p_token_hash: hashCustomerIntakeToken(value.token),
     p_customer_name: value.customerName,
     p_customer_phone: value.customerPhone,
@@ -160,7 +160,11 @@ export async function submitCustomerIntakeAction(input: unknown): Promise<Action
     p_location_label: value.locationLabel,
     p_location_source: value.locationSource,
     p_customer_notes: value.customerNotes,
-  });
+  };
+  // Old callers omit the field; preserve their existing destination unchanged.
+  const { data: jobId, error } = value.destinationLabel === undefined
+    ? await admin.rpc("submit_customer_intake_v3", parameters)
+    : await admin.rpc("submit_customer_intake_v4", { ...parameters, p_destination_label: value.destinationLabel });
 
   if (error) return { ok: false, error: unavailableError };
   revalidatePath("/");

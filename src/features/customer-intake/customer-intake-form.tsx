@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 
 import type { CapabilityCode } from "@/lib/domain/types";
 import { capabilityCodes } from "@/lib/domain/types";
+import { VEHICLE_DESTINATION_MAX_LENGTH } from "@/lib/domain/destination";
 import { OTHER_VEHICLE_MAKE, vehicleMakes } from "@/lib/domain/vehicle-makes";
 import { capabilityLabels } from "@/lib/i18n/is";
 import { createClient } from "@/lib/supabase/client";
@@ -66,6 +67,8 @@ const copy = {
     rentalPlaceholder: "For example: Hertz or Blue Car Rental",
     peopleCount: "Number of people involved",
     peopleHelp: "Include yourself in the total.",
+    destination: "Where should the vehicle be taken? (optional)",
+    destinationHelp: "For example: a workshop, rental depot, address or town. Leave blank if the destination has not been decided.",
     location: "Confirm the vehicle location",
     gps: "Use my current GPS location",
     confirming: "Finding your location…",
@@ -108,6 +111,8 @@ const copy = {
     rentalPlaceholder: "Til dæmis Hertz eða Blue Car Rental",
     peopleCount: "Fjöldi fólks",
     peopleHelp: "Teldu þig með í heildarfjöldanum.",
+    destination: "Hvert á að flytja ökutækið? (valfrjálst)",
+    destinationHelp: "Til dæmis verkstæði, bílaleiga, heimilisfang eða bær. Má vera autt ef áfangastaður hefur ekki verið ákveðinn.",
     location: "Staðfestu staðsetningu ökutækisins",
     gps: "Nota núverandi GPS-staðsetningu",
     confirming: "Finn staðsetningu…",
@@ -318,6 +323,7 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token, payme
         vehicleRegistration: String(form.get("vehicleRegistration") ?? ""),
         vehicleMake,
         rentalCompany: String(form.get("rentalCompany") ?? ""),
+        destinationLabel: String(form.get("destinationLabel") ?? ""),
         peopleCount: Number(form.get("peopleCount")),
         requiredCapability: String(form.get("requiredCapability") ?? ""),
         latitude: location.latitude,
@@ -401,6 +407,9 @@ export function CustomerIntakeForm({ expiresAt, initialPhotos, job, token, payme
             ) : null}
             <label><span id="customer-rentalCompany-label">{t.rentalCompany}</span><input {...fieldProps("rentalCompany")} name="rentalCompany" defaultValue={job.rentalCompany ?? ""} placeholder={t.rentalPlaceholder} maxLength={120} />{fieldError("rentalCompany")}</label>
             <label><span id="customer-peopleCount-label">{t.peopleCount}</span><input {...fieldProps("peopleCount")} name="peopleCount" defaultValue={job.peopleCount ?? 1} aria-describedby={fieldErrors.peopleCount ? "customer-peopleCount-error people-count-help" : "people-count-help"} inputMode="numeric" min={1} max={99} required type="number" /><small id="people-count-help" className="customer-field-help">{t.peopleHelp}</small>{fieldError("peopleCount")}</label>
+            <label className="customer-field-wide"><span id="customer-destinationLabel-label">{t.destination}</span><input {...fieldProps("destinationLabel")} name="destinationLabel" defaultValue={job.destinationLabel ?? ""} maxLength={VEHICLE_DESTINATION_MAX_LENGTH}
+              aria-describedby={`customer-destination-help${fieldErrors.destinationLabel ? " customer-destinationLabel-error" : ""}`} />
+              <small id="customer-destination-help" className="customer-field-help">{t.destinationHelp}</small>{fieldError("destinationLabel")}</label>
           </div>
         </section>
 

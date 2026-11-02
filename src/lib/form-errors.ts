@@ -2,8 +2,8 @@ export type FormErrors = Record<string, string>;
 export type FormLanguage = "en" | "is";
 
 const labels = {
-  en: { customerName: "Full name", customerPhone: "Phone number", vehicleRegistration: "Vehicle registration", vehicleMake: "Vehicle make", rentalCompany: "Rental company", peopleCount: "Number of people", locationLabel: "Location", requiredCapability: "Assistance", requiredCapabilities: "Assistance", customerNotes: "Description", priority: "Priority", notes: "Notes" },
-  is: { customerName: "Fullt nafn", customerPhone: "Símanúmer", vehicleRegistration: "Skráningarnúmer", vehicleMake: "Bíltegund", rentalCompany: "Bílaleiga", peopleCount: "Fjöldi fólks", locationLabel: "Staðsetning", requiredCapability: "Aðstoð", requiredCapabilities: "Aðstoð", customerNotes: "Lýsing", priority: "Forgangur", notes: "Athugasemdir" },
+  en: { customerName: "Full name", customerPhone: "Phone number", vehicleRegistration: "Vehicle registration", vehicleMake: "Vehicle make", rentalCompany: "Rental company", destinationLabel: "Vehicle destination", peopleCount: "Number of people", locationLabel: "Location", requiredCapability: "Assistance", requiredCapabilities: "Assistance", customerNotes: "Description", priority: "Priority", notes: "Notes" },
+  is: { customerName: "Fullt nafn", customerPhone: "Símanúmer", vehicleRegistration: "Skráningarnúmer", vehicleMake: "Bíltegund", rentalCompany: "Bílaleiga", destinationLabel: "Áfangastaður ökutækis", peopleCount: "Fjöldi fólks", locationLabel: "Staðsetning", requiredCapability: "Aðstoð", requiredCapabilities: "Aðstoð", customerNotes: "Lýsing", priority: "Forgangur", notes: "Athugasemdir" },
 };
 
 export function formFieldKey(name: string) {
@@ -20,14 +20,14 @@ export function fieldErrorMessage(name: string, language: FormLanguage) {
   const key = formFieldKey(name);
   const en: Record<string, string> = {
     customerName: "Enter a full name between 2 and 120 characters.", customerPhone: "Enter a valid phone number and country code.",
-    vehicleRegistration: "Shorten the vehicle registration.", vehicleMake: "Enter a vehicle make of at most 120 characters.", rentalCompany: "Use at most 120 characters for the rental company.",
+    vehicleRegistration: "Shorten the vehicle registration.", vehicleMake: "Enter a vehicle make of at most 120 characters.", rentalCompany: "Use at most 120 characters for the rental company.", destinationLabel: "Use at most 300 characters for the vehicle destination.",
     peopleCount: "Enter a whole number of people from 1 to 99.", locationLabel: "Enter a town/address, use GPS or select a point on the map.",
     requiredCapability: "Choose the assistance you need.", requiredCapabilities: "Choose at least one assistance type.", customerNotes: "Describe the problem using 5 to 4,000 characters.",
     priority: "Choose a priority from the list.", notes: "Use at most 4,000 characters for notes.",
   };
   const is: Record<string, string> = {
     customerName: "Sláðu inn fullt nafn, 2–120 stafir.", customerPhone: "Sláðu inn gilt símanúmer og landsnúmer.",
-    vehicleRegistration: "Styttu skráningarnúmerið.", vehicleMake: "Sláðu inn bíltegund, að hámarki 120 stafir.", rentalCompany: "Heiti bílaleigu má vera allt að 120 stafir.",
+    vehicleRegistration: "Styttu skráningarnúmerið.", vehicleMake: "Sláðu inn bíltegund, að hámarki 120 stafir.", rentalCompany: "Heiti bílaleigu má vera allt að 120 stafir.", destinationLabel: "Áfangastaður ökutækis má vera allt að 300 stafir.",
     peopleCount: "Sláðu inn heilan fólksfjölda frá 1 til 99.", locationLabel: "Skrifaðu bæ eða heimilisfang, notaðu GPS eða veldu punkt á kortinu.",
     requiredCapability: "Veldu þá aðstoð sem þarf.", requiredCapabilities: "Veldu að minnsta kosti eina tegund aðstoðar.", customerNotes: "Lýstu vandanum með 5–4.000 stöfum.",
     priority: "Veldu forgang úr listanum.", notes: "Athugasemdir mega vera allt að 4.000 stafir.",

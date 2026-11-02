@@ -1,5 +1,14 @@
 # Manual WhatsApp handoff — 26 September 2026
 
+Local follow-up, 2 November 2026: customer form/correction and prepared payment
+links now offer SMS alongside WhatsApp/copy, with the same URL and message.
+Driver sharing remains WhatsApp-only. Android's native composer is verified,
+and Freyr confirmed the physical iPhone's recipient/text/link after tapping the
+SMS button. iPad has automated format coverage only. No SMS was sent by the
+agent. This change is **not deployed**.
+See the [SMS record](sms-handoff-2026-11-02.md); the deployed policy below remains
+the historical/current-live baseline until release.
+
 Payment-flow update, 21 October 2026: this manual sending policy still applies
 on the live site. Staff send the initial private form link once. The customer
 enters their details and uses **Pay and submit** for the fixed **10,490 ISK**

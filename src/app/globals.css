@@ -1030,8 +1030,16 @@ button.driver-job-contact { cursor: pointer; }
 .phone-field .phone-input-controls > select { min-width: 0; width: 100%; }
 .phone-field .phone-input-controls > input { font-variant-numeric: tabular-nums; }
 .phone-field .phone-input-controls > input[aria-invalid="true"] { border-color: #b74437; }
+.phone-country-control { min-width: 0; position: relative; }
+.phone-field .phone-country-control > input { font-variant-numeric: tabular-nums; min-width: 0; padding-right: 34px; width: 100%; }
+.phone-country-picker { align-items: center; bottom: 0; color: var(--pine); display: flex; justify-content: center; position: absolute; right: 0; top: 0; width: 32px; }
+.phone-field .phone-country-picker > select { cursor: pointer; height: 100%; inset: 0; opacity: 0; padding: 0; position: absolute; width: 100%; }
+.phone-country-control:focus-within > input { background: white; border-color: #78a99d; box-shadow: 0 0 0 3px rgba(14, 75, 70, 0.08); }
+.phone-field .phone-country-control > input[aria-invalid="true"] { border-color: #b74437; }
+.phone-code-help { color: var(--muted); font-size: 10px; line-height: 1.45; }
 .phone-input-error { color: #a83228; font-size: 11px; line-height: 1.45; margin: 0; }
 .field-error { color: #a83228; font-size: 11px; line-height: 1.5; margin: 4px 0 0; }
+.vehicle-destination-copy { overflow-wrap: anywhere; white-space: pre-wrap; }
 .form-error-summary { background: #fff3ef; border: 1px solid #d99586; border-radius: 10px; color: #8d2e23; font-size: 12px; line-height: 1.5; padding: 13px 16px; }
 .form-error-summary ul { margin: 7px 0 0; padding-left: 18px; }
 .form-error-summary button { background: none; border: 0; color: inherit; padding: 3px 0; text-align: left; text-decoration: underline; }
@@ -1042,10 +1050,11 @@ button.driver-job-contact { cursor: pointer; }
 .customer-location-card .address-search { margin-bottom: 16px; }
 .customer-location-card .address-search-input { border: 1px solid #cedbd6; border-radius: 10px; padding: 3px 8px; }
 .customer-location-card .address-search-input input { background: transparent; border: 0; font-size: 14px; min-height: 42px; padding: 8px; width: 100%; }
-.quick-job-phone select { min-height: 48px; }
+.quick-job-phone .phone-country-control > input { min-height: 48px; }
 .customer-fields-two .phone-input-label > span { font-size: 11px; }
 @media (max-width: 600px) {
   .phone-field .phone-input-controls > input,
+  .phone-field .phone-country-control > input,
   .phone-field .phone-input-controls > select { font-size: 16px; }
 }
 .form-section { background: #f5f8f6; border-radius: 11px; padding: 14px; }

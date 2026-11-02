@@ -81,4 +81,20 @@ describe("customer intake link handoff", () => {
     expect(screen.queryByRole("link", { name: /Opna WhatsApp/ })).not.toBeInTheDocument();
     expect(screen.getByText(/Athugaðu númerið áður en þú sendir/)).toBeInTheDocument();
   });
+
+  it("opens the same customer link in SMS without generating or revoking another link", async () => {
+    render(<CustomerLinkPanel customerName="Sophie Martin" customerPhone="+33 6 12 34 56 78" jobId="30000000-0000-4000-8000-000000000001" link={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "Búa til tengil" }));
+    const sms = await screen.findByRole("link", { name: "Opna SMS fyrir Sophie Martin" });
+    const whatsapp = screen.getByRole("link", { name: "Opna WhatsApp fyrir Sophie Martin" });
+    const smsUrl = new URL(sms.getAttribute("href")!);
+    const message = new URL(whatsapp.getAttribute("href")!).searchParams.get("text");
+    expect(smsUrl.pathname).toBe("+33612345678");
+    expect(smsUrl.searchParams.get("body")).toBe(message);
+    sms.addEventListener("click", (event) => event.preventDefault());
+    fireEvent.click(sms);
+    expect(createCustomerIntakeLinkAction).toHaveBeenCalledTimes(1);
+    expect(revokeCustomerIntakeLinkAction).not.toHaveBeenCalled();
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
 });

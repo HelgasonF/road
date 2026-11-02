@@ -70,6 +70,14 @@ describe("customer link rate limiting", () => {
 
     await expect(submitCustomerIntakeAction(submission)).resolves.toEqual({ ok: true });
     expect(rpc).toHaveBeenCalledWith("submit_customer_intake_v3", expect.objectContaining({ p_vehicle_registration: "AB123" }));
+    expect(rpc.mock.calls[0][1]).not.toHaveProperty("p_destination_label");
+  });
+
+  it.each([["  Depot in Keflavík  ", "Depot in Keflavík"], ["", null], [null, null]])("submits the optional destination %s through the service-only version", async (destinationLabel, expected) => {
+    vi.mocked(consumeRateLimit).mockResolvedValue(true);
+    rpc.mockResolvedValue({ data: "30000000-0000-4000-8000-000000000001", error: null });
+    expect(await submitCustomerIntakeAction({ ...submission, destinationLabel })).toEqual({ ok: true });
+    expect(rpc).toHaveBeenCalledWith("submit_customer_intake_v4", expect.objectContaining({ p_destination_label: expected }));
   });
 
   it("blocks the old Submit action from bypassing Pay and submit", async () => {

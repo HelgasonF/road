@@ -21,6 +21,20 @@ afterEach(() => {
 });
 
 describe("typed dispatcher locations and validation", () => {
+  it("keeps the destination optional and saves it separately from the pickup", async () => {
+    vi.mocked(saveJobAction).mockResolvedValue({ ok: true, data: { id: demoJobs[0].id } });
+    render(<JobEditor capabilities={[]} job={{ ...demoJobs[0], destinationLabel: "Original workshop" }} onClose={vi.fn()} onQuickCreated={vi.fn()} onSaved={vi.fn()} />);
+    const destination = screen.getByLabelText("Hvert á að flytja ökutækið? (valfrjálst)");
+    expect(destination).not.toBeRequired();
+    expect(destination).toHaveValue("Original workshop");
+    fireEvent.change(destination, { target: { value: "New rental depot" } });
+    fireEvent.submit(screen.getByRole("button", { name: "Vista" }).closest("form")!);
+    await waitFor(() => expect(saveJobAction).toHaveBeenCalledWith(expect.objectContaining({ destinationLabel: "New rental depot", latitude: demoJobs[0].latitude, longitude: demoJobs[0].longitude })));
+    fireEvent.change(destination, { target: { value: "" } });
+    fireEvent.submit(screen.getByRole("button", { name: "Vista" }).closest("form")!);
+    await waitFor(() => expect(saveJobAction).toHaveBeenLastCalledWith(expect.objectContaining({ destinationLabel: "" })));
+  });
+
   it("keeps optional fields in the server schema's input format until the save action validates them", async () => {
     vi.mocked(saveJobAction).mockImplementation(async (input) => {
       const parsed = jobInputSchema.safeParse(input);
@@ -73,7 +87,7 @@ describe("quick customer intake handoff", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "Sími viðskiptavinar" }), {
       target: { value: "6597003" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Búa til WhatsApp-tengil" }));
+    fireEvent.click(screen.getByRole("button", { name: "Búa til viðskiptavinatengil" }));
 
     const copyButton = await screen.findByRole("button", { name: "Afrita skilaboð til +354 659 7003" });
     const openLink = screen.getByRole("link", { name: "Opna WhatsApp fyrir +354 659 7003" });
@@ -81,6 +95,11 @@ describe("quick customer intake handoff", () => {
 
     expect(copyButton).toBeInTheDocument();
     expect(message).toContain("http://localhost:3000/customer/one-time-token");
+    const sms = screen.getByRole("link", { name: "Opna SMS fyrir +354 659 7003" });
+    expect(new URL(sms.getAttribute("href")!).searchParams.get("body")).toBe(message);
+    sms.addEventListener("click", (event) => event.preventDefault());
+    fireEvent.click(sms);
+    expect(createQuickCustomerIntakeJobAction).toHaveBeenCalledTimes(1);
     expect(openLink).toHaveAttribute("href", expect.stringContaining("https://wa.me/3546597003"));
     expect(screen.getByText("Verkefnið og tengillinn eru tilbúin")).toBeInTheDocument();
     expect(screen.queryByText(/WhatsApp tók við sjálfvirku sendingunni/)).not.toBeInTheDocument();

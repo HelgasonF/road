@@ -1,6 +1,53 @@
 # Road / Iceland Road Assistance maintenance handoff
 
-Last updated: 26 October 2026 (Atlantic/Reykjavik)
+Last updated: 2 November 2026 (Atlantic/Reykjavik)
+
+Local follow-up **4** is complete: unpaid second-payment replacement in IRA,
+with revised manual message, retained history, stale/concurrent request guards,
+server-checked customer Pay and late-Paid monitoring/collection blocking. An
+old provider checkout already opened cannot be closed by IRA; dispatch's edit
+help and the replacement message tell the customer to close it and use the new
+link. **669 application tests**, **35 integration tests / 499 SQL assertions**,
+build/types/lint and responsive browser checks pass. Issues 1–4 are **uncommitted
+and undeployed**. Apply `20261102185452` then `20261102192200` before releasing
+the compatible source; no hosted data was changed. See the
+[replacement record](service-payment-replacement-2026-11-02.md) for guards,
+verification and rollback limitations. Preserve unrelated map/editor edits.
+
+Local follow-up **3** is complete: optional plain-text vehicle destination in
+both customer languages and the dispatcher editor, shown to dispatch and the
+assigned provider. Blank remains valid; pickup coordinates are unchanged.
+**639 application tests**, **25 isolated integration tests / 465 SQL assertions**,
+build/types/lint and browser checks at 320/390/1280px pass. Migration
+`20261102185452` was tested only in a disposable clone; apply it before releasing
+the source. Existing writers and old frozen drafts remain compatible. No hosted
+data was changed. Issues 1–3 remain **uncommitted and undeployed**; issue 4 was
+completed next, above. See the [destination record](vehicle-destination-2026-11-02.md).
+Preserve the unrelated map/editor changes when preparing a release.
+
+Local follow-up **2**: customer SMS sharing is implemented after Freyr selected
+it next. Android/iPhone/iPad formats and both physical phone handoffs are checked;
+Samsung's recipient/text matched exactly and Freyr confirmed the native iPhone
+draft after tapping the two buttons. No SMS was sent by the agent. Build,
+types/lint and **621 tests** pass. It is **not committed or deployed**. See the
+[SMS verification record](sms-handoff-2026-11-02.md). Issue 3 was completed next,
+as recorded above; issue 4 was subsequently completed too.
+Native iPhone acceptance is complete: after Safari automation failed to connect,
+Safari loaded the test page and Freyr manually tapped **Búa til tengil → Opna
+SMS**, then confirmed **“yes it works”** for the recipient/text/link. This is
+user-observed physical iPhone acceptance, not a WebDriver pass. Native iPad
+remains untested. Owned Mac drivers/static server/fixture and local test
+resources have been removed and their ports checked; both Android drafts were cleared. The
+iPhone's unsent draft can be dismissed by Freyr. See the SMS record for evidence
+and cleanup; no hosted data or deployment was changed.
+
+Local follow-up: Freyr selected owner report **1** and requested one fix at a
+time. Direct calling-code entry (`+44`, `44`, `0044`) is implemented in the shared
+phone input, preserving the native picker, no default country and E.164. It is
+**not committed or deployed**. See the [scope and verification record](phone-code-entry-2026-11-02.md).
+Vehicle destinations and second-payment replacement were subsequently completed
+above. The connected phone was used for the unsent SMS draft check. Preserve the
+pre-existing editor/address-map changes and keep later fixes separate.
 
 Latest live source: `2716c4b`, a copy-only customer-form section 4 update using
 **þjónustuaðili** / **service provider**. All 13 customer-form tests and the hosted

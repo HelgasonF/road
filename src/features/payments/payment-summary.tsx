@@ -2,7 +2,7 @@
 
 import { CreditCard, LockKeyhole } from "lucide-react";
 import { useState, useTransition } from "react";
-import { resumeCustomerCheckoutAction } from "./checkout-actions";
+import { openServiceCheckoutAction, resumeCustomerCheckoutAction } from "./checkout-actions";
 import type { PublicPaymentSummary } from "./public-summary";
 
 const copy = {
@@ -30,12 +30,23 @@ const copy = {
   },
 };
 
-export function PaymentSummary({ summary, initialToken }: { summary: PublicPaymentSummary; initialToken?: string }) {
+export function PaymentSummary({ summary, initialToken, serviceToken }: { summary: PublicPaymentSummary; initialToken?: string; serviceToken?: string }) {
   const [language, setLanguage] = useState<"en" | "is">("en");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const t = copy[language];
   const paid = summary.status === "paid";
+  const checkoutAvailable = summary.purpose === "service" ? Boolean(serviceToken && summary.serviceCheckoutAvailable) : Boolean(summary.checkoutUrl);
+  function openService() {
+    setError(null);
+    startTransition(async () => {
+      try {
+        const result = await openServiceCheckoutAction({ token: serviceToken });
+        if (result.ok) window.location.assign(result.data.checkoutUrl);
+        else setError(t.unavailable);
+      } catch { setError(t.unavailable); }
+    });
+  }
   function retry() {
     setError(null);
     startTransition(async () => {
@@ -59,14 +70,15 @@ export function PaymentSummary({ summary, initialToken }: { summary: PublicPayme
         <p>{summary.purpose === "initial_fee" ? t.initialHelp : t.separate}</p>
         {paid ? (
           <div className="payment-confirmed" role="status"><strong>✓ {t.paid}</strong>{summary.intakeState ? <p>{summary.intakeState === "submitted" ? t.submitted : summary.intakeState === "review_required" ? t.review : t.pending}</p> : null}</div>
-        ) : summary.checkoutUrl ? (
-          <a className="customer-submit-button payment-pay-button" href={summary.checkoutUrl} rel="noreferrer"><LockKeyhole size={18} />{t.pay}</a>
+        ) : checkoutAvailable ? (
+          summary.purpose === "service" ? <button type="button" className="customer-submit-button payment-pay-button" disabled={pending} onClick={openService}><LockKeyhole size={18} />{pending ? t.preparing : t.pay}</button>
+            : <a className="customer-submit-button payment-pay-button" href={summary.checkoutUrl!} rel="noreferrer"><LockKeyhole size={18} />{t.pay}</a>
         ) : summary.retryAllowed && initialToken ? <>
           <p role="status">{t.retryHelp}</p>
           <button type="button" className="customer-submit-button payment-pay-button" disabled={pending} onClick={retry}>{pending ? t.preparing : t.retry}</button>
         </> : <p className="customer-form-error" role="status">{t.unavailable}</p>}
         {error ? <p className="customer-form-error" role="alert">{error}</p> : null}
-        {!paid && summary.checkoutUrl ? <small><LockKeyhole size={13} /> {t.secure}</small> : null}
+        {!paid && checkoutAvailable ? <small><LockKeyhole size={13} /> {t.secure}</small> : null}
         <button type="button" className="payment-refresh-button" onClick={() => window.location.reload()}>{t.refresh}</button>
       </section>
     </main>

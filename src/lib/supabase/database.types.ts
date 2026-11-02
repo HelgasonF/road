@@ -335,6 +335,7 @@ export type Database = {
           vehicle_type: string | null;
           rental_company: string | null;
           people_count: number | null;
+          destination_label: string | null;
           latitude: number;
           longitude: number;
           location: unknown;
@@ -361,6 +362,7 @@ export type Database = {
           vehicle_type?: string | null;
           rental_company?: string | null;
           people_count?: number | null;
+          destination_label?: string | null;
           latitude: number;
           longitude: number;
           location_label?: string | null;
@@ -572,6 +574,10 @@ export type Database = {
       };
     };
     Functions: {
+      replace_service_payment_page: {
+        Args: Database["public"]["Functions"]["prepare_service_payment_page"]["Args"] & { p_payment_id: string };
+        Returns: Json;
+      };
       create_driver_assignment_link: {
         Args: { p_job_id: string; p_operator_id: string; p_token_hash: string };
         Returns: string;
@@ -659,6 +665,10 @@ export type Database = {
           p_notes: string | null;
           p_required_capabilities: CapabilityCode[];
         };
+        Returns: string;
+      };
+      save_job_v2: {
+        Args: Database["public"]["Functions"]["save_job"]["Args"] & { p_destination_label: string | null };
         Returns: string;
       };
       assign_job: {
@@ -845,6 +855,10 @@ export type Database = {
           p_location_source: LocationSource;
           p_customer_notes: string;
         };
+        Returns: string;
+      };
+      submit_customer_intake_v4: {
+        Args: Database["public"]["Functions"]["submit_customer_intake_v3"]["Args"] & { p_destination_label: string | null };
         Returns: string;
       };
       is_staff: { Args: Record<PropertyKey, never>; Returns: boolean };

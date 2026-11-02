@@ -34,11 +34,13 @@ const workingState = () => sql(`select json_build_array(
   to_regclass('public.customer_payment_intakes')::text,
   to_regclass('public.job_payment_pages')::text,
   to_regclass('public.driver_assignment_links')::text,
+  (select count(*) from information_schema.columns where table_schema='public' and table_name='jobs' and column_name='destination_label'),
+  (select count(*) from information_schema.columns where table_schema='public' and table_name='job_payment_requests' and column_name='superseded_at'),
   (select count(*) from supabase_migrations.schema_migrations
-    where version in ('20261020223002','20261021201000','20261023171927','20261026174440')),
+    where version in ('20261020223002','20261021201000','20261023171927','20261026174440','20261102185452','20261102192200')),
   (select md5(string_agg(pg_get_functiondef(p.oid), '' order by p.proname))
     from pg_proc p join pg_namespace n on n.oid=p.pronamespace
-    where n.nspname='public' and p.proname in ('submit_customer_intake_v3','prepare_customer_payment_intake','search_iceland_addresses','create_driver_assignment_link','resolve_driver_assignment_link'))
+    where n.nspname='public' and p.proname in ('submit_customer_intake_v3','submit_customer_intake_v4','save_job_v2','finalize_paid_customer_intake','prepare_customer_payment_intake','search_iceland_addresses','create_driver_assignment_link','resolve_driver_assignment_link','reserve_job_payment_request','record_job_payment_status','replace_service_payment_page'))
 )::text;`, "postgres").trim();
 
 let created = false, started = false;
@@ -65,12 +67,22 @@ try {
       sql(readFileSync(resolve(project, "supabase/migrations", migration), "utf8"));
     }
   }
-  sql(readFileSync(resolve(project, "supabase/migrations/20261023171927_support_typed_customer_locations.sql"), "utf8"));
-  sql(readFileSync(resolve(project, "supabase/migrations/20261026115922_recover_rejected_payment_creation.sql"), "utf8"));
+  // A schema copied after recovery already contains the typed-location writers.
+  // Replaying their older definition would overwrite the newer draft recovery.
+  if (sql("select not exists (select 1 from information_schema.columns where table_schema='public' and table_name='job_payment_requests' and column_name='creation_started_at');").trim() === "t") {
+    sql(readFileSync(resolve(project, "supabase/migrations/20261023171927_support_typed_customer_locations.sql"), "utf8"));
+    sql(readFileSync(resolve(project, "supabase/migrations/20261026115922_recover_rejected_payment_creation.sql"), "utf8"));
+  }
   if (sql("select to_regclass('public.driver_assignment_links') is null;").trim() === "t") {
     sql(readFileSync(resolve(project, "supabase/migrations/20261026174440_reusable_driver_assignment_links.sql"), "utf8"));
   }
   sql(readFileSync(resolve(project, "supabase/seed.sql"), "utf8"));
+  if (sql("select not exists (select 1 from information_schema.columns where table_schema='public' and table_name='jobs' and column_name='destination_label');").trim() === "t") {
+    sql(readFileSync(resolve(project, "supabase/migrations/20261102185452_add_vehicle_destination.sql"), "utf8"));
+  }
+  if (sql("select not exists (select 1 from information_schema.columns where table_schema='public' and table_name='job_payment_requests' and column_name='superseded_at');").trim() === "t") {
+    sql(readFileSync(resolve(project, "supabase/migrations/20261102192200_replace_service_payment_links.sql"), "utf8"));
+  }
 
   const rest = inspect("supabase_rest_Road");
   const existingUri = rest.Config.Env.find((entry) => entry.startsWith("PGRST_DB_URI="));
