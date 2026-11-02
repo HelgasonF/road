@@ -22,6 +22,19 @@ See the [release record](owner-followup-release-2026-11-02.md). The original loc
 database remains unmigrated; source/migrations are current. Earlier local
 checkpoints below are superseded by this release. Git deployment remains disabled.
 
+Map-history clarification after Freyr questioned the exclusion: the local
+address-map files were last written on **26 October at 09:31–09:32 UTC**.
+The 26 October release manifests already excluded them. A read-only,
+authenticated asset comparison of the payment, driver and copy deployments
+from that date, plus the current site, found the older map controls and no
+`mapOpen` property in all four. This supports an earlier release omission,
+rather than a map rollback in the 2 November release. Calling the local edits
+"unfinished" was an unsupported inference from their uncommitted state. Treat
+them as **unreleased**, reconcile the earlier intended work, and verify it;
+uncommitted alone is not a reason to exclude a change. This investigation
+changed no application code, hosted data or deployment. Its temporary audit
+login was signed out. Evidence: `output/map-history-20261102/`.
+
 Local follow-up **4** is complete: unpaid second-payment replacement in IRA,
 with revised manual message, retained history, stale/concurrent request guards,
 server-checked customer Pay and late-Paid monitoring/collection blocking. An

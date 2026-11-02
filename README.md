@@ -104,7 +104,7 @@ Both migrations are applied and source `ca6f4b3` serves the stable site. The
 release also patches production dependency advisories. Live tests passed without
 card charges or sent messages. See the [release record](docs/owner-followup-release-2026-11-02.md)
 for verification, retained audit history and the limit on an already-open myPOS
-checkout. Unfinished map/editor work remains local.
+checkout. Earlier map/editor changes remain unreleased locally.
 
 The [21 October live phone audit](docs/live-phone-audit-2026-10-21.md) passed both payments, automatic confirmation, private photos and correction submission. The 23 October release preserved the current inventory: two jobs (one active), zero operators and three staff accounts, with the cancelled audit job's two Paid records retained. Its temporary audit job was removed without creating a payment or sending a message. The company owner will add their drivers/providers. Release source, migrations, tests and documentation are recorded on `chore/vercel-git-connection`. Automatic Git deployments remain disabled by `git.deploymentEnabled=false` in [vercel.json](vercel.json); future releases use the manual commands in the [deployment runbook](docs/deployment.md).
 
