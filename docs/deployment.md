@@ -2,21 +2,25 @@
 
 Last updated: 2 November 2026
 
-Pending local owner follow-ups 1–4 are implemented but **uncommitted and
-undeployed**. Before releasing them, apply destination migration `20261102185452`
-then service replacement migration `20261102192200` and verify the hosted schema/
-API before deploying compatible source. Final local checks pass build/types/lint,
-669 application tests, 35 isolated integration tests and 499 SQL assertions.
-Preserve unrelated editor/map changes. Once payment replacement history exists,
-do not roll back to code that selects the oldest service request. See the
-[replacement record](service-payment-replacement-2026-11-02.md) and
-[maintenance handoff](maintenance-handoff.md). No hosted migration or release
-was performed for these follow-ups; the live release below remains unchanged.
+Owner follow-ups 1–4 are **deployed and live-tested**. Source `ca6f4b3`, Ready
+Preview `dpl_CGMYghdgA12RY5H5GWVYVxiZL5Uv`,
+`vegstod-2vknn23ef-freyrs-projects-fad4047a.vercel.app`, serves the stable alias.
+Destination migration `20261102185452` and replacement migration `20261102192200`
+were applied first, with existing rows/permissions verified. The security-patched
+candidate passed build/types/lint, 668 application tests, 35 integration tests,
+499 SQL assertions and zero production npm audit findings. The workspace also
+passes its extra map test (669 total); those map/editor changes are excluded.
+Hosted browser/API tests passed with no charge or message. The owned audit job
+is cancelled and links disabled; two unpaid request records are retained. Keep
+replacement-aware code when rolling back, since old UI selects the oldest row.
+See the [release record](owner-followup-release-2026-11-02.md) and
+[maintenance handoff](maintenance-handoff.md). Git deployment remains disabled.
 
-Latest copy-only release: section 4 of customer intake uses **þjónustuaðili** /
+Earlier copy-only release: section 4 of customer intake uses **þjónustuaðili** /
 **service provider**. Source `2716c4b`, Ready Preview
 `dpl_BhHDSAkCi881RKdohFyatvZMQeE8`,
-`vegstod-h6qg4fqqc-freyrs-projects-fad4047a.vercel.app`, serves the stable alias.
+`vegstod-h6qg4fqqc-freyrs-projects-fad4047a.vercel.app`, served the stable alias
+before the 2 November release.
 All 13 customer-form tests and the hosted build/type check passed. No database,
 business flow or other local editor/map changes were included.
 
@@ -91,8 +95,8 @@ DEMO_MODE=false
 
 On 21 October, Freyr authorized myPOS collection on the existing public Preview.
 `vegstod.vercel.app` now points to
-`vegstod-h6qg4fqqc-freyrs-projects-fad4047a.vercel.app` after the 26 October
-copy follow-up, preserving the driver-link and payment fixes. Payment configuration is
+`vegstod-2vknn23ef-freyrs-projects-fad4047a.vercel.app` after the 2 November
+owner follow-up release, preserving the driver-link and payment fixes. Payment configuration is
 installed in **Preview**; the unused Production target remains unchanged.
 Server-only sensitive variables hold the merchant Client ID/Secret and
 `PAYMENT_WORKER_SECRET`. Collection and production API creation are enabled,
@@ -100,8 +104,10 @@ the initial fee is `10490` ISK, and `WHATSAPP_API_ENABLED=false` preserves manua
 messaging. Local defaults remain disabled.
 
 Hosted migrations `20261020223002`, `20261021201000`, `20261021220248`,
-`20261023171927`, `20261026115922` and `20261026174440` are applied. The last
-adds reusable assignment credentials and revocation triggers. The third enables
+`20261023171927`, `20261026115922`, `20261026174440`, `20261102185452` and
+`20261102192200` are applied. The last two add optional destinations and retained
+service-payment replacement history; `20261026174440` adds reusable assignment
+credentials and revocation triggers. The third enables
 pg_cron and pg_net; it creates no
 schedule or secret. The fourth permits searched customer locations and grants
 server-only catalog access, preserving existing table structures and payment flow.

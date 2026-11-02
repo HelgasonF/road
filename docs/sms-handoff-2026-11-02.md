@@ -4,11 +4,13 @@
 
 After completing calling-code entry as issue 1, Freyr selected **issue 2** and
 provided the connected phone for testing. He explicitly requested support for
-both **iPhone and Android**. This change is implemented and verified locally;
-it is **not committed, pushed or deployed**. Issue 3 was subsequently completed
-locally; see the [destination record](vehicle-destination-2026-11-02.md).
-Issue 4 was subsequently completed locally too; see the
-[replacement record](service-payment-replacement-2026-11-02.md).
+both **iPhone and Android**. This change was verified locally on both physical
+phones and is now **committed, deployed and live-tested** with the other owner
+fixes. See the [release record](owner-followup-release-2026-11-02.md),
+[destination record](vehicle-destination-2026-11-02.md) and
+[replacement record](service-payment-replacement-2026-11-02.md). Native phone
+acceptance below preceded deployment; hosted checks verified the same generated
+messages without sending SMS or WhatsApp.
 
 The existing customer sharing panels now offer **Opna SMS** beside **Opna
 WhatsApp** and **Afrita skilaboð**. This covers quick job creation, the existing

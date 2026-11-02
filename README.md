@@ -98,12 +98,13 @@ Demo mode is read-only and must never be enabled in deployment.
 
 The myPOS REST v1.1 integration includes the combined **Pay and submit** customer flow, durable drafts, background paid-intake completion, automatic dispatcher status updates, dispatcher-entered second amount/description, and a private payment summary page with manual WhatsApp handoff. It uses the owner's merchant-issued credentials. The fixed first fee is **10,490 ISK** (`MYPOS_INITIAL_FEE_ISK=10490`); dispatch enters the separate second amount in ISK. Payments are enabled on the existing online site after successful controlled phone acceptance; migrations, server credentials and minute reconciliation are configured there. Local defaults remain disabled. See [docs/MYPOS_SETUP.md](docs/MYPOS_SETUP.md) and the [hosted release record](docs/mypos-hosted-release-2026-10-21.md). Run `npm run mypos:test:system -- --full` for the repeatable zero-cost integration/regression/database suite against a disposable local clone; it never uses merchant credentials or real money.
 
-Unreleased 2 November owner follow-ups add direct calling-code entry, SMS sharing,
-an optional vehicle destination and unpaid second-payment replacement. All four
-are implemented and tested locally, **uncommitted and undeployed**. Destination
-and payment replacement migrations must precede release. See the
-[maintenance handoff](docs/maintenance-handoff.md) for scope, verification and the
-limitation on myPOS checkouts a customer already opened.
+The 2 November owner follow-ups are **released**: direct calling-code entry, SMS
+sharing, optional vehicle destination and unpaid second-payment replacement.
+Both migrations are applied and source `ca6f4b3` serves the stable site. The
+release also patches production dependency advisories. Live tests passed without
+card charges or sent messages. See the [release record](docs/owner-followup-release-2026-11-02.md)
+for verification, retained audit history and the limit on an already-open myPOS
+checkout. Unfinished map/editor work remains local.
 
 The [21 October live phone audit](docs/live-phone-audit-2026-10-21.md) passed both payments, automatic confirmation, private photos and correction submission. The 23 October release preserved the current inventory: two jobs (one active), zero operators and three staff accounts, with the cancelled audit job's two Paid records retained. Its temporary audit job was removed without creating a payment or sending a message. The company owner will add their drivers/providers. Release source, migrations, tests and documentation are recorded on `chore/vercel-git-connection`. Automatic Git deployments remain disabled by `git.deploymentEnabled=false` in [vercel.json](vercel.json); future releases use the manual commands in the [deployment runbook](docs/deployment.md).
 

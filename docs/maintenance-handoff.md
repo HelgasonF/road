@@ -2,6 +2,26 @@
 
 Last updated: 2 November 2026 (Atlantic/Reykjavik)
 
+**Current release:** owner follow-ups 1–4 are deployed and live-tested on
+`https://vegstod.vercel.app`. Source `ca6f4b3`, Ready Preview
+`vegstod-2vknn23ef-freyrs-projects-fad4047a.vercel.app`
+(`dpl_CGMYghdgA12RY5H5GWVYVxiZL5Uv`), preserves prior payment/driver behavior and
+excludes the pre-existing map/editor edits. Migrations `20261102185452` and
+`20261102192200` are applied. Candidate: 668 application tests, 35 integration
+tests, 499 SQL assertions, build/types/lint; original workspace: 669 tests.
+Security-patched Next/ESLint 16.4.4, Zod 4.6.6 and compatible transitive patches
+give zero production npm audit findings. Live tests passed both customer
+languages, optional destination/persistence, phone/SMS sharing, real unpaid
+payment replacement/reissue, stale-link blocking and actual myPOS opening.
+Worker status reads are healthy; no card charge or message was made. Audit job
+`845dc149-d936-4120-9d09-2dfd7f75b71b` is cancelled; its two unpaid service requests
+remain as history, with IRA pages/customer link disabled and test polling stopped.
+All original business-row fingerprints match. Final inventory: 8 jobs (3 active),
+6 operators, 6 profiles, 2 assignments, 10 payment requests and 12 intake links.
+See the [release record](owner-followup-release-2026-11-02.md). The original local
+database remains unmigrated; source/migrations are current. Earlier local
+checkpoints below are superseded by this release. Git deployment remains disabled.
+
 Local follow-up **4** is complete: unpaid second-payment replacement in IRA,
 with revised manual message, retained history, stale/concurrent request guards,
 server-checked customer Pay and late-Paid monitoring/collection blocking. An
@@ -49,7 +69,7 @@ Vehicle destinations and second-payment replacement were subsequently completed
 above. The connected phone was used for the unsent SMS draft check. Preserve the
 pre-existing editor/address-map changes and keep later fixes separate.
 
-Latest live source: `2716c4b`, a copy-only customer-form section 4 update using
+26 October live source (superseded): `2716c4b`, a copy-only section 4 update using
 **þjónustuaðili** / **service provider**. All 13 customer-form tests and the hosted
 build/type check pass. The stable alias serves Ready Preview
 `vegstod-h6qg4fqqc-freyrs-projects-fad4047a.vercel.app`

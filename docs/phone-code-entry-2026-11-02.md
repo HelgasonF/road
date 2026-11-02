@@ -4,7 +4,9 @@
 
 Freyr asked to investigate four owner reports, then explicitly requested one fix
 at a time and selected **1: enter a country calling code directly**. Only this
-phone-input change is implemented in this checkpoint. It is local and unreleased.
+phone-input change was implemented in the first local checkpoint recorded below.
+All four fixes are now committed, deployed and live-tested as source `ca6f4b3`.
+See the [release record](owner-followup-release-2026-11-02.md).
 
 The shared phone input now accepts `+44`, `44` and `0044` in its country-code
 box. Users can still choose a country through the native dropdown arrow or

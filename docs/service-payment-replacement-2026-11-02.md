@@ -5,9 +5,11 @@
 Freyr selected owner issue **4** after issues 1–3 were completed locally.
 Allow dispatch to change the unpaid second payment's amount/description and
 prepare a new private link inside IRA. Preserve the first fee, existing payment
-history and manual WhatsApp/SMS sending. Do not deploy or change hosted data.
-This is implemented and verified locally. It is **not committed, pushed or
-deployed**. Neither new migration has been applied to hosted or working data.
+history and manual WhatsApp/SMS sending. Initial implementation stayed local;
+Freyr then approved deployment and hosted testing. All four fixes are now
+**committed, deployed and live-tested** as source `ca6f4b3`, with both migrations
+applied to hosted Road. The original local database remains unchanged. See the
+[release record](owner-followup-release-2026-11-02.md).
 
 The completed plan was:
 
@@ -126,12 +128,15 @@ stored in source or database payment pages.
   container. The owned browser and Vite server are closed after verification.
   No hosted write, outgoing message or card charge occurred.
 
-## Release checkpoint
+## Release checkpoint — complete
 
-Issues 1–4 are local and uncommitted. Before a requested release, apply destination
-migration `20261102185452` and then replacement migration `20261102192200`, verify
-the hosted schema/API, and deploy the compatible source. The live copy-only
-26 October release remains unchanged. Superseded history is retained; do not
+Issues 1–4 are committed and deployed. Destination migration `20261102185452`
+and replacement migration `20261102192200` were applied before source `ca6f4b3`.
+The hosted test created an unpaid 35 ISK request, replaced it with 40 ISK, blocked
+the old IRA page, opened the real provider checkout without entering a card,
+and safely reissued the same current payment. Both requests remain unpaid on a
+cancelled audit job; all IRA links are disabled and test polling stopped.
+Normal first pricing stays 10,490 ISK. Superseded history is retained; do not
 restore the old uniqueness constraint or remove history. Once replacements exist,
 a rollback must use a UI that selects the current request; pre-replacement UI
 would select its oldest row. Git deployment remains disabled.

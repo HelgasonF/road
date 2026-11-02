@@ -8,8 +8,9 @@ plain-text destination, separate from the pickup coordinates, in both customer
 languages and the dispatcher editor. A workshop, rental depot, address or town
 can be entered without map selection. Blank/missing values remain valid.
 Show a provided destination in dispatcher and assigned-provider details.
-This is implemented and verified locally. It is **not committed, pushed or
-deployed**, and the migration has not been applied to hosted or working data.
+This is **committed, deployed and live-tested** as source `ca6f4b3`; the migration
+is applied to hosted Road. The original local database remains unchanged. See
+the [release record](owner-followup-release-2026-11-02.md).
 
 Persist it as nullable `jobs.destination_label` (maximum 300 trimmed characters)
 and in the existing frozen payment draft. Preserve the distinction between an
@@ -90,12 +91,12 @@ The completed plan was:
   Evidence and local fixture files are ignored under
   `output/destination-20261102/`; no credentials or test resources are versioned.
 
-## Release checkpoint
+## Release checkpoint — complete
 
-Apply migration `20261102185452` **before** deploying the new source, since job
+Migration `20261102185452` was applied **before** deploying the source, since job
 queries select its new column. The migration is additive; old source/RPCs keep
 working and leave the optional column untouched. Keep this migration if rolling
 back application source. Use the normal hosted release checks when a deployment
-is requested. There has been no hosted write, deployment, card charge or message
-in this task. Issues 1 and 2 remain local; issue 4 was subsequently completed in
-the separate replacement record above.
+is requested. The initial implementation used only a disposable database; the
+later approved release verified actual hosted persistence and customer prefill.
+All four issues are deployed. No card was charged and no message was sent.

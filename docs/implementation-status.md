@@ -2,6 +2,22 @@
 
 Last updated: 2 November 2026
 
+**Released and live-tested:** all four owner follow-ups now serve
+`https://vegstod.vercel.app` from source `ca6f4b3`, Ready Preview
+`vegstod-2vknn23ef-freyrs-projects-fad4047a.vercel.app`
+(`dpl_CGMYghdgA12RY5H5GWVYVxiZL5Uv`). Migrations `20261102185452` and
+`20261102192200` are applied. The isolated candidate passed 668 application tests,
+35 integration tests, 499 SQL assertions and build/types/lint; the original
+workspace also passes 669 tests with its unrelated map test. Compatible security
+patches bring the production npm audit to zero findings. Hosted tests passed
+phone entry, SMS/WhatsApp message equality, bilingual optional destination,
+staff persistence, actual unpaid 35→40 ISK replacement, stale-page blocking and
+server-checked myPOS opening. Worker HTTP 200/status updates and unauthorized 401
+passed. No messages or card charges. One cancelled audit job retains two unpaid
+requests with IRA links disabled and test polling stopped. Original business
+data fingerprints match. See the [release record](owner-followup-release-2026-11-02.md).
+The implementation checkpoints below describe the work before release.
+
 Local, unreleased **issue 4**: dispatch can edit an unpaid service payment and
 prepare a replacement link/message inside IRA. Old requests remain in history;
 the old IRA page expires. Paid/uncertain requests are guarded, stale edits and
@@ -94,7 +110,7 @@ checks pass with no console errors/warnings and no new charge or message. See th
 [audit/release record](phone-location-release-2026-10-23.md).
 
 The live customer site is **https://vegstod.vercel.app**, served by the Ready
-Vercel Preview deployment `vegstod-h6qg4fqqc-freyrs-projects-fad4047a.vercel.app`.
+Vercel Preview deployment `vegstod-2vknn23ef-freyrs-projects-fad4047a.vercel.app`.
 The separate Vercel Production target is unused. myPOS REST v1.1 collection is
 enabled with the owner's server-only merchant credentials.
 
